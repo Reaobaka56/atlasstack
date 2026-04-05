@@ -294,58 +294,207 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
     }
   };
 
+  // Time-based greeting
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+
+  const quickActions = [
+    { label: 'Analyze Repo', icon: '🔍' },
+    { label: 'Auto Fix', icon: '🔧' },
+    { label: 'Security Scan', icon: '🔐' },
+    { label: 'Open PR', icon: '⚡' },
+    { label: 'Tech Debt', icon: '📊' },
+    { label: 'Dependencies', icon: '📦' },
+  ];
+
   return (
-    <div className="pt-32 pb-24">
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-8 py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center max-w-5xl mx-auto"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm mb-8 font-medium">
-            <Zap className="w-4 h-4" />
-            AtlasStack Beta Available
+    <div className="pb-0">
+      {/* ── HERO: Full-viewport cinematic ── */}
+      <section className="relative w-full h-screen min-h-[640px] overflow-hidden">
+
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/hero_bg.png')" }}
+        />
+        {/* Dark gradient overlay — heavier on the left so text is readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col px-10 md:px-16 py-10">
+
+          {/* Top bar (replaces Navbar on hero) */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                ⚡
+              </div>
+              <span className="text-white font-black text-lg tracking-tight">AtlasStack</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {token ? (
+                <button
+                  onClick={() => (window as any).__setPage?.('dashboard')}
+                  className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-white/20 transition-all"
+                >
+                  Dashboard →
+                </button>
+              ) : (
+                <button
+                  onClick={onNavigateToLogin}
+                  className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-white/20 transition-all"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
           </div>
 
-          <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-8">
-            <span className="text-white">The autonomous</span>
-            <br />
-            <span className="metallic-text">software engineer.</span>
-          </h1>
+          {/* Main hero content */}
+          <div className="flex-1 flex flex-col justify-center max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <p className="text-white/60 text-sm font-medium mb-3 tracking-wide">
+                {timeGreeting} — What would you like to ship today?
+              </p>
+              <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6 drop-shadow-2xl">
+                The Autonomous<br />
+                <span style={{ color: '#a5b4fc' }}>Code Engineer.</span>
+              </h1>
+              <p className="text-white/55 text-lg leading-relaxed mb-10 max-w-lg">
+                Paste a GitHub URL. Get a health score, auto-fixes, and one-click PR generation — in under 60 seconds.
+              </p>
 
-          <p className="text-xl text-slate-400 mb-12 leading-relaxed max-w-2xl mx-auto">
-            AtlasStack continuously improves your codebase by analyzing repositories, finding bugs, and opening high-quality pull requests—while you sleep.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-32">
-            <a href="#try" className="btn-primary flex items-center gap-3">
-              Analyze a Repository <ChevronRight className="w-5 h-5" />
-            </a>
-          </div>
-
-          <div className="mb-14 relative group cursor-pointer max-w-4xl mx-auto">
-            <div className="w-full aspect-video bg-black/40 rounded-2xl border border-white/10 flex flex-col items-center justify-center overflow-hidden relative shadow-2xl transition-transform group-hover:scale-[1.01]">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none" />
-              
-              <video 
-                className="absolute inset-0 w-full h-full object-cover opacity-50"
-                autoPlay loop muted playsInline
+              {/* Quick action pills */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="flex flex-wrap gap-2"
               >
-              </video>
-              
-              <div className="z-20 text-center relative pointer-events-none">
-                <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-white/20 transition-colors shadow-lg shadow-black/50">
-                   <Play className="w-6 h-6 text-white ml-1" />
-                </div>
-                <p className="text-slate-300 font-medium text-sm drop-shadow-md">See AtlasStack generate a PR (30s demo)</p>
-                <div className="text-[10px] text-slate-500 mt-2 font-mono">Place your demo.mp4 in the /public folder</div>
+                {quickActions.map((action, i) => (
+                  <motion.button
+                    key={action.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.25 + i * 0.05 }}
+                    onClick={() => {
+                      if (action.label === 'Analyze Repo') {
+                        const el = document.getElementById('try');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white/90 border border-white/20 backdrop-blur-md hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all active:scale-95"
+                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                  >
+                    <span>{action.icon}</span> {action.label}
+                  </motion.button>
+                ))}
+              </motion.div>
+            </motion.div>
+          </div>
+
+        </div>
+
+        {/* ── Top-right floating "Start Analysis" card ── */}
+        <motion.div
+          initial={{ opacity: 0, x: 40, y: -20 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute top-20 right-10 w-72 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl overflow-hidden"
+          style={{ background: 'rgba(10,10,20,0.75)' }}
+        >
+          <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Quick Scan</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          </div>
+          <form onSubmit={handleAnalyze} className="p-4 space-y-3">
+            <div>
+              <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Repository URL</p>
+              <div className="relative">
+                <Github className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+                <input
+                  type="url"
+                  placeholder="github.com/owner/repo"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50 transition-all"
+                />
               </div>
             </div>
-            <div className="absolute inset-0 bg-blue-500/20 blur-[100px] -z-10 rounded-full" />
+            <div>
+              <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Branch</p>
+              <input
+                type="text"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50 transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isAnalyzing || !repoUrl}
+              className="w-full py-2.5 rounded-xl font-bold text-xs text-white transition-all flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-40"
+              style={{ background: isAnalyzing ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.8)' }}
+            >
+              {isAnalyzing ? (
+                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Analyzing…</>
+              ) : (
+                <><Zap className="w-3.5 h-3.5" /> Start Analysis</>
+              )}
+            </button>
+            {statusMessage && (
+              <p className="text-[10px] text-indigo-300 text-center animate-pulse">{statusMessage}</p>
+            )}
+          </form>
+        </motion.div>
+
+        {/* ── Bottom-right floating "Practical Tools" card ── */}
+        <motion.div
+          initial={{ opacity: 0, x: 40, y: 40 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute bottom-10 right-10 w-60 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl"
+          style={{ background: 'rgba(10,10,20,0.75)' }}
+        >
+          <div className="p-4">
+            <p className="text-xs font-black text-white mb-3">Practical Tools</p>
+            <div className="space-y-2">
+              {[
+                { label: 'Auto-Fix Engine', color: '#10b981', pct: 94 },
+                { label: 'Security Scanner', color: '#6366f1', pct: 87 },
+                { label: 'PR Generator', color: '#f59e0b', pct: 76 },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex justify-between mb-0.5">
+                    <span className="text-[10px] text-white/60">{item.label}</span>
+                    <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.pct}%</span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: item.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => { const el = document.getElementById('try'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+              className="mt-4 w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.3)' }}
+            >
+              Get Started →
+            </button>
           </div>
         </motion.div>
+
+        {/* Bottom scroll hint */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+          <span className="text-white text-[10px] uppercase tracking-widest font-bold">Scroll</span>
+          <div className="w-px h-8 bg-white/30" />
+        </div>
       </section>
 
       {/* Use Cases Section */}
@@ -728,12 +877,17 @@ export default function App() {
       <div className="app-background" />
       <div className="app-overlay" />
       
-      <Navbar 
-        onNavigate={setCurrentPage} 
-        currentPage={currentPage} 
-        token={token}
-        onLogout={handleLogout}
-      />
+      {/* Hide global navbar on landing — it has its own inline nav in the hero */}
+      {currentPage !== 'landing' && (
+        <Navbar 
+          onNavigate={setCurrentPage} 
+          currentPage={currentPage} 
+          token={token}
+          onLogout={handleLogout}
+        />
+      )}
+      {/* Expose setCurrentPage for the landing page's inline dashboard button */}
+      {typeof window !== 'undefined' && ((window as any).__setPage = setCurrentPage)}
 
       <AnimatePresence mode="wait">
         {currentPage === 'ide' ? (

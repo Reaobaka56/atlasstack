@@ -36,15 +36,12 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2400');
-  background-size: cover;
-  background-position: center;
-  filter: brightness(0.15) saturate(0.6);
-  transition: filter 0.5s ease;
+  background: #07070f;
+  transition: background 0.5s ease;
 }
 
 body.light .app-background {
-  filter: brightness(0.9) saturate(0.4) opacity(0.1);
+  background: #f8fafc;
 }
 
 .app-overlay {
