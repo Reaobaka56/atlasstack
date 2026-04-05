@@ -1,0 +1,28 @@
+# Environment files (keep example file tracked)
+.env
+.env.*
+!.env.example
+
+# Local dependencies
+node_modules/
+clients/vscode/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+api_log.txt
+backend_output.log
+test2_log.txt
+
+# Vite / build output
+dist/
+.vite/
