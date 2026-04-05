@@ -214,7 +214,19 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onL
             
             <button 
               type="button" 
-              onClick={() => window.location.href = `${apiUrl}/api/v1/auth/github/login`}
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${apiUrl}/api/v1/auth/github/login`);
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  } else {
+                    alert('GitHub OAuth not configured. Check GITHUB_CLIENT_ID in .env');
+                  }
+                } catch (e) {
+                  alert('Cannot reach backend. Make sure the API is running at ' + apiUrl);
+                }
+              }}
               className="w-full py-5 text-lg font-bold bg-[#24292e] text-white rounded-2xl hover:bg-[#2f363d] transition-colors flex items-center justify-center gap-3 border border-white/10"
             >
               <Github className="w-6 h-6" /> Continue with GitHub
@@ -230,7 +242,7 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onL
   );
 };
 
-const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, key?: React.Key }) => {
+const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, key?: React.Key }) => {
   const [repoUrl, setRepoUrl] = useState('');
   const [branch, setBranch] = useState('main');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -535,6 +547,12 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           <p className="text-xl text-slate-500 max-w-2xl mx-auto">
             Start free, upgrade when you need more power to ship faster.
           </p>
+          {isPro && (
+            <div className="mt-6 inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-5 py-2 rounded-full text-sm font-bold">
+              <CheckCircle2 className="w-4 h-4 text-indigo-400" /> You are on Pro (Test Mode) —
+              <button onClick={() => { localStorage.removeItem('atlas_pro'); onLogout(); }} className="underline hover:no-underline text-indigo-400 ml-1">Disable</button>
+            </div>
+          )}
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {[
@@ -543,25 +561,36 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
               price: "$0",
               desc: "Perfect for testing the waters on a single weekend project.",
               features: ["1 Repository", "5 Scans per month", "Basic Code Analysis", "Community Support"],
-              button: "Get Started"
+              button: token ? "You're on Free" : "Get Started",
+              action: () => onNavigateToLogin(),
+              highlight: false,
             },
             {
               name: "Pro",
               price: "$19",
               desc: "For serious developers who want to eliminate tech debt.",
               features: ["Unlimited Repositories", "Unlimited Scans", "Auto-Fix Patches", "GitHub PR Integration"],
-              button: "Upgrade to Pro",
-              highlight: true
+              button: isPro ? "✓ Pro Active" : "Test Pro Mode",
+              action: () => {
+                localStorage.setItem('atlas_pro', '1');
+                window.location.reload();
+              },
+              highlight: true,
             },
             {
               name: "Team",
               price: "$49",
               desc: "For startups needing CI/CD pipelines and history tracking.",
               features: ["Everything in Pro", "CI/CD Integration", "Compare Trends Over Time", "Enterprise Dashboards"],
-              button: "Contact Sales"
+              button: "Contact Sales",
+              action: () => window.open('mailto:reaobaka@atlasstack.ai?subject=AtlasStack Team Plan', '_blank'),
+              highlight: false,
             }
           ].map((tier, i) => (
              <div key={i} className={`liquid-glass p-10 rounded-[3rem] border ${tier.highlight ? 'border-blue-500/50 shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)]' : 'border-white/5'} transition-transform hover:scale-[1.02] flex flex-col`}>
+                {tier.highlight && (
+                  <div className="bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20 w-fit mb-4">Most Popular</div>
+                )}
                 <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
                 <div className="text-4xl font-display font-bold text-white mb-4">{tier.price}<span className="text-lg text-slate-500 font-normal">/mo</span></div>
                 <p className="text-sm text-slate-400 mb-8 h-10">{tier.desc}</p>
@@ -573,11 +602,21 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                   ))}
                 </ul>
                 <button 
-                  onClick={() => alert('Stripe integration coming soon!')}
-                  className={`w-full py-4 rounded-full font-bold text-sm transition-colors ${tier.highlight ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'}`}
+                  onClick={tier.action}
+                  disabled={tier.highlight && isPro}
+                  className={`w-full py-4 rounded-full font-bold text-sm transition-all ${
+                    tier.highlight && isPro
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 cursor-default'
+                      : tier.highlight
+                      ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
+                      : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
+                  }`}
                 >
                   {tier.button}
                 </button>
+                {tier.highlight && !isPro && (
+                  <p className="text-center text-xs text-slate-600 mt-3">No credit card required for test mode</p>
+                )}
              </div>
           ))}
         </div>
@@ -623,6 +662,7 @@ export default function App() {
   const [currentRepo, setCurrentRepo] = useState<string>('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem(TOKEN_KEY));
+  const [isPro, setIsPro] = useState<boolean>(localStorage.getItem('atlas_pro') === '1');
   const [apiUrl, setApiUrl] = useState<string>(detectDefaultApiUrl());
 
   useEffect(() => {
@@ -643,14 +683,12 @@ export default function App() {
   }, [apiUrl]);
 
   useEffect(() => {
-    // Handle GitHub Auth Callback
+    // Handle GitHub Auth Callback — GitHub redirects back to the frontend with ?code=...
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (code) {
-      // Clear URL
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      // Exchange code for token
       fetch(`${apiUrl}/api/v1/auth/github/callback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -659,10 +697,18 @@ export default function App() {
       .then(res => res.json())
       .then(data => {
         if (data.access_token) {
+          localStorage.setItem(TOKEN_KEY, data.access_token);
           setToken(data.access_token);
+          setCurrentPage('landing'); // redirect to landing after login
+        } else {
+          console.error("GitHub OAuth failed:", data);
+          alert(`GitHub login failed: ${data.detail || 'Unknown error'}`);
         }
       })
-      .catch(err => console.error("GitHub auth error:", err));
+      .catch(err => {
+        console.error("GitHub auth error:", err);
+        alert('GitHub login failed: Cannot reach backend API');
+      });
     }
   }, [apiUrl]);
 
@@ -727,6 +773,7 @@ export default function App() {
             onLogout={handleLogout}
             apiUrl={apiUrl}
             onApiUrlChange={setApiUrl}
+            isPro={isPro}
           />
         ) : (
           <LoginPage 

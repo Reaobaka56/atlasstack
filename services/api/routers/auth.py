@@ -5,7 +5,7 @@ Authentication endpoints - improved with real user persistence and password hash
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +37,7 @@ class TokenResponse(BaseModel):
     expires_in_hours: int = 24
     user_id: str
     email: str
+    is_pro: bool = False
 
 
 class RefreshRequest(BaseModel):
@@ -141,15 +142,30 @@ class GithubAuthRequest(BaseModel):
 
 
 @router.get("/auth/github/login")
-async def github_login():
-    """Return the GitHub OAuth authorize URL"""
+async def github_login(request: Request):
+    """Return the GitHub OAuth authorize URL — frontend redirects user there."""
     from core.config import get_settings
     settings = get_settings()
     client_id = settings.GITHUB_CLIENT_ID
     if not client_id:
         raise HTTPException(status_code=500, detail="GitHub Client ID not configured")
-    # You can return the URL so the frontend can redirect
-    url = f"https://github.com/login/oauth/authorize?client_id={client_id}&scope=repo user:email"
+
+    # The redirect_uri must match what's registered in your GitHub OAuth App settings.
+    # It should point to your FRONTEND so the ?code= param lands back in the React app.
+    origin = request.headers.get("origin") or request.headers.get("referer", "http://localhost:5173")
+    # Strip trailing slash/path — keep just origin
+    import re
+    origin_match = re.match(r"(https?://[^/]+)", origin)
+    frontend_origin = origin_match.group(1) if origin_match else "http://localhost:5173"
+    redirect_uri = frontend_origin  # GitHub sends ?code= back to this URL
+
+    url = (
+        f"https://github.com/login/oauth/authorize"
+        f"?client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=repo+user:email"
+        f"&allow_signup=true"
+    )
     return {"url": url}
 
 
@@ -218,30 +234,40 @@ async def github_callback(payload: GithubAuthRequest, db: AsyncSession = Depends
     
         access_token = create_access_token(user_id=user.id, email=user.email, roles=user.roles)
         refresh_token = create_refresh_token(user_id=user.id)
+        # Mark as pro if they have 'pro' in roles or for testing purposes
+        is_pro = "pro" in (user.roles or [])
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
             user_id=user.id,
-            email=user.email
+            email=user.email,
+            is_pro=is_pro
         )
 
 @router.get("/auth/github/repos")
-async def get_github_repos(db: AsyncSession = Depends(get_db), req: Request = None):
-    user_context = getattr(req.state, "user", None)
-    if not user_context:
+async def get_github_repos(request: Request, db: AsyncSession = Depends(get_db)):
+    """Fetch authenticated user's GitHub repos using their stored GitHub token."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Must be logged in to fetch repos")
     
-    result = await db.execute(select(UserRecord).where(UserRecord.id == user_context["id"]))
+    token_str = auth_header.split(" ", 1)[1]
+    decoded = verify_token(token_str)
+    if not decoded:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_id = decoded.get("sub")
+    result = await db.execute(select(UserRecord).where(UserRecord.id == user_id))
     user = result.scalar_one_or_none()
     if not user or not user.github_token:
-        raise HTTPException(status_code=403, detail="GitHub account not linked")
+        raise HTTPException(status_code=403, detail="GitHub account not linked. Please sign in with GitHub.")
 
     import httpx
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            "https://api.github.com/user/repos?sort=updated&per_page=50",
+            "https://api.github.com/user/repos?sort=updated&per_page=50&affiliation=owner,collaborator",
             headers={"Authorization": f"token {user.github_token}", "Accept": "application/vnd.github.v3+json"}
         )
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail="Failed to fetch repos from GitHub")
-        return [{"name": r["full_name"], "url": r["html_url"], "private": r["private"]} for r in resp.json()]
+        return [{"name": r["full_name"], "url": r["html_url"], "private": r["private"], "default_branch": r.get("default_branch", "main")} for r in resp.json()]
