@@ -25,8 +25,6 @@ import {
   CheckCircle2,
   X,
   ArrowLeft,
-  Sun,
-  Moon,
   GitBranch,
   Play
 } from 'lucide-react';
@@ -34,7 +32,6 @@ import {
 // --- Constants & API Config ---
 const API_URL_STORAGE_KEY = "codesage_api_url";
 const TOKEN_KEY = "codesage_access_token";
-const THEME_KEY = "codesage_theme";
 
 const normalizeApiUrl = (value?: string | null) => (value || '').trim().replace(/\/$/, '');
 
@@ -67,11 +64,9 @@ type Page = 'landing' | 'login' | 'ide' | 'dashboard';
 
 // --- Components ---
 
-const Navbar = ({ onNavigate, currentPage, theme, onToggleTheme, token, onLogout }: { 
+const Navbar = ({ onNavigate, currentPage, token, onLogout }: { 
   onNavigate: (page: Page) => void, 
   currentPage: Page,
-  theme: 'light' | 'dark',
-  onToggleTheme: () => void,
   token: string | null,
   onLogout: () => void
 }) => (
@@ -99,13 +94,6 @@ const Navbar = ({ onNavigate, currentPage, theme, onToggleTheme, token, onLogout
           </>
         )}
         <div className="flex items-center gap-4">
-          <button 
-            onClick={onToggleTheme}
-            className="p-2.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all"
-            aria-label="Toggle Theme"
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
           {token ? (
             <>
               <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
@@ -635,7 +623,6 @@ export default function App() {
   const [currentRepo, setCurrentRepo] = useState<string>('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem(TOKEN_KEY));
-  const [theme, setTheme] = useState<'light' | 'dark'>((localStorage.getItem(THEME_KEY) as 'light' | 'dark') || 'dark');
   const [apiUrl, setApiUrl] = useState<string>(detectDefaultApiUrl());
 
   useEffect(() => {
@@ -646,14 +633,6 @@ export default function App() {
     }
   }, [token]);
 
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-    if (theme === 'light') {
-      document.body.classList.add('light');
-    } else {
-      document.body.classList.remove('light');
-    }
-  }, [theme]);
 
   useEffect(() => {
     const normalized = normalizeApiUrl(apiUrl);
@@ -697,9 +676,6 @@ export default function App() {
     setCurrentPage('landing');
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
 
   return (
     <div className="min-h-screen text-slate-400">
@@ -709,8 +685,6 @@ export default function App() {
       <Navbar 
         onNavigate={setCurrentPage} 
         currentPage={currentPage} 
-        theme={theme}
-        onToggleTheme={toggleTheme}
         token={token}
         onLogout={handleLogout}
       />
