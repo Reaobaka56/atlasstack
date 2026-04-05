@@ -9,24 +9,9 @@ import Editor from '@monaco-editor/react';
 import { IDEPage } from './IDEPage';
 import { DashboardPage } from './DashboardPage';
 import { 
-  Shield, 
-  Zap, 
-  BarChart3, 
-  Network, 
-  Github, 
-  BookOpen, 
-  ChevronRight, 
-  Terminal,
-  Lock,
-  Mail,
-  Search,
-  LogOut,
-  Cpu,
-  CheckCircle2,
-  X,
-  ArrowLeft,
-  GitBranch,
-  Play
+  Shield, Zap, BarChart3, Network, Github, BookOpen, ChevronRight, Terminal,
+  Lock, Mail, Search, LogOut, Cpu, CheckCircle2, X, ArrowLeft, GitBranch,
+  Play, Wrench, Package, TrendingDown, GitPullRequest, ScanLine, Activity
 } from 'lucide-react';
 
 // --- Constants & API Config ---
@@ -70,41 +55,34 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
   token: string | null,
   onLogout: () => void
 }) => (
-  <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6">
+  <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-5">
     <div className="max-w-7xl mx-auto flex items-center justify-between">
       <div 
-        className="flex items-center gap-4 group cursor-pointer"
+        className="flex items-center gap-3 cursor-pointer"
         onClick={() => onNavigate('landing')}
       >
-        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
-          <img 
-            src="" 
-            alt="Logo" 
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
+        <div className="w-8 h-8 rounded-lg glass-card flex items-center justify-center">
+          <Zap className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.7)' }} />
         </div>
-        <span className="text-2xl font-display font-bold text-white tracking-tighter">AtlasStack</span>
+        <span className="text-base font-black tracking-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>AtlasStack</span>
       </div>
       
-      <div className="hidden md:flex items-center gap-10">
+      <div className="hidden md:flex items-center gap-8">
         {currentPage === 'landing' && (
-          <>
-            <a href="#try" className="nav-link">Try it now</a>
-          </>
+          <a href="#try" className="nav-link">Try it now</a>
         )}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {token ? (
             <>
-              <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
-              <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
+              <button onClick={() => onNavigate('dashboard')} className="nav-link text-sm">Dashboard</button>
+              <button onClick={onLogout} className="btn-secondary text-xs px-4 py-2">Sign Out</button>
             </>
           ) : (
             <button 
               onClick={() => onNavigate('login')}
-              className="btn-primary py-2.5 text-sm"
+              className="btn-primary text-xs px-5 py-2.5"
             >
-              Sign In / Register
+              Sign In
             </button>
           )}
         </div>
@@ -298,14 +276,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
   const hour = new Date().getHours();
   const timeGreeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
-  const quickActions = [
-    { label: 'Analyze Repo', icon: '🔍' },
-    { label: 'Auto Fix', icon: '🔧' },
-    { label: 'Security Scan', icon: '🔐' },
-    { label: 'Open PR', icon: '⚡' },
-    { label: 'Tech Debt', icon: '📊' },
-    { label: 'Dependencies', icon: '📦' },
-  ];
+
 
   return (
     <div className="pb-0">
@@ -317,219 +288,223 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/hero_bg.png')" }}
         />
-        {/* Dark gradient overlay — heavier on the left so text is readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/35" />
 
         {/* Content */}
         <div className="relative z-10 h-full flex flex-col px-10 md:px-16 py-10">
 
-          {/* Top bar (replaces Navbar on hero) */}
+          {/* Inline top bar */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                ⚡
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <Zap className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.65)' }} />
               </div>
-              <span className="text-white font-black text-lg tracking-tight">AtlasStack</span>
+              <span className="text-sm font-black tracking-tight" style={{ color: 'rgba(255,255,255,0.82)' }}>AtlasStack</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div>
               {token ? (
                 <button
                   onClick={() => (window as any).__setPage?.('dashboard')}
-                  className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-white/20 transition-all"
+                  className="pill text-xs"
                 >
-                  Dashboard →
+                  Dashboard
                 </button>
               ) : (
-                <button
-                  onClick={onNavigateToLogin}
-                  className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-white/20 transition-all"
-                >
+                <button onClick={onNavigateToLogin} className="pill text-xs">
                   Sign In
                 </button>
               )}
             </div>
           </div>
 
-          {/* Main hero content */}
+          {/* Hero text */}
           <div className="flex-1 flex flex-col justify-center max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="text-white/60 text-sm font-medium mb-3 tracking-wide">
+              <p className="text-sm font-medium mb-4 tracking-wide" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 {timeGreeting} — What would you like to ship today?
               </p>
-              <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6 drop-shadow-2xl">
+              <h1 className="text-5xl md:text-[4.5rem] font-black text-white leading-[1.04] tracking-tight mb-6 drop-shadow-2xl">
                 The Autonomous<br />
-                <span style={{ color: '#a5b4fc' }}>Code Engineer.</span>
+                <span className="metallic-text">Code Engineer.</span>
               </h1>
-              <p className="text-white/55 text-lg leading-relaxed mb-10 max-w-lg">
+              <p className="text-base leading-relaxed mb-10 max-w-md" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Paste a GitHub URL. Get a health score, auto-fixes, and one-click PR generation — in under 60 seconds.
               </p>
 
-              {/* Quick action pills */}
+              {/* Quick action pills — icons only, no emoji */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
                 className="flex flex-wrap gap-2"
               >
-                {quickActions.map((action, i) => (
+                {[
+                  { label: 'Analyze Repo',    Icon: ScanLine },
+                  { label: 'Auto Fix',        Icon: Wrench },
+                  { label: 'Security Scan',   Icon: Shield },
+                  { label: 'Open PR',         Icon: GitPullRequest },
+                  { label: 'Tech Debt',       Icon: TrendingDown },
+                  { label: 'Dependencies',    Icon: Package },
+                ].map(({ label, Icon }, i) => (
                   <motion.button
-                    key={action.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.25 + i * 0.05 }}
+                    key={label}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 + i * 0.04 }}
                     onClick={() => {
-                      if (action.label === 'Analyze Repo') {
-                        const el = document.getElementById('try');
-                        el?.scrollIntoView({ behavior: 'smooth' });
+                      if (label === 'Analyze Repo') {
+                        document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white/90 border border-white/20 backdrop-blur-md hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all active:scale-95"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                    className="pill"
                   >
-                    <span>{action.icon}</span> {action.label}
+                    <Icon className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
+                    {label}
                   </motion.button>
                 ))}
               </motion.div>
             </motion.div>
           </div>
-
         </div>
 
-        {/* ── Top-right floating "Start Analysis" card ── */}
+        {/* Top-right: Quick Scan card */}
         <motion.div
           initial={{ opacity: 0, x: 40, y: -20 }}
           animate={{ opacity: 1, x: 0, y: 0 }}
           transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute top-20 right-10 w-72 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl overflow-hidden"
-          style={{ background: 'rgba(10,10,20,0.75)' }}
+          className="absolute top-20 right-10 w-72 rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(6,6,14,0.8)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)' }}
         >
-          <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Quick Scan</span>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>Quick Scan</span>
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.35)' }} />
           </div>
           <form onSubmit={handleAnalyze} className="p-4 space-y-3">
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Repository URL</p>
+              <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Repository URL</p>
               <div className="relative">
-                <Github className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+                <Github className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.25)' }} />
                 <input
                   type="url"
                   placeholder="github.com/owner/repo"
                   value={repoUrl}
                   onChange={(e) => setRepoUrl(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50 transition-all"
+                  className="w-full pl-8 pr-3 py-2.5 text-xs rounded-xl outline-none transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)' }}
                 />
               </div>
             </div>
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Branch</p>
+              <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Branch</p>
               <input
                 type="text"
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50 transition-all"
+                className="w-full px-3 py-2.5 text-xs rounded-xl outline-none transition-all"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)' }}
               />
             </div>
             <button
               type="submit"
               disabled={isAnalyzing || !repoUrl}
-              className="w-full py-2.5 rounded-xl font-bold text-xs text-white transition-all flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-40"
-              style={{ background: isAnalyzing ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.8)' }}
+              className="w-full py-2.5 rounded-xl font-bold text-xs text-white transition-all flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-35"
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
             >
               {isAnalyzing ? (
-                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Analyzing…</>
+                <><div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" /> Analyzing</>
               ) : (
-                <><Zap className="w-3.5 h-3.5" /> Start Analysis</>
+                <><ScanLine className="w-3.5 h-3.5" /> Start Analysis</>
               )}
             </button>
             {statusMessage && (
-              <p className="text-[10px] text-indigo-300 text-center animate-pulse">{statusMessage}</p>
+              <p className="text-[10px] text-center animate-pulse" style={{ color: 'rgba(255,255,255,0.4)' }}>{statusMessage}</p>
             )}
           </form>
         </motion.div>
 
-        {/* ── Bottom-right floating "Practical Tools" card ── */}
+        {/* Bottom-right: AI Tools card */}
         <motion.div
           initial={{ opacity: 0, x: 40, y: 40 }}
           animate={{ opacity: 1, x: 0, y: 0 }}
           transition={{ delay: 0.6, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute bottom-10 right-10 w-60 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl"
-          style={{ background: 'rgba(10,10,20,0.75)' }}
+          className="absolute bottom-10 right-10 w-60 rounded-2xl"
+          style={{ background: 'rgba(6,6,14,0.8)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)' }}
         >
           <div className="p-4">
-            <p className="text-xs font-black text-white mb-3">Practical Tools</p>
-            <div className="space-y-2">
+            <p className="text-xs font-black mb-3" style={{ color: 'rgba(255,255,255,0.7)' }}>Analysis Capabilities</p>
+            <div className="space-y-3">
               {[
-                { label: 'Auto-Fix Engine', color: '#10b981', pct: 94 },
-                { label: 'Security Scanner', color: '#6366f1', pct: 87 },
-                { label: 'PR Generator', color: '#f59e0b', pct: 76 },
+                { label: 'Auto-Fix Engine',   pct: 94 },
+                { label: 'Security Scanner',  pct: 87 },
+                { label: 'PR Generator',      pct: 76 },
               ].map((item) => (
                 <div key={item.label}>
-                  <div className="flex justify-between mb-0.5">
-                    <span className="text-[10px] text-white/60">{item.label}</span>
-                    <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.pct}%</span>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{item.label}</span>
+                    <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.55)' }}>{item.pct}%</span>
                   </div>
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: item.color }} />
+                  <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: 'rgba(255,255,255,0.25)' }} />
                   </div>
                 </div>
               ))}
             </div>
             <button
-              onClick={() => { const el = document.getElementById('try'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-              className="mt-4 w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.3)' }}
+              onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })}
+              className="mt-4 w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)' }}
             >
-              Get Started →
+              Get Started
             </button>
           </div>
         </motion.div>
 
-        {/* Bottom scroll hint */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
-          <span className="text-white text-[10px] uppercase tracking-widest font-bold">Scroll</span>
-          <div className="w-px h-8 bg-white/30" />
+        {/* Scroll hint */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1" style={{ opacity: 0.3 }}>
+          <span className="text-white text-[9px] uppercase tracking-widest font-bold">Scroll</span>
+          <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.3)' }} />
         </div>
       </section>
 
       {/* Use Cases Section */}
-      <section id="use-cases" className="max-w-7xl mx-auto px-8 py-32 border-t border-white/5">
+      <section id="use-cases" className="max-w-7xl mx-auto px-8 py-32" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="mb-20 text-center">
-          <h2 className="text-4xl lg:text-5xl mb-6 metallic-text">Built to scale your engineering team</h2>
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto">
-            Stop wasting junior dev hours on trivial issues. Let the agent handle it.
+          <h2 className="text-4xl lg:text-5xl mb-5 metallic-text">Built to scale your engineering team</h2>
+          <p className="text-lg max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Stop wasting engineering hours on trivial issues. Let the agent handle it.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           {[
             {
-              title: "Finds Bugs Autonomously",
-              desc: "AtlasStack deeply analyzes your repository structure to find security vulnerabilities, edge cases, and runtime bugs before users do.",
-              icon: <Zap className="w-6 h-6 text-yellow-400" />
+              title: "Autonomous Bug Detection",
+              desc: "Deep repository analysis to find security vulnerabilities, edge cases, and runtime bugs before users do.",
+              Icon: ScanLine,
             },
             {
-              title: "Auto-Fixes Tech Debt",
-              desc: "Schedule AtlasStack to run weekly and clean up deprecated APIs, dead code, and inconsistent styling across your entire monolithic codebase.",
-              icon: <Network className="w-6 h-6 text-blue-400" />
+              title: "Auto-Fix Tech Debt",
+              desc: "Schedule weekly runs to clean up deprecated APIs, dead code, and inconsistencies across your entire codebase.",
+              Icon: Wrench,
             },
             {
               title: "One-Click PR Generation",
-              desc: "Instead of just leaving a comment, AtlasStack clones the repo, makes the fix, and opens a perfectly formatted Pull Request for your review.",
-              icon: <GitBranch className="w-6 h-6 text-purple-400" />
+              desc: "AtlasStack clones the repo, applies the fix, and opens a formatted Pull Request — ready for your review.",
+              Icon: GitPullRequest,
             }
           ].map((uc, i) => (
-            <div key={i} className="liquid-glass p-8 rounded-[2rem] border-white/5 hover:border-white/10 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6">
-                {uc.icon}
+            <div key={i} className="liquid-glass p-8 rounded-3xl card-hover">
+              <div className="w-10 h-10 rounded-xl mb-6 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <uc.Icon className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.55)' }} />
               </div>
-              <h3 className="text-xl text-white font-semibold mb-3">{uc.title}</h3>
-              <p className="text-slate-400 leading-relaxed text-sm">{uc.desc}</p>
+              <h3 className="text-base font-bold mb-2" style={{ color: 'rgba(255,255,255,0.82)' }}>{uc.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{uc.desc}</p>
             </div>
           ))}
         </div>

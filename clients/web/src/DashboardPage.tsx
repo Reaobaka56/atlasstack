@@ -9,7 +9,7 @@ import {
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
-  s > 70 ? '#10b981' : s > 40 ? '#f59e0b' : '#ef4444';
+  s > 70 ? 'rgba(255,255,255,0.75)' : s > 40 ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)';
 
 const scoreLabel = (s: number) =>
   s > 70 ? 'Good' : s > 40 ? 'Needs Work' : 'Critical';
@@ -54,11 +54,19 @@ const NavItem = ({
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${
       active
-        ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
-        : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+        ? 'border'
+        : 'hover:bg-white/5'
     }`}
+    style={active ? {
+      background: 'rgba(255,255,255,0.08)',
+      borderColor: 'rgba(255,255,255,0.14)',
+      color: 'rgba(255,255,255,0.85)',
+    } : {
+      color: 'rgba(255,255,255,0.35)',
+      border: '1px solid transparent',
+    }}
   >
-    <span className={`transition-colors ${active ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-300'}`}>
+    <span style={{ color: active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }} className="transition-colors group-hover:opacity-80">
       {icon}
     </span>
     {label}
@@ -70,21 +78,23 @@ const StatCard = ({
   value,
   sub,
   icon,
-  accent,
 }: {
   label: string;
   value: string | number;
   sub: string;
   icon: React.ReactNode;
-  accent: string;
+  accent?: string;
 }) => (
-  <div className="bg-[#13131f] border border-white/5 rounded-2xl p-5 flex items-start justify-between hover:border-white/10 transition-colors">
+  <div className="rounded-2xl p-5 flex items-start justify-between transition-all hover:border-white/12"
+    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
     <div>
-      <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{label}</p>
-      <p className="text-2xl font-black text-white tabular-nums">{value}</p>
-      <p className="text-xs text-slate-500 mt-1">{sub}</p>
+      <p className="text-[10px] uppercase tracking-widest font-bold mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</p>
+      <p className="text-2xl font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.88)' }}>{value}</p>
+      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{sub}</p>
     </div>
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${accent}`}>{icon}</div>
+    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+      {icon}
+    </div>
   </div>
 );
 
@@ -194,12 +204,12 @@ export const DashboardPage = ({
         <div className="flex-1" />
 
         {/* AI Tip card */}
-        <div className="mx-1 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/15">
+        <div className="mx-1 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Cpu className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">AI Tip</span>
+            <Cpu className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.4)' }} />
+            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Tip</span>
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">{TIPS[tipIdx]}</p>
+          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{TIPS[tipIdx]}</p>
         </div>
 
         {/* Back */}
@@ -218,7 +228,7 @@ export const DashboardPage = ({
           {/* Greeting header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
             <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">{dayLabel}</p>
-            <h1 className="text-3xl font-black text-white mb-1">{greeting} 👋</h1>
+            <h1 className="text-3xl font-black mb-1" style={{ color: 'rgba(255,255,255,0.88)' }}>{greeting}</h1>
             <p className="text-slate-400 text-sm">
               {analyses.length > 0
                 ? `You have ${analyses.length} scanned repostitories. Average health: ${avgHealth}/100.`
@@ -234,15 +244,15 @@ export const DashboardPage = ({
             className="flex flex-wrap gap-3"
           >
             {[
-              { label: '+ Analyze Repo', icon: <Plus className="w-3.5 h-3.5" />, action: onBack, style: 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500/30' },
-              { label: 'Refresh History', icon: <RefreshCw className="w-3.5 h-3.5" />, action: fetchAnalyses, style: 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/8' },
-              { label: 'Connect GitHub', icon: <Github className="w-3.5 h-3.5" />, action: () => {}, style: 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/8' },
-              { label: 'View Reports', icon: <BarChart3 className="w-3.5 h-3.5" />, action: () => setActiveNav('reports'), style: 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/8' },
+              { label: 'Analyze Repo', icon: <Plus className="w-3.5 h-3.5" />, action: onBack },
+              { label: 'Refresh', icon: <RefreshCw className="w-3.5 h-3.5" />, action: fetchAnalyses },
+              { label: 'GitHub', icon: <Github className="w-3.5 h-3.5" />, action: () => {} },
+              { label: 'Reports', icon: <BarChart3 className="w-3.5 h-3.5" />, action: () => setActiveNav('reports') },
             ].map((item) => (
               <button
                 key={item.label}
                 onClick={item.action}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border transition-all hover:scale-105 active:scale-95 ${item.style}`}
+                className="pill"
               >
                 {item.icon} {item.label}
               </button>
@@ -260,29 +270,25 @@ export const DashboardPage = ({
               label="Total Scans"
               value={analyses.length}
               sub="All time"
-              icon={<Activity className="w-5 h-5 text-indigo-400" />}
-              accent="bg-indigo-500/10 border-indigo-500/20"
+              icon={<Activity className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
             />
             <StatCard
               label="Avg Health"
               value={`${avgHealth}/100`}
               sub={avgHealth > 70 ? 'Great shape' : avgHealth > 40 ? 'Needs work' : 'Attention needed'}
-              icon={<Shield className="w-5 h-5 text-emerald-400" />}
-              accent="bg-emerald-500/10 border-emerald-500/20"
+              icon={<Shield className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
             />
             <StatCard
               label="Healthy Repos"
               value={good}
               sub="Score > 70"
-              icon={<CheckCircle2 className="w-5 h-5 text-green-400" />}
-              accent="bg-green-500/10 border-green-500/20"
+              icon={<CheckCircle2 className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
             />
             <StatCard
               label="Need Fixes"
               value={critical}
               sub="Score ≤ 40"
-              icon={<AlertTriangle className="w-5 h-5 text-red-400" />}
-              accent="bg-red-500/10 border-red-500/20"
+              icon={<AlertTriangle className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
             />
           </motion.div>
 
@@ -294,7 +300,8 @@ export const DashboardPage = ({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="lg:col-span-3 bg-[#0f0f1c] border border-white/5 rounded-2xl overflow-hidden"
+              className="lg:col-span-3 rounded-2xl overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
@@ -305,7 +312,8 @@ export const DashboardPage = ({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search repos..."
-                    className="bg-white/5 border border-white/8 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/40 w-44"
+                    className="rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none w-44"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
                   />
                 </div>
               </div>
@@ -314,14 +322,14 @@ export const DashboardPage = ({
               <div className="divide-y divide-white/5">
                 {loading ? (
                   <div className="py-16 flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-                    <p className="text-xs text-slate-500">Loading your analyses...</p>
+                    <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.4)' }} />
+                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Loading your analyses...</p>
                   </div>
                 ) : error ? (
                   <div className="py-12 text-center px-6">
-                    <AlertTriangle className="w-8 h-8 text-red-400/50 mx-auto mb-2" />
-                    <p className="text-red-400 text-sm">{error}</p>
-                    <button onClick={fetchAnalyses} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 mx-auto">
+                    <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.25)' }} />
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{error}</p>
+                    <button onClick={fetchAnalyses} className="mt-3 text-xs flex items-center gap-1 mx-auto transition-colors hover:opacity-80" style={{ color: 'rgba(255,255,255,0.45)' }}>
                       <RefreshCw className="w-3 h-3" /> Retry
                     </button>
                   </div>
@@ -337,7 +345,7 @@ export const DashboardPage = ({
                     {!search && (
                       <button
                         onClick={onBack}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95"
+                        className="btn-primary text-xs px-5 py-2.5"
                       >
                         + Analyze a Repository
                       </button>
@@ -354,8 +362,8 @@ export const DashboardPage = ({
                       className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/3 transition-colors text-left group"
                     >
                       {/* repo icon */}
-                      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center shrink-0">
-                        <Github className="w-4 h-4 text-indigo-400" />
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <Github className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} />
                       </div>
 
                       {/* name + url */}
@@ -367,38 +375,31 @@ export const DashboardPage = ({
                           <Clock className="w-2.5 h-2.5" />
                           {relativeTime(analysis.created_at)}
                           <span className="mx-1">·</span>
-                          <span className={`font-bold ${
-                            analysis.status === 'done' ? 'text-emerald-500' : 'text-amber-500'
-                          }`}>
+                          <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>
                             {analysis.status}
                           </span>
                         </p>
                       </div>
 
-                      {/* Health bar */}
                       <div className="w-24 shrink-0">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Health</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Health</span>
                           <span className="text-xs font-black" style={{ color: scoreColor(analysis.health_score) }}>
                             {analysis.health_score}
                           </span>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                           <div
                             className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: `${analysis.health_score}%`,
-                              background: scoreColor(analysis.health_score),
-                              boxShadow: `0 0 6px ${scoreColor(analysis.health_score)}60`,
-                            }}
+                            style={{ width: `${analysis.health_score}%`, background: 'rgba(255,255,255,0.25)' }}
                           />
                         </div>
-                        <p className="text-[9px] font-bold mt-0.5" style={{ color: scoreColor(analysis.health_score) }}>
+                        <p className="text-[9px] font-bold mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
                           {scoreLabel(analysis.health_score)}
                         </p>
                       </div>
 
-                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors shrink-0" />
+                      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />
                     </motion.button>
                   ))
                 )}
@@ -413,15 +414,16 @@ export const DashboardPage = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-[#0f0f1c] border border-white/5 rounded-2xl p-5"
+                className="rounded-2xl p-5"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
                 <h2 className="text-xs font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-indigo-400" /> Health Breakdown
                 </h2>
                 {[
-                  { label: 'Healthy repos', count: good, total: analyses.length, color: '#10b981' },
-                  { label: 'Needs work', count: analyses.filter(a => a.health_score > 40 && a.health_score <= 70).length, total: analyses.length, color: '#f59e0b' },
-                  { label: 'Critical', count: critical, total: analyses.length, color: '#ef4444' },
+                  { label: 'Healthy repos', count: good, total: analyses.length },
+                  { label: 'Needs work', count: analyses.filter(a => a.health_score > 40 && a.health_score <= 70).length, total: analyses.length },
+                  { label: 'Attention', count: critical, total: analyses.length },
                 ].map((item) => (
                   <div key={item.label} className="mb-3 last:mb-0">
                     <div className="flex items-center justify-between mb-1">
@@ -434,7 +436,7 @@ export const DashboardPage = ({
                         animate={{ width: item.total > 0 ? `${(item.count / item.total) * 100}%` : '0%' }}
                         transition={{ duration: 0.8, delay: 0.3 }}
                         className="h-full rounded-full"
-                        style={{ background: item.color, boxShadow: `0 0 8px ${item.color}50` }}
+                        style={{ background: 'rgba(255,255,255,0.22)' }}
                       />
                     </div>
                   </div>
@@ -448,8 +450,8 @@ export const DashboardPage = ({
                 transition={{ delay: 0.25 }}
                 className="bg-[#0f0f1c] border border-white/5 rounded-2xl p-5"
               >
-                <h2 className="text-xs font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <Star className="w-4 h-4 text-yellow-400" /> Your Goals
+                  <h2 className="text-xs font-black uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <Star className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} /> Your Goals
                 </h2>
                 {[
                   { label: 'Scan 5 repos', done: Math.min(analyses.length, 5), total: 5 },
@@ -461,15 +463,15 @@ export const DashboardPage = ({
                     <div key={g.label} className="mb-3 last:mb-0">
                       <div className="flex justify-between mb-1">
                         <span className="text-xs text-slate-400">{g.label}</span>
-                        <span className="text-xs font-bold text-indigo-400">{Math.round(pct)}%</span>
+                        <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.55)' }}>{Math.round(pct)}%</span>
                       </div>
-                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.9, delay: 0.35 }}
-                          className="h-full rounded-full bg-indigo-500"
-                          style={{ boxShadow: '0 0 6px #6366f180' }}
+                          className="h-full rounded-full"
+                          style={{ background: 'rgba(255,255,255,0.22)' }}
                         />
                       </div>
                     </div>
@@ -482,7 +484,8 @@ export const DashboardPage = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-[#0f0f1c] border border-white/5 rounded-2xl p-5 flex-1"
+                className="rounded-2xl p-5 flex-1"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
                 <h2 className="text-xs font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-purple-400" /> Recent Activity
@@ -494,8 +497,8 @@ export const DashboardPage = ({
                     {analyses.slice(0, 4).map((a, i) => (
                       <div key={a.id} className="flex items-start gap-3">
                         <div
-                          className="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                          style={{ background: scoreColor(a.health_score) }}
+                          className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                          style={{ background: 'rgba(255,255,255,0.2)' }}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-slate-300 font-medium truncate">
