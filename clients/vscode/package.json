@@ -154,18 +154,32 @@
         },
         "codesage.analysisTypes": {
           "type": "array",
-          "default": ["security", "performance"],
+          "default": [
+            "security",
+            "performance"
+          ],
           "description": "Types of analysis to run",
           "items": {
             "type": "string",
-            "enum": ["security", "performance", "quality", "taint"]
+            "enum": [
+              "security",
+              "performance",
+              "quality",
+              "taint"
+            ]
           }
         },
         "codesage.severityThreshold": {
           "type": "string",
           "default": "low",
           "description": "Minimum severity level to report",
-          "enum": ["info", "low", "medium", "high", "critical"]
+          "enum": [
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
         },
         "codesage.useSSL": {
           "type": "boolean",
@@ -226,15 +240,16 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
-    "eslint": "^8.56.0",
-    "typescript": "^5.3.3",
     "@vscode/test-electron": "^2.3.8",
-    "@vscode/vsce": "^2.22.0"
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "ws": "^8.16.0",
-    "axios": "^1.6.2"
+    "axios": "^1.6.2",
+    "ws": "^8.16.0"
   }
 }
