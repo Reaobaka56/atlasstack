@@ -76,11 +76,11 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
         className="flex items-center gap-4 group cursor-pointer"
         onClick={() => onNavigate('landing')}
       >
-        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
+        <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
           <img 
-            src="" 
+            src="/logo.png" 
             alt="Logo" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
           />
         </div>
@@ -96,16 +96,20 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
         <div className="flex items-center gap-4">
           {token ? (
             <>
+              <a href="/atlasstack.vsix" download className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
               <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
               <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
             </>
           ) : (
-            <button 
-              onClick={() => onNavigate('login')}
-              className="btn-primary py-2.5 text-sm"
-            >
-              Sign In / Register
-            </button>
+            <>
+              <a href="/atlasstack.vsix" download className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
+              <button 
+                onClick={() => onNavigate('login')}
+                className="btn-primary py-2.5 text-sm"
+              >
+                Sign In / Register
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -316,9 +320,9 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
                Start Analysis Now
              </button>
-             <button className="btn-secondary px-10 py-5 rounded-full text-base">
-               View Documentation
-             </button>
+             <a href="/atlasstack.vsix" download className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3">
+               Install VS Code Extension <ChevronRight className="w-5 h-5" />
+             </a>
           </div>
         </motion.div>
 
