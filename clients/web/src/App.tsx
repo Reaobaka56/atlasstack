@@ -9,9 +9,24 @@ import Editor from '@monaco-editor/react';
 import { IDEPage } from './IDEPage';
 import { DashboardPage } from './DashboardPage';
 import { 
-  Shield, Zap, BarChart3, Network, Github, BookOpen, ChevronRight, Terminal,
-  Lock, Mail, Search, LogOut, Cpu, CheckCircle2, X, ArrowLeft, GitBranch,
-  Play, Wrench, Package, TrendingDown, GitPullRequest, ScanLine, Activity
+  Shield, 
+  Zap, 
+  BarChart3, 
+  Network, 
+  Github, 
+  BookOpen, 
+  ChevronRight, 
+  Terminal,
+  Lock,
+  Mail,
+  Search,
+  LogOut,
+  Cpu,
+  CheckCircle2,
+  X,
+  ArrowLeft,
+  GitBranch,
+  Play
 } from 'lucide-react';
 
 // --- Constants & API Config ---
@@ -55,34 +70,41 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
   token: string | null,
   onLogout: () => void
 }) => (
-  <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-5">
+  <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6">
     <div className="max-w-7xl mx-auto flex items-center justify-between">
       <div 
-        className="flex items-center gap-3 cursor-pointer"
+        className="flex items-center gap-4 group cursor-pointer"
         onClick={() => onNavigate('landing')}
       >
-        <div className="w-8 h-8 rounded-lg glass-card flex items-center justify-center">
-          <Zap className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.7)' }} />
+        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
+          <img 
+            src="" 
+            alt="Logo" 
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
         </div>
-        <span className="text-base font-black tracking-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>AtlasStack</span>
+        <span className="text-2xl font-display font-bold text-white tracking-tighter">AtlasStack</span>
       </div>
       
-      <div className="hidden md:flex items-center gap-8">
+      <div className="hidden md:flex items-center gap-10">
         {currentPage === 'landing' && (
-          <a href="#try" className="nav-link">Try it now</a>
+          <>
+            <a href="#try" className="nav-link">Try it now</a>
+          </>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {token ? (
             <>
-              <button onClick={() => onNavigate('dashboard')} className="nav-link text-sm">Dashboard</button>
-              <button onClick={onLogout} className="btn-secondary text-xs px-4 py-2">Sign Out</button>
+              <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
+              <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
             </>
           ) : (
             <button 
               onClick={() => onNavigate('login')}
-              className="btn-primary text-xs px-5 py-2.5"
+              className="btn-primary py-2.5 text-sm"
             >
-              Sign In
+              Sign In / Register
             </button>
           )}
         </div>
@@ -220,24 +242,24 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onL
   );
 };
 
-const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, key?: React.Key }) => {
+const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro, setIsPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, setIsPro: (val: boolean) => void, key?: React.Key }) => {
   const [repoUrl, setRepoUrl] = useState('');
   const [branch, setBranch] = useState('main');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+
+  const now = new Date();
+  const hours = now.getHours();
+  const greeting = hours < 12 ? 'Good Morning' : hours < 18 ? 'Good Afternoon' : 'Good Evening';
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!repoUrl) return;
 
     setIsAnalyzing(true);
-    setAnalysisResult(null);
     setStatusMessage("Initializing analysis engine...");
 
     try {
-      // If the user is logged in, register the repo first; otherwise go straight to IDE analysis
       if (token) {
         const authHeaders = {
           "Content-Type": "application/json",
@@ -263,8 +285,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           return;
         }
       }
-
-      // Navigate to the IDE page which handles the actual deep analysis
       onNavigateToIDE(repoUrl);
     } catch (error: any) {
       setStatusMessage(`Network error: Unable to reach API at ${apiUrl}`);
@@ -272,356 +292,198 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
     }
   };
 
-  // Time-based greeting
-  const hour = new Date().getHours();
-  const timeGreeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-
-
-
   return (
-    <div className="pb-0">
-      {/* ── HERO: Full-viewport cinematic ── */}
-      <section className="relative w-full h-screen min-h-[640px] overflow-hidden">
-
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/hero_bg.png')" }}
-        />
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/15" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/35" />
-
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col px-10 md:px-16 py-10">
-
-          {/* Inline top bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <Zap className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.65)' }} />
-              </div>
-              <span className="text-sm font-black tracking-tight" style={{ color: 'rgba(255,255,255,0.82)' }}>AtlasStack</span>
-            </div>
-            <div>
-              {token ? (
-                <button
-                  onClick={() => (window as any).__setPage?.('dashboard')}
-                  className="pill text-xs"
-                >
-                  Dashboard
-                </button>
-              ) : (
-                <button onClick={onNavigateToLogin} className="pill text-xs">
-                  Sign In
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Hero text */}
-          <div className="flex-1 flex flex-col justify-center max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <p className="text-sm font-medium mb-4 tracking-wide" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                {timeGreeting} — What would you like to ship today?
-              </p>
-              <h1 className="text-5xl md:text-[4.5rem] font-black text-white leading-[1.04] tracking-tight mb-6 drop-shadow-2xl">
-                The Autonomous<br />
-                <span className="metallic-text">Code Engineer.</span>
-              </h1>
-              <p className="text-base leading-relaxed mb-10 max-w-md" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Paste a GitHub URL. Get a health score, auto-fixes, and one-click PR generation — in under 60 seconds.
-              </p>
-
-              {/* Quick action pills — icons only, no emoji */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="flex flex-wrap gap-2"
-              >
-                {[
-                  { label: 'Analyze Repo',    Icon: ScanLine },
-                  { label: 'Auto Fix',        Icon: Wrench },
-                  { label: 'Security Scan',   Icon: Shield },
-                  { label: 'Open PR',         Icon: GitPullRequest },
-                  { label: 'Tech Debt',       Icon: TrendingDown },
-                  { label: 'Dependencies',    Icon: Package },
-                ].map(({ label, Icon }, i) => (
-                  <motion.button
-                    key={label}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 + i * 0.04 }}
-                    onClick={() => {
-                      if (label === 'Analyze Repo') {
-                        document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }}
-                    className="pill"
-                  >
-                    <Icon className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
-                    {label}
-                  </motion.button>
-                ))}
-              </motion.div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Top-right: Quick Scan card */}
+    <div className="min-h-screen pt-32 pb-20 px-6 sm:px-10 lg:px-20 max-w-7xl mx-auto">
+      {/* Hero Section — Centered Cluely Style */}
+      <section className="text-center mb-32 flex flex-col items-center">
         <motion.div
-          initial={{ opacity: 0, x: 40, y: -20 }}
-          animate={{ opacity: 1, x: 0, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute top-20 right-10 w-72 rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(6,6,14,0.8)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-8"
         >
-          <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>Quick Scan</span>
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.35)' }} />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-silver-400 mb-8 backdrop-blur-xl">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             Autonomous Engineering Standard
           </div>
-          <form onSubmit={handleAnalyze} className="p-4 space-y-3">
-            <div>
-              <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Repository URL</p>
-              <div className="relative">
-                <Github className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.25)' }} />
-                <input
-                  type="url"
-                  placeholder="github.com/owner/repo"
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2.5 text-xs rounded-xl outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)' }}
-                />
-              </div>
-            </div>
-            <div>
-              <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Branch</p>
-              <input
-                type="text"
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-                className="w-full px-3 py-2.5 text-xs rounded-xl outline-none transition-all"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)' }}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isAnalyzing || !repoUrl}
-              className="w-full py-2.5 rounded-xl font-bold text-xs text-white transition-all flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-35"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              {isAnalyzing ? (
-                <><div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" /> Analyzing</>
-              ) : (
-                <><ScanLine className="w-3.5 h-3.5" /> Start Analysis</>
-              )}
-            </button>
-            {statusMessage && (
-              <p className="text-[10px] text-center animate-pulse" style={{ color: 'rgba(255,255,255,0.4)' }}>{statusMessage}</p>
-            )}
-          </form>
-        </motion.div>
-
-        {/* Bottom-right: AI Tools card */}
-        <motion.div
-          initial={{ opacity: 0, x: 40, y: 40 }}
-          animate={{ opacity: 1, x: 0, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute bottom-10 right-10 w-60 rounded-2xl"
-          style={{ background: 'rgba(6,6,14,0.8)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)' }}
-        >
-          <div className="p-4">
-            <p className="text-xs font-black mb-3" style={{ color: 'rgba(255,255,255,0.7)' }}>Analysis Capabilities</p>
-            <div className="space-y-3">
-              {[
-                { label: 'Auto-Fix Engine',   pct: 94 },
-                { label: 'Security Scanner',  pct: 87 },
-                { label: 'PR Generator',      pct: 76 },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{item.label}</span>
-                    <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.55)' }}>{item.pct}%</span>
-                  </div>
-                  <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: 'rgba(255,255,255,0.25)' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })}
-              className="mt-4 w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)' }}
-            >
-              Get Started
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Scroll hint */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1" style={{ opacity: 0.3 }}>
-          <span className="text-white text-[9px] uppercase tracking-widest font-bold">Scroll</span>
-          <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.3)' }} />
-        </div>
-      </section>
-
-      {/* Use Cases Section */}
-      <section id="use-cases" className="max-w-7xl mx-auto px-8 py-32" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="mb-20 text-center">
-          <h2 className="text-4xl lg:text-5xl mb-5 metallic-text">Built to scale your engineering team</h2>
-          <p className="text-lg max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            Stop wasting engineering hours on trivial issues. Let the agent handle it.
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl metallic-text font-display-bold mb-8 max-w-4xl mx-auto">
+            Architect <br/> the future.
+          </h1>
+          <p className="text-lg sm:text-xl text-silver-400 font-medium max-w-2xl mx-auto opacity-70 leading-relaxed mb-12">
+            AtlasStack deeply scans your repository topology to identify architectural risks, performance bottlenecks, and security gaps.
           </p>
-        </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+             <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
+               Start Analysis Now
+             </button>
+             <button className="btn-secondary px-10 py-5 rounded-full text-base">
+               View Documentation
+             </button>
+          </div>
+        </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              title: "Autonomous Bug Detection",
-              desc: "Deep repository analysis to find security vulnerabilities, edge cases, and runtime bugs before users do.",
-              Icon: ScanLine,
-            },
-            {
-              title: "Auto-Fix Tech Debt",
-              desc: "Schedule weekly runs to clean up deprecated APIs, dead code, and inconsistencies across your entire codebase.",
-              Icon: Wrench,
-            },
-            {
-              title: "One-Click PR Generation",
-              desc: "AtlasStack clones the repo, applies the fix, and opens a formatted Pull Request — ready for your review.",
-              Icon: GitPullRequest,
-            }
-          ].map((uc, i) => (
-            <div key={i} className="liquid-glass p-8 rounded-3xl card-hover">
-              <div className="w-10 h-10 rounded-xl mb-6 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <uc.Icon className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.55)' }} />
-              </div>
-              <h3 className="text-base font-bold mb-2" style={{ color: 'rgba(255,255,255,0.82)' }}>{uc.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{uc.desc}</p>
-            </div>
-          ))}
-        </div>
+        {/* Hero Visual — The Tool Preview */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="w-full mt-20 relative"
+          id="try"
+        >
+          <div className="liquid-glass p-2 rounded-[3.5rem] border-white/10 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.8)]">
+             <div className="bg-[#08080c] rounded-[3rem] p-10 sm:p-16 border border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] blur-3xl rounded-full" />
+                
+                <div className="max-w-2xl mx-auto text-center space-y-12">
+                   <div>
+                     <h2 className="text-3xl metallic-text font-display-bold mb-4">Start Analysis</h2>
+                     <p className="text-silver-600 text-sm font-medium">Enter your repository node to begin deep architectural scanning.</p>
+                   </div>
+
+                   <form onSubmit={handleAnalyze} className="space-y-8 text-left">
+                     <div className="space-y-3">
+                       <label className="block text-[10px] uppercase tracking-[0.4em] text-silver-600 font-black ml-1">Repository Node</label>
+                       <div className="relative">
+                         <Github className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-silver-500" />
+                         <input 
+                           type="url" 
+                           className="input-field pl-16 py-6 text-lg rounded-[1.5rem]" 
+                           placeholder="https://github.com/owner/repository"
+                           value={repoUrl}
+                           onChange={(e) => setRepoUrl(e.target.value)}
+                           required
+                         />
+                       </div>
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-3">
+                         <label className="block text-[10px] uppercase tracking-[0.4em] text-silver-600 font-black ml-1">Branch</label>
+                         <input 
+                           type="text" 
+                           className="input-field py-6 px-8 text-lg rounded-[1.5rem]" 
+                           value={branch}
+                           onChange={(e) => setBranch(e.target.value)}
+                           required
+                         />
+                       </div>
+                       <div className="space-y-3">
+                         <label className="block text-[10px] uppercase tracking-[0.4em] text-silver-600 font-black ml-1">Tier</label>
+                         <div className="input-field py-6 px-8 opacity-50 cursor-not-allowed text-lg rounded-[1.5rem]">
+                           {isPro ? "Pro Node" : "Free Tier"}
+                         </div>
+                       </div>
+                     </div>
+
+                     <button 
+                       type="submit" 
+                       disabled={isAnalyzing}
+                       className="btn-primary w-full py-8 text-xl flex items-center justify-center gap-4 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99] rounded-[2rem]"
+                     >
+                       {isAnalyzing ? (
+                         <>
+                           <div className="w-6 h-6 border-3 border-black/30 border-t-black rounded-full animate-spin" />
+                           Node Scanning...
+                         </>
+                       ) : (
+                         <>Begin Deep Scan <ChevronRight className="w-6 h-6" /></>
+                       )}
+                     </button>
+                     
+                     {statusMessage && (
+                       <p className="text-sm text-center text-silver-400 animate-pulse mt-6 bg-white/5 py-4 rounded-2xl border border-white/10 uppercase tracking-[0.3em] text-[10px] font-black">{statusMessage}</p>
+                     )}
+                   </form>
+                </div>
+             </div>
+          </div>
+          
+          {/* Floaters for depth */}
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/[0.03] blur-3xl -z-10 rounded-full animate-float" />
+          <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-white/[0.02] blur-3xl -z-10 rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        </motion.div>
       </section>
 
-      {/* Try Section */}
-      <section id="try" className="max-w-7xl mx-auto px-8 py-48">
-        <div className="liquid-glass rounded-[4rem] p-12 lg:p-24 relative overflow-hidden border-white/5">
-          <div className="grid lg:grid-cols-2 gap-24 relative z-10">
-            <div>
-              <h2 className="text-5xl lg:text-6xl mb-10 metallic-text">Try it in seconds</h2>
-              <p className="text-xl text-slate-500 mb-16 leading-relaxed">
-                Connect your repository and instantly receive a comprehensive analysis report. No complex setup required.
-              </p>
-              
-              <div className="space-y-12">
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white border border-white/10 flex-shrink-0 mt-1">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl text-white font-semibold mb-3">Instant Feedback</h4>
-                    <p className="text-slate-500 leading-relaxed">Get results in under 60 seconds for most repositories.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white border border-white/10 flex-shrink-0 mt-1">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl text-white font-semibold mb-3">Secure by Design</h4>
-                    <p className="text-slate-500 leading-relaxed">Your code is analyzed in isolated environments and never stored.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Feature Grid — 2-Column Cluely Pattern */}
+      <section className="py-48 space-y-32">
+        <div className="text-center max-w-3xl mx-auto mb-20">
+           <h2 className="text-4xl sm:text-6xl metallic-text font-display-bold mb-8">Engineering with <br/> superpowers.</h2>
+           <p className="text-xl text-silver-500 font-medium leading-relaxed">AtlasStack automates the routine so your team can focus on the architectural breakthroughs.</p>
+        </div>
 
-            <div className="space-y-10">
-              <div className="liquid-glass p-12 rounded-[3rem] border-white/5 shadow-2xl">
-                <div className="flex items-center justify-between mb-10">
-                  <h3 className="text-3xl metallic-text">Analyze Repo</h3>
-                  {token && (
-                    <button 
-                      onClick={onLogout}
-                      className="text-[10px] uppercase tracking-[0.3em] text-slate-600 hover:text-white flex items-center gap-2 transition-colors font-bold"
-                    >
-                      <LogOut className="w-4 h-4" /> Logout
-                    </button>
-                  )}
+        <div className="grid lg:grid-cols-2 gap-10">
+          <div className="liquid-glass p-12 rounded-[2.5rem] flex flex-col justify-between group h-[500px] overflow-hidden">
+             <div>
+               <h3 className="text-3xl text-white font-display-bold mb-6">Autonomous <br/> Scoping</h3>
+               <p className="text-silver-400 text-base leading-relaxed max-w-xs">Identifying structural risks and performance leaks across your entire repository node.</p>
+             </div>
+             <div className="relative mt-12 transform translate-y-8 group-hover:translate-y-4 transition-transform duration-700">
+                <div className="liquid-glass rounded-2xl p-6 border-white/5 shadow-2xl">
+                   <div className="flex items-center justify-between mb-4">
+                      <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
+                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+                      </div>
+                      <span className="text-[10px] font-mono text-silver-700 uppercase tracking-widest">Topology Analysis</span>
+                   </div>
+                   <div className="space-y-3 font-mono">
+                      <div className="h-2 w-3/4 bg-white/5 rounded-full" />
+                      <div className="h-2 w-1/2 bg-white/5 rounded-full" />
+                      <div className="h-2 w-2/3 bg-white/5 rounded-full" />
+                   </div>
                 </div>
-                
-                <form onSubmit={handleAnalyze} className="space-y-8">
-                  <div className="space-y-3">
-                    <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">API URL</label>
-                    <input
-                      type="url"
-                      className="input-field"
-                      placeholder="http://localhost:8000"
-                      value={apiUrl}
-                      onChange={(e) => onApiUrlChange(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Repository URL</label>
-                    <div className="relative">
-                      <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                      <input 
-                        type="url" 
-                        className="input-field pl-16" 
-                        placeholder="https://github.com/owner/repository"
-                        value={repoUrl}
-                        onChange={(e) => setRepoUrl(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Branch</label>
-                    <input 
-                      type="text" 
-                      className="input-field" 
-                      value={branch}
-                      onChange={(e) => setBranch(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button 
-                    type="submit" 
-                    disabled={isAnalyzing}
-                    className="btn-primary w-full py-5 flex items-center justify-center gap-4 disabled:opacity-50"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Start Analysis"
-                    )}
-                  </button>
-                  {statusMessage && (
-                    <p className="text-sm text-center text-slate-500 animate-pulse">{statusMessage}</p>
-                  )}
-                </form>
-              </div>
-            </div>
+             </div>
+          </div>
+
+          <div className="liquid-glass p-12 rounded-[2.5rem] flex flex-col justify-between group h-[500px] overflow-hidden">
+             <div>
+               <h3 className="text-3xl text-white font-display-bold mb-6">Patch <br/> Generation</h3>
+               <p className="text-silver-400 text-base leading-relaxed max-w-xs">One-click PRs for security vulnerabilities and architectural technical debt.</p>
+             </div>
+             <div className="relative mt-12 bg-white/5 rounded-2xl p-8 border border-white/10 transform translate-y-8 group-hover:translate-y-4 transition-transform duration-700 shadow-2xl">
+                <div className="flex items-center gap-4 mb-6">
+                   <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                   </div>
+                   <span className="text-sm font-bold text-white tracking-tight">PR #842 Ready for Merge</span>
+                </div>
+                <div className="space-y-2 opacity-40">
+                   <div className="h-1.5 w-full bg-emerald-400/50 rounded-full" />
+                   <div className="h-1.5 w-full bg-emerald-400/50 rounded-full" />
+                </div>
+             </div>
           </div>
         </div>
       </section>
+
+      {/* Pricing Banner for Free users */}
+      {!isPro && token && (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 1 }}
+          className="mt-20 liquid-glass p-8 rounded-[2.5rem] border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6"
+        >
+          <div>
+            <h4 className="text-white font-bold text-xl mb-1">Upgrade to Pro</h4>
+            <p className="text-silver-400 text-sm">Unlock unlimited scans and automated PR fixes today.</p>
+          </div>
+          <button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            className="btn-pill btn-pill-active py-3 px-8 text-base shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+          >
+            Upgrade for $19/mo
+          </button>
+        </motion.div>
+      )}
 
       {/* Docs Section */}
-      <section id="docs" className="max-w-7xl mx-auto px-8 py-48">
+      <section id="docs" className="scroll-mt-32 py-48">
         <div className="grid lg:grid-cols-2 gap-32 items-center">
           <div>
             <h2 className="text-5xl lg:text-6xl mb-10 metallic-text">Documentation</h2>
-            <p className="text-slate-500 mb-16 text-xl leading-relaxed">
+            <p className="text-silver-500 mb-16 text-xl leading-relaxed">
               Get started with the backend API, run the platform locally, and configure AI models for your specific needs.
             </p>
             <div className="grid sm:grid-cols-2 gap-6">
@@ -631,33 +493,39 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                 { label: "Analysis Engine", path: "services/analysis" },
                 { label: "Knowledge Graph", path: "services/knowledge" }
               ].map((doc, i) => (
-                <div key={i} className="flex items-center gap-5 p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all group">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-white transition-colors">
+                <div key={i} className="flex items-center gap-5 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group cursor-pointer shadow-lg hover:bg-white/[0.05]">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-silver-500 group-hover:text-white transition-colors border border-white/10">
                     <BookOpen className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-white font-medium text-base mb-1">{doc.label}</div>
-                    <code className="text-[11px] text-slate-600 font-mono">{doc.path}</code>
+                    <div className="text-white font-black text-sm mb-0.5 tracking-tight">{doc.label}</div>
+                    <code className="text-[9px] text-silver-800 font-mono uppercase tracking-widest">{doc.path}</code>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="hidden lg:block relative">
-            <div className="relative liquid-glass rounded-[3rem] p-12 border-white/5 shadow-2xl">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
-                <span className="text-[11px] font-mono text-slate-600 uppercase tracking-[0.4em] font-bold">API Reference</span>
+          <div className="hidden lg:block relative h-full">
+            <div className="relative liquid-glass rounded-[2.5rem] p-12 border-white/5 shadow-2xl h-full flex flex-col justify-between overflow-hidden">
+              <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/5 blur-3xl -z-10 rounded-full" />
+              <div>
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
+                  <span className="text-[10px] font-mono text-silver-800 uppercase tracking-[0.4em] font-black">API Reference Node</span>
+                </div>
+                <div className="space-y-10 font-mono text-base">
+                  <div className="group cursor-pointer">
+                    <div className="text-white font-black group-hover:text-silver-200 transition-colors">GET /api/v1/analysis/:id</div>
+                    <div className="text-silver-700 text-[10px] mt-2 uppercase tracking-widest font-black"># Architectural Insight Mapping</div>
+                  </div>
+                  <div className="group cursor-pointer">
+                    <div className="text-white font-black group-hover:text-silver-200 transition-colors">POST /api/v1/scan/:id</div>
+                    <div className="text-silver-700 text-[10px] mt-2 uppercase tracking-widest font-black"># Trigger deep node scanning</div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-8 font-mono text-base">
-                <div className="group cursor-pointer">
-                  <div className="text-white/80 group-hover:text-white transition-colors">GET /api/v1/analysis/:id</div>
-                  <div className="text-slate-600 text-xs mt-2"># Returns full analysis report object</div>
-                </div>
-                <div className="group cursor-pointer">
-                  <div className="text-white/80 group-hover:text-white transition-colors">POST /api/v1/repositories/:id/analyze</div>
-                  <div className="text-slate-600 text-xs mt-2"># Triggers new asynchronous repository scan</div>
-                </div>
+              <div className="mt-12 flex items-center gap-3 text-silver-800 text-[9px] font-black uppercase tracking-[0.4em]">
+                <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" /> Nodes syncing...
               </div>
             </div>
           </div>
@@ -665,7 +533,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="max-w-7xl mx-auto px-8 py-32 border-t border-white/5">
+      <section id="pricing" className="scroll-mt-32 py-32 border-t border-white/5">
         <div className="text-center mb-20">
           <h2 className="text-4xl lg:text-5xl mb-6 metallic-text">Simple, transparent pricing</h2>
           <p className="text-xl text-slate-500 max-w-2xl mx-auto">
@@ -674,14 +542,14 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           {isPro && (
             <div className="mt-6 inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-5 py-2 rounded-full text-sm font-bold">
               <CheckCircle2 className="w-4 h-4 text-indigo-400" /> You are on Pro (Test Mode) —
-              <button onClick={() => { localStorage.removeItem('atlas_pro'); onLogout(); }} className="underline hover:no-underline text-indigo-400 ml-1">Disable</button>
+              <button onClick={() => { localStorage.removeItem('atlas_pro'); setIsPro(false); }} className="underline hover:no-underline text-indigo-400 ml-1">Disable</button>
             </div>
           )}
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-10">
           {[
             {
-              name: "Free",
+              name: "Free Node",
               price: "$0",
               desc: "Perfect for testing the waters on a single weekend project.",
               features: ["1 Repository", "5 Scans per month", "Basic Code Analysis", "Community Support"],
@@ -690,7 +558,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
               highlight: false,
             },
             {
-              name: "Pro",
+              name: "Pro Node",
               price: "$19",
               desc: "For serious developers who want to eliminate tech debt.",
               features: ["Unlimited Repositories", "Unlimited Scans", "Auto-Fix Patches", "GitHub PR Integration"],
@@ -702,7 +570,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
               highlight: true,
             },
             {
-              name: "Team",
+              name: "Enterprise",
               price: "$49",
               desc: "For startups needing CI/CD pipelines and history tracking.",
               features: ["Everything in Pro", "CI/CD Integration", "Compare Trends Over Time", "Enterprise Dashboards"],
@@ -711,44 +579,47 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
               highlight: false,
             }
           ].map((tier, i) => (
-             <div key={i} className={`liquid-glass p-10 rounded-[3rem] border ${tier.highlight ? 'border-blue-500/50 shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)]' : 'border-white/5'} transition-transform hover:scale-[1.02] flex flex-col`}>
-                {tier.highlight && (
-                  <div className="bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20 w-fit mb-4">Most Popular</div>
-                )}
-                <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
-                <div className="text-4xl font-display font-bold text-white mb-4">{tier.price}<span className="text-lg text-slate-500 font-normal">/mo</span></div>
-                <p className="text-sm text-slate-400 mb-8 h-10">{tier.desc}</p>
-                <ul className="space-y-4 mb-10 flex-1">
+             <div key={i} className={`liquid-glass p-12 rounded-[2.5rem] border ${tier.highlight ? 'border-white/20' : 'border-white/5'} transition-all hover:scale-[1.02] flex flex-col group h-full`}>
+                <div className="flex items-center justify-between mb-8">
+                   <h3 className="text-lg font-black text-silver-400 uppercase tracking-[0.3em]">{tier.name}</h3>
+                   {tier.highlight && (
+                     <div className="bg-white/10 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/20">Popular</div>
+                   )}
+                </div>
+                <div className="text-5xl font-display-bold text-white mb-6 metallic-text">{tier.price}<span className="text-lg text-silver-600 font-medium">/mo</span></div>
+                <p className="text-sm text-silver-500 mb-10 min-h-[40px] font-medium leading-relaxed">{tier.desc}</p>
+                <div className="h-px bg-white/5 mb-10" />
+                <ul className="space-y-5 mb-12 flex-1">
                   {tier.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-3 text-sm text-slate-300">
-                      <CheckCircle2 className={`w-5 h-5 ${tier.highlight ? 'text-blue-400' : 'text-slate-500'}`} /> {f}
+                    <li key={j} className="flex items-center gap-4 text-sm text-silver-300 font-medium">
+                      <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                        <CheckCircle2 className={`w-3 h-3 ${tier.highlight ? 'text-white' : 'text-silver-600'}`} />
+                      </div>
+                      {f}
                     </li>
                   ))}
                 </ul>
                 <button 
                   onClick={tier.action}
                   disabled={tier.highlight && isPro}
-                  className={`w-full py-4 rounded-full font-bold text-sm transition-all ${
+                  className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl ${
                     tier.highlight && isPro
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 cursor-default'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
                       : tier.highlight
-                      ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
+                      ? 'bg-white text-black hover:bg-silver-100 hover:scale-[1.02]'
                       : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
                   }`}
                 >
                   {tier.button}
                 </button>
-                {tier.highlight && !isPro && (
-                  <p className="text-center text-xs text-slate-600 mt-3">No credit card required for test mode</p>
-                )}
              </div>
           ))}
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-8 py-32 text-center border-t border-white/5">
+      <section className="py-32 text-center border-t border-white/5">
         <h2 className="text-3xl metallic-text mb-6">Why I built AtlasStack</h2>
-        <p className="text-lg text-slate-400 leading-relaxed italic mb-8 max-w-2xl mx-auto">
+        <p className="text-lg text-silver-400 leading-relaxed italic mb-8 max-w-2xl mx-auto">
           "I was tired of spending hours on routine engineering tasks—fixing low-level bugs, resolving tech debt, and updating dependencies. I wanted an autonomous engineer that could analyze a repository and submit PRs while my team focused on the hard problems. That's why I built AtlasStack."
         </p>
         <div className="text-white font-semibold text-lg">Reaobaka Mogajane</div>
@@ -756,11 +627,11 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
       </section>
 
       {/* Footer */}
-      <footer className="max-w-7xl mx-auto px-8 pt-24 pb-16 border-t border-white/5">
+      <footer className="pt-24 pb-16 border-t border-white/5">
         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-              <span className="font-bold">&lt;/&gt;</span>
+              <span className="font-bold text-white">&lt;/&gt;</span>
             </div>
             <span className="text-2xl font-display font-bold text-white tracking-tighter">AtlasStack</span>
           </div>
@@ -852,17 +723,12 @@ export default function App() {
       <div className="app-background" />
       <div className="app-overlay" />
       
-      {/* Hide global navbar on landing — it has its own inline nav in the hero */}
-      {currentPage !== 'landing' && (
-        <Navbar 
-          onNavigate={setCurrentPage} 
-          currentPage={currentPage} 
-          token={token}
-          onLogout={handleLogout}
-        />
-      )}
-      {/* Expose setCurrentPage for the landing page's inline dashboard button */}
-      {typeof window !== 'undefined' && ((window as any).__setPage = setCurrentPage)}
+      <Navbar 
+        onNavigate={setCurrentPage} 
+        currentPage={currentPage} 
+        token={token}
+        onLogout={handleLogout}
+      />
 
       <AnimatePresence mode="wait">
         {currentPage === 'ide' ? (
@@ -903,6 +769,7 @@ export default function App() {
             apiUrl={apiUrl}
             onApiUrlChange={setApiUrl}
             isPro={isPro}
+            setIsPro={setIsPro}
           />
         ) : (
           <LoginPage 

@@ -4,15 +4,16 @@ import {
   Home, GitBranch, Clock, BarChart3, Settings, ChevronRight,
   Github, Plus, Zap, Shield, TrendingUp, AlertTriangle,
   CheckCircle2, Calendar, Activity, Star, ArrowLeft,
-  Search, RefreshCw, ExternalLink, Cpu, FileCode2
+  Search, RefreshCw, ExternalLink, Cpu, FileCode2,
+  Menu, X as CloseIcon, LogOut
 } from 'lucide-react';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
-  s > 70 ? 'rgba(255,255,255,0.75)' : s > 40 ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)';
+  s > 70 ? 'var(--color-silver-100)' : s > 40 ? 'var(--color-silver-300)' : '#ef4444';
 
 const scoreLabel = (s: number) =>
-  s > 70 ? 'Good' : s > 40 ? 'Needs Work' : 'Critical';
+  s > 70 ? 'Optimal' : s > 40 ? 'Fair' : 'Critical';
 
 const relativeTime = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -52,21 +53,13 @@ const NavItem = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all group border ${
       active
-        ? 'border'
-        : 'hover:bg-white/5'
+        ? 'bg-white/10 text-white border-white/20 shadow-lg'
+        : 'text-silver-500 hover:text-white hover:bg-white/5 border-transparent'
     }`}
-    style={active ? {
-      background: 'rgba(255,255,255,0.08)',
-      borderColor: 'rgba(255,255,255,0.14)',
-      color: 'rgba(255,255,255,0.85)',
-    } : {
-      color: 'rgba(255,255,255,0.35)',
-      border: '1px solid transparent',
-    }}
   >
-    <span style={{ color: active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }} className="transition-colors group-hover:opacity-80">
+    <span className={`transition-colors ${active ? 'text-white' : 'text-silver-500 group-hover:text-silver-300'}`}>
       {icon}
     </span>
     {label}
@@ -78,23 +71,25 @@ const StatCard = ({
   value,
   sub,
   icon,
+  accent,
 }: {
   label: string;
   value: string | number;
   sub: string;
   icon: React.ReactNode;
-  accent?: string;
+  accent: string;
 }) => (
-  <div className="rounded-2xl p-5 flex items-start justify-between transition-all hover:border-white/12"
-    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-    <div>
-      <p className="text-[10px] uppercase tracking-widest font-bold mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</p>
-      <p className="text-2xl font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.88)' }}>{value}</p>
-      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{sub}</p>
+  <div className="liquid-glass border-white/5 rounded-[2.5rem] p-10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.02] group shadow-2xl">
+    <div className="flex items-start justify-between mb-4">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${accent}`}>
+        {icon}
+      </div>
+      <div className="text-right">
+        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-silver-500 mb-1">{label}</p>
+        <p className="text-3xl font-black text-white tabular-nums metallic-text">{value}</p>
+      </div>
     </div>
-    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-      {icon}
-    </div>
+    <p className="text-xs text-silver-600 font-medium group-hover:text-silver-400 transition-colors">{sub}</p>
   </div>
 );
 
@@ -116,6 +111,7 @@ export const DashboardPage = ({
   const [error, setError] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState<'home' | 'analyses' | 'repos' | 'reports'>('home');
   const [search, setSearch] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tipIdx] = useState(() => Math.floor(Math.random() * TIPS.length));
 
   useEffect(() => {
@@ -160,355 +156,426 @@ export const DashboardPage = ({
     day: 'numeric',
   });
 
+  const SidebarContent = () => (
+    <>
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-4 mb-10">
+        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+          <Zap className="w-5 h-5 text-yellow-400" />
+        </div>
+        <span className="text-white font-black tracking-tighter text-xl">AtlasStack</span>
+      </div>
+
+      {/* Primary nav */}
+      <div className="space-y-1 mb-10">
+        <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-700 px-4 mb-4">Navigation</p>
+        <NavItem icon={<Home className="w-4 h-4" />} label="Overview" active={activeNav === 'home'} onClick={() => { setActiveNav('home'); setIsSidebarOpen(false); }} />
+        <NavItem icon={<Activity className="w-4 h-4" />} label="Scans" active={activeNav === 'analyses'} onClick={() => { setActiveNav('analyses'); setIsSidebarOpen(false); }} />
+        <NavItem icon={<GitBranch className="w-4 h-4" />} label="Repos" active={activeNav === 'repos'} onClick={() => { setActiveNav('repos'); setIsSidebarOpen(false); }} />
+        <NavItem icon={<BarChart3 className="w-4 h-4" />} label="Insights" active={activeNav === 'reports'} onClick={() => { setActiveNav('reports'); setIsSidebarOpen(false); }} />
+      </div>
+
+      {/* Recent repos */}
+      <div className="mb-10">
+        <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-700 px-4 mb-4">Pinned Repos</p>
+        <div className="space-y-1 px-2">
+          {analyses.slice(0, 4).map((a) => (
+            <button
+              key={a.id}
+              onClick={() => onViewAnalysis(a.id, a.repo_url)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-silver-500 hover:text-white hover:bg-white/5 transition-all group text-left w-full"
+            >
+              <div
+                className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+                style={{ background: scoreColor(a.health_score) }}
+              />
+              <span className="truncate flex-1">{a.repo_url.split('/').pop()}</span>
+              <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))}
+          {analyses.length === 0 && !loading && (
+            <p className="text-[10px] text-silver-800 px-4 italic">No recent activity</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* AI Tip card */}
+      <div className="mx-2 p-5 rounded-3xl bg-white/5 border border-white/10 mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-lg bg-yellow-400/10 flex items-center justify-center">
+            <Cpu className="w-3.5 h-3.5 text-yellow-500" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-silver-400">Engineering Intel</span>
+        </div>
+        <p className="text-[11px] text-silver-500 leading-relaxed font-medium">{TIPS[tipIdx]}</p>
+      </div>
+
+      {/* Logout */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-3 px-4 py-4 rounded-2xl text-xs font-bold text-silver-600 hover:text-white hover:bg-red-500/10 transition-all group border border-transparent hover:border-red-500/20"
+      >
+        <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Sign Out
+      </button>
+    </>
+  );
+
   return (
-    <div className="flex h-screen bg-[#07070f] overflow-hidden text-slate-300">
-
-      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside className="w-60 shrink-0 flex flex-col border-r border-white/5 bg-[#0c0c18] py-6 px-3 gap-1 overflow-y-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-3 mb-6">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-indigo-400" />
-          </div>
-          <span className="text-white font-black tracking-tight text-lg">AtlasStack</span>
+    <div className="flex h-screen overflow-hidden">
+      
+      {/* ── Mobile Header ─────────────────────────────────────────────────── */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between liquid-glass border-t-0 border-x-0 rounded-none shadow-xl">
+        <div className="flex items-center gap-3">
+          <Zap className="w-6 h-6 text-yellow-400" />
+          <span className="text-white font-black tracking-tighter text-lg underline decoration-yellow-400/30 decoration-2 underline-offset-4">AtlasStack</span>
         </div>
-
-        {/* Primary nav */}
-        <p className="text-[9px] uppercase tracking-widest font-black text-slate-600 px-3 mb-1">Menu</p>
-        <NavItem icon={<Home className="w-4 h-4" />} label="Dashboard" active={activeNav === 'home'} onClick={() => setActiveNav('home')} />
-        <NavItem icon={<Activity className="w-4 h-4" />} label="Analyses" active={activeNav === 'analyses'} onClick={() => setActiveNav('analyses')} />
-        <NavItem icon={<GitBranch className="w-4 h-4" />} label="Repositories" active={activeNav === 'repos'} onClick={() => setActiveNav('repos')} />
-        <NavItem icon={<BarChart3 className="w-4 h-4" />} label="Reports" active={activeNav === 'reports'} onClick={() => setActiveNav('reports')} />
-
-        <div className="h-px bg-white/5 my-3" />
-
-        {/* Recent repos */}
-        <p className="text-[9px] uppercase tracking-widest font-black text-slate-600 px-3 mb-1">Recent Repos</p>
-        {analyses.slice(0, 5).map((a) => (
-          <button
-            key={a.id}
-            onClick={() => onViewAnalysis(a.id, a.repo_url)}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all group text-left w-full"
-          >
-            <div
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: scoreColor(a.health_score) }}
-            />
-            <span className="truncate">{a.repo_url.replace('https://github.com/', '')}</span>
-          </button>
-        ))}
-        {analyses.length === 0 && !loading && (
-          <p className="text-xs text-slate-600 px-3 py-2 italic">No repos yet</p>
-        )}
-
-        <div className="flex-1" />
-
-        {/* AI Tip card */}
-        <div className="mx-1 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Cpu className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.4)' }} />
-            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Tip</span>
-          </div>
-          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{TIPS[tipIdx]}</p>
-        </div>
-
-        {/* Back */}
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 mt-2 rounded-xl text-xs text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all"
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+          <Menu className="w-5 h-5 text-white" />
         </button>
+      </header>
+
+      {/* ── Sidebar (Desktop) ─────────────────────────────────────────────── */}
+      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-white/5 liquid-glass rounded-none py-10 px-4 gap-1 overflow-y-auto">
+        <SidebarContent />
       </aside>
 
+      {/* ── Sidebar (Mobile Drawer) ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lg:hidden fixed inset-y-0 left-0 w-80 z-50 flex flex-col liquid-glass rounded-none py-10 px-6 shadow-2xl border-y-0 border-l-0"
+            >
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="absolute top-8 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10"
+              >
+                <CloseIcon className="w-5 h-5 text-white" />
+              </button>
+              <SidebarContent />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-8 space-y-8">
+      <main className="flex-1 overflow-y-auto pt-24 lg:pt-0">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-12 space-y-12">
 
           {/* Greeting header */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">{dayLabel}</p>
-            <h1 className="text-3xl font-black mb-1" style={{ color: 'rgba(255,255,255,0.88)' }}>{greeting}</h1>
-            <p className="text-slate-400 text-sm">
-              {analyses.length > 0
-                ? `You have ${analyses.length} scanned repostitories. Average health: ${avgHealth}/100.`
-                : "Let's scan your first repository and get some insights."}
-            </p>
-          </motion.div>
-
-          {/* Quick action pills */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="flex flex-wrap gap-3"
-          >
-            {[
-              { label: 'Analyze Repo', icon: <Plus className="w-3.5 h-3.5" />, action: onBack },
-              { label: 'Refresh', icon: <RefreshCw className="w-3.5 h-3.5" />, action: fetchAnalyses },
-              { label: 'GitHub', icon: <Github className="w-3.5 h-3.5" />, action: () => {} },
-              { label: 'Reports', icon: <BarChart3 className="w-3.5 h-3.5" />, action: () => setActiveNav('reports') },
-            ].map((item) => (
+          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="relative">
+            <div className="absolute -top-4 -left-4 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+              <div>
+                <p className="text-[10px] text-silver-600 uppercase tracking-[0.4em] font-black mb-3 ml-1">{dayLabel}</p>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-3 tracking-tight">
+                  {greeting}, <span className="metallic-text">User</span>
+                </h1>
+                <p className="text-silver-400 text-sm font-medium opacity-80 pl-1 max-w-md leading-relaxed">
+                  {analyses.length > 0
+                    ? `You've deployed ${analyses.length} systems. Global infrastructure stability is currently at ${avgHealth}%.`
+                    : "No systems detected. Initialize your first node to begin scanning."}
+                </p>
+              </div>
               <button
-                key={item.label}
-                onClick={item.action}
-                className="pill"
+                onClick={onBack}
+                className="btn-pill btn-pill-active py-4 px-8 text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group"
               >
-                {item.icon} {item.label}
+                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> New Analysis
               </button>
-            ))}
+            </div>
           </motion.div>
 
           {/* Stats row */}
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             <StatCard
-              label="Total Scans"
+              label="Global Scans"
               value={analyses.length}
-              sub="All time"
-              icon={<Activity className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
+              sub="Accumulated Node Intelligence"
+              icon={<Activity className="w-5 h-5 text-white" />}
+              accent="bg-white/5 border-white/10"
             />
             <StatCard
-              label="Avg Health"
-              value={`${avgHealth}/100`}
-              sub={avgHealth > 70 ? 'Great shape' : avgHealth > 40 ? 'Needs work' : 'Attention needed'}
-              icon={<Shield className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
+              label="Fleet Health"
+              value={`${avgHealth}%`}
+              sub={avgHealth > 70 ? 'Operational Optimal' : 'Needs Optimization'}
+              icon={<Shield className="w-5 h-5 text-emerald-400" />}
+              accent="bg-emerald-400/5 border-emerald-400/10"
             />
             <StatCard
-              label="Healthy Repos"
+              label="Stable Nodes"
               value={good}
-              sub="Score > 70"
-              icon={<CheckCircle2 className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
+              sub="Zero Vulnerability Detected"
+              icon={<CheckCircle2 className="w-5 h-5 text-silver-300" />}
+              accent="bg-white/5 border-white/10"
             />
             <StatCard
-              label="Need Fixes"
+              label="Threat Alerts"
               value={critical}
-              sub="Score ≤ 40"
-              icon={<AlertTriangle className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.45)' }} />}
+              sub="Immediate Action Required"
+              icon={<AlertTriangle className="w-5 h-5 text-red-500" />}
+              accent="bg-red-500/5 border-red-500/10"
             />
           </motion.div>
 
           {/* Main grid: recent analyses + activity */}
-          <div className="grid lg:grid-cols-5 gap-6">
+          <div className="grid lg:grid-cols-12 gap-8">
 
-            {/* Recent Analyses (3/5) */}
+            {/* Recent Analyses (8/12) */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="lg:col-span-3 rounded-2xl overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+              className="lg:col-span-8 liquid-glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl relative"
             >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 blur-[100px] -z-10" />
+              
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-                <h2 className="text-sm font-black text-white">Recent Analyses</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between px-8 py-8 gap-4 border-b border-white/5">
+                <h2 className="text-xl font-black text-white metallic-text">Recent Infrastructure Scans</h2>
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Search className="w-4 h-4 text-silver-600 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search repos..."
-                    className="rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none w-44"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
+                    placeholder="Filter nodes..."
+                    className="bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm text-white placeholder:text-silver-700 focus:outline-none focus:border-white/20 w-full sm:w-64 transition-all"
                   />
                 </div>
               </div>
 
               {/* Body */}
-              <div className="divide-y divide-white/5">
+              <div className="p-4 sm:p-6 space-y-3">
                 {loading ? (
-                  <div className="py-16 flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.4)' }} />
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Loading your analyses...</p>
+                  <div className="py-24 flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin" />
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600">Syncing Node History...</p>
                   </div>
                 ) : error ? (
-                  <div className="py-12 text-center px-6">
-                    <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.25)' }} />
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{error}</p>
-                    <button onClick={fetchAnalyses} className="mt-3 text-xs flex items-center gap-1 mx-auto transition-colors hover:opacity-80" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                      <RefreshCw className="w-3 h-3" /> Retry
+                  <div className="py-16 text-center px-6">
+                    <AlertTriangle className="w-12 h-12 text-red-500/20 mx-auto mb-4" />
+                    <p className="text-red-400 text-sm font-bold mb-4">{error}</p>
+                    <button onClick={fetchAnalyses} className="btn-pill py-2.5 px-6 text-xs flex items-center gap-2 mx-auto">
+                      <RefreshCw className="w-3.5 h-3.5" /> Reconnect
                     </button>
                   </div>
                 ) : filtered.length === 0 ? (
-                  <div className="py-16 text-center px-6">
-                    <FileCode2 className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm font-semibold mb-1">
-                      {search ? 'No matching repos' : 'No analyses yet'}
+                  <div className="py-24 text-center px-6">
+                    <FileCode2 className="w-16 h-16 text-silver-900 mx-auto mb-6" />
+                    <p className="text-white text-lg font-black mb-2">
+                      {search ? 'Zero Matches' : 'No Infrastructure Active'}
                     </p>
-                    <p className="text-slate-600 text-xs mb-5">
-                      {search ? 'Try a different search term.' : 'Scan your first repo to see insights here.'}
+                    <p className="text-silver-600 text-sm mb-8">
+                      {search ? 'Adjust your filtering parameters.' : 'Deploy your first node to initialize monitoring.'}
                     </p>
                     {!search && (
                       <button
                         onClick={onBack}
-                        className="btn-primary text-xs px-5 py-2.5"
+                        className="btn-pill btn-pill-active py-4 px-10 font-black text-sm"
                       >
-                        + Analyze a Repository
+                        Initialize First Node
                       </button>
                     )}
                   </div>
                 ) : (
-                  filtered.map((analysis, i) => (
-                    <motion.button
-                      key={analysis.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      onClick={() => onViewAnalysis(analysis.id, analysis.repo_url)}
-                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/3 transition-colors text-left group"
-                    >
-                      {/* repo icon */}
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Github className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} />
-                      </div>
-
-                      {/* name + url */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">
-                          {analysis.repo_url.replace('https://github.com/', '')}
-                        </p>
-                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <Clock className="w-2.5 h-2.5" />
-                          {relativeTime(analysis.created_at)}
-                          <span className="mx-1">·</span>
-                          <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>
-                            {analysis.status}
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="w-24 shrink-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Health</span>
-                          <span className="text-xs font-black" style={{ color: scoreColor(analysis.health_score) }}>
-                            {analysis.health_score}
-                          </span>
+                  <div className="space-y-3">
+                    {filtered.map((analysis, i) => (
+                      <motion.button
+                        key={analysis.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => onViewAnalysis(analysis.id, analysis.repo_url)}
+                        className="w-full flex items-center gap-5 px-6 py-5 rounded-[1.5rem] bg-white/0 hover:bg-white/5 transition-all text-left group border border-transparent hover:border-white/10 relative overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
+                        {/* repo icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+                          <Github className="w-5 h-5 text-white" />
                         </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.health_score}%`, background: 'rgba(255,255,255,0.25)' }}
-                          />
-                        </div>
-                        <p className="text-[9px] font-bold mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                          {scoreLabel(analysis.health_score)}
-                        </p>
-                      </div>
 
-                      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />
-                    </motion.button>
-                  ))
+                        {/* name + url */}
+                        <div className="flex-1 min-w-0 z-10">
+                          <p className="text-base font-black text-white truncate mb-1">
+                            {analysis.repo_url.split('/').pop()}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <p className="text-[10px] text-silver-600 flex items-center gap-1.5 uppercase font-black tracking-widest leading-none">
+                              <Clock className="w-3 h-3" />
+                              {relativeTime(analysis.created_at)}
+                            </p>
+                            <span className="w-1 h-1 bg-silver-800 rounded-full" />
+                            <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${
+                              analysis.status === 'done' ? 'text-emerald-500' : 'text-yellow-500'
+                            }`}>
+                              {analysis.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Health Progress */}
+                        <div className="hidden sm:block w-32 shrink-0 z-10 ml-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-silver-700">Stability</span>
+                            <span className="text-xs font-black text-white">
+                              {analysis.health_score}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[2px]">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${analysis.health_score}%` }}
+                              className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                              style={{ 
+                                background: analysis.health_score > 70 ? 'var(--color-silver-100)' : analysis.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444'
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all group-hover:border-transparent shrink-0">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
                 )}
               </div>
             </motion.div>
 
-            {/* Right column (2/5) */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* Right column (4/12) */}
+            <div className="lg:col-span-4 flex flex-col gap-8">
 
               {/* Health Breakdown */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="rounded-2xl p-5"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 shadow-xl"
               >
-                <h2 className="text-xs font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-indigo-400" /> Health Breakdown
+                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5 text-silver-400" /> Infrastructure Stability
                 </h2>
-                {[
-                  { label: 'Healthy repos', count: good, total: analyses.length },
-                  { label: 'Needs work', count: analyses.filter(a => a.health_score > 40 && a.health_score <= 70).length, total: analyses.length },
-                  { label: 'Attention', count: critical, total: analyses.length },
-                ].map((item) => (
-                  <div key={item.label} className="mb-3 last:mb-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-slate-400">{item.label}</span>
-                      <span className="text-xs font-bold text-white">{item.count}/{item.total}</span>
+                <div className="space-y-6">
+                  {[
+                    { label: 'High Stability Fleet', count: good, total: analyses.length, color: 'var(--color-silver-100)' },
+                    { label: 'Awaiting Optimization', count: analyses.filter(a => a.health_score > 40 && a.health_score <= 70).length, total: analyses.length, color: 'var(--color-silver-400)' },
+                    { label: 'Critical Failure Risk', count: critical, total: analyses.length, color: '#ef4444' },
+                  ].map((item) => (
+                    <div key={item.label} className="group">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-silver-500 group-hover:text-silver-300 transition-colors">{item.label}</span>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-white block">{item.count}</span>
+                          <span className="text-[8px] font-black text-silver-700 uppercase">Nodes</span>
+                        </div>
+                      </div>
+                      <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[2px]">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: item.total > 0 ? `${(item.count / item.total) * 100}%` : '0%' }}
+                          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                          className="h-full rounded-full shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                          style={{ background: item.color }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: item.total > 0 ? `${(item.count / item.total) * 100}%` : '0%' }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                        className="h-full rounded-full"
-                        style={{ background: 'rgba(255,255,255,0.22)' }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </motion.div>
 
               {/* Quick Goals */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="bg-[#0f0f1c] border border-white/5 rounded-2xl p-5"
+                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 shadow-xl bg-gradient-to-br from-white/[0.02] to-transparent"
               >
-                  <h2 className="text-xs font-black uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  <Star className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} /> Your Goals
+                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                  <Star className="w-5 h-5 text-yellow-400" /> Progression
                 </h2>
-                {[
-                  { label: 'Scan 5 repos', done: Math.min(analyses.length, 5), total: 5 },
-                  { label: 'Get avg score > 70', done: avgHealth > 70 ? 1 : 0, total: 1 },
-                  { label: 'Connect GitHub', done: 0, total: 1 },
-                ].map((g) => {
-                  const pct = g.total > 0 ? (g.done / g.total) * 100 : 0;
-                  return (
-                    <div key={g.label} className="mb-3 last:mb-0">
-                      <div className="flex justify-between mb-1">
-                        <span className="text-xs text-slate-400">{g.label}</span>
-                        <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.55)' }}>{Math.round(pct)}%</span>
+                <div className="space-y-6">
+                  {[
+                    { label: 'Node expansion (5 Nodes)', done: Math.min(analyses.length, 5), total: 5 },
+                    { label: 'Fleet Optimization (70% Avg)', done: avgHealth > 70 ? 1 : 0, total: 1 },
+                    { label: 'Cloud Uplink (Auth)', done: 1, total: 1 },
+                  ].map((g) => {
+                    const pct = g.total > 0 ? (g.done / g.total) * 100 : 0;
+                    return (
+                      <div key={g.label}>
+                        <div className="flex justify-between mb-3 items-end">
+                          <span className="text-[10px] font-black uppercase text-silver-500 max-w-[140px] leading-tight">{g.label}</span>
+                          <span className="text-sm font-black text-white italic">{Math.round(pct)}%</span>
+                        </div>
+                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 1.5, delay: 0.4 }}
+                            className="h-full rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.5)]"
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.9, delay: 0.35 }}
-                          className="h-full rounded-full"
-                          style={{ background: 'rgba(255,255,255,0.22)' }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </motion.div>
 
-              {/* Recent Activity */}
+              {/* Activity Log */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="rounded-2xl p-5 flex-1"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 flex-1 shadow-xl"
               >
-                <h2 className="text-xs font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-purple-400" /> Recent Activity
+                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-silver-600" /> Activity Log
                 </h2>
                 {analyses.length === 0 ? (
-                  <p className="text-xs text-slate-600 text-center py-6 italic">No activity yet</p>
+                  <p className="text-xs text-silver-800 text-center py-12 italic font-medium">No signals detected.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-6 relative ml-2">
+                    <div className="absolute left-0 top-1 bottom-1 w-px bg-white/5" />
                     {analyses.slice(0, 4).map((a, i) => (
-                      <div key={a.id} className="flex items-start gap-3">
+                      <div key={a.id} className="flex items-start gap-5 relative group">
                         <div
-                          className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                          style={{ background: 'rgba(255,255,255,0.2)' }}
+                          className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 z-10 shadow-lg border border-black transition-transform group-hover:scale-150"
+                          style={{ 
+                            background: a.health_score > 70 ? 'var(--color-silver-100)' : a.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444',
+                            boxShadow: `0 0 10px ${a.health_score > 70 ? 'rgba(255,255,255,0.3)' : 'transparent'}`
+                          }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-slate-300 font-medium truncate">
-                            Scanned {a.repo_url.replace('https://github.com/', '')}
+                          <p className="text-sm text-white font-black truncate group-hover:metallic-text transition-all">
+                            Node {a.repo_url.split('/').pop()} Scan
                           </p>
-                          <p className="text-[10px] text-slate-600">{relativeTime(a.created_at)}</p>
+                          <p className="text-[10px] text-silver-700 font-bold uppercase tracking-widest mt-1">{relativeTime(a.created_at)}</p>
                         </div>
                         <span
                           className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border shrink-0"
-                          style={{ color: scoreColor(a.health_score), borderColor: `${scoreColor(a.health_score)}30`, background: `${scoreColor(a.health_score)}10` }}
+                          style={{ color: a.health_score > 70 ? 'var(--color-silver-100)' : a.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444', borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)' }}
                         >
                           {a.health_score}/100
                         </span>
@@ -524,3 +591,4 @@ export const DashboardPage = ({
     </div>
   );
 };
+

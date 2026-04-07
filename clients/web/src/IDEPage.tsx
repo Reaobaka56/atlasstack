@@ -4,7 +4,8 @@ import {
   Github, Terminal, CheckCircle2, ChevronRight,
   ArrowLeft, Search, ShieldCheck, Zap, Layers, FolderTree, Lightbulb, 
   Wrench, Play, Code2, Copy, ToggleLeft, ToggleRight, ListChecks, FileWarning, Star, AlertTriangle,
-  Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket
+  Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
+  FileCode2
 } from 'lucide-react';
 
 
@@ -312,33 +313,34 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
           {/* STEP 3: Analyzing / Loading state */}
           {step === 'analyzing' && (
-            <motion.div key="analyzing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-xl mx-auto text-center py-20">
-               <div className="w-24 h-24 mx-auto mb-8 relative">
-                 <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                 <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                 <Zap className="w-8 h-8 text-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <motion.div key="analyzing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-xl mx-auto text-center py-24">
+               <div className="w-28 h-28 mx-auto mb-10 relative">
+                 <div className="absolute inset-0 border-4 border-white/5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.05)]"></div>
+                 <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                 <Zap className="w-10 h-10 text-yellow-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 filter drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
                </div>
-               <h3 className="text-3xl font-bold text-white mb-4">Deep Analysis Running</h3>
+               <h3 className="text-4xl font-black text-white mb-4 tracking-tighter metallic-text">Scanning Infrastructure...</h3>
+               <p className="text-silver-600 text-sm mb-10 font-medium">Synchronizing with node clusters and generating AI architectural map.</p>
                <div className="flex flex-col gap-3 mt-6">
                  {['Cloning repository...', 'Parsing file tree...', 'Running AI analysis...', 'Scoring health...'].map((label, idx) => (
                    <motion.div
                      key={idx}
-                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-500 ${
+                     className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all duration-700 ${
                        idx === analyzingStep
-                         ? 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+                         ? 'bg-white/10 border-white/20 text-white shadow-xl scale-[1.02]'
                          : idx < analyzingStep
-                         ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
-                         : 'bg-white/2 border-white/5 text-slate-600'
+                         ? 'bg-white/5 border-white/10 text-silver-300'
+                         : 'bg-white/[0.02] border-white/5 text-silver-700'
                      }`}
                    >
-                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                       idx < analyzingStep ? 'border-emerald-500 bg-emerald-500/20' :
-                       idx === analyzingStep ? 'border-blue-400' : 'border-white/10'
+                     <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 ${
+                       idx < analyzingStep ? 'border-white bg-white/20' :
+                       idx === analyzingStep ? 'border-yellow-400' : 'border-white/10'
                      }`}>
-                       {idx < analyzingStep && <Check className="w-3 h-3 text-emerald-400" />}
-                       {idx === analyzingStep && <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />}
+                       {idx < analyzingStep && <Check className="w-4 h-4 text-white" />}
+                       {idx === analyzingStep && <div className="w-2.5 h-2.5 rounded-sm bg-yellow-400 animate-pulse" />}
                      </div>
-                     <span className="text-sm font-medium">{label}</span>
+                     <span className="text-xs font-black uppercase tracking-widest">{label}</span>
                    </motion.div>
                  ))}
                </div>
@@ -347,119 +349,125 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
           {/* STEP 4: Dashboard */}
           {step === 'dashboard' && mvpData && (
-            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               
               {/* Header section */}
-              <div className="liquid-glass p-6 rounded-[2rem] border-blue-500/20 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+              <div className="liquid-glass p-10 rounded-[2.5rem] border-white/10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
                 {/* Decorative glow */}
-                <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[120px] -z-10 rounded-full" />
                 
-                {/* Viral Actions Bar */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                   <button onClick={handleShare} className="bg-blue-600/80 hover:bg-blue-500 text-white shadow-lg text-xs font-bold uppercase px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-blue-400/30 transition-all hover:scale-105">
-                     <Share2 className="w-3 h-3" /> Share
+                {/* Action Toolbar */}
+                <div className="absolute top-6 right-8 flex gap-3">
+                   <button onClick={handleShare} className="bg-white/5 hover:bg-white/10 text-white shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 transition-all hover:scale-105 active:scale-95">
+                     <Share2 className="w-3.5 h-3.5" /> Share
                    </button>
-                   <button onClick={handleCopyMarkdown} className="bg-slate-700/80 hover:bg-slate-600 text-white shadow-lg text-xs font-bold uppercase px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-slate-500/30 transition-all hover:scale-105">
-                     <FileText className="w-3 h-3" /> Report
-                   </button>
-                   <button onClick={handleExportJson} className="bg-slate-800/80 hover:bg-slate-700 text-slate-300 shadow-lg text-xs font-bold uppercase px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10 transition-all hover:scale-105">
-                     <Download className="w-3 h-3" /> JSON
+                   <button onClick={handleCopyMarkdown} className="bg-white/5 hover:bg-white/10 text-white shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 transition-all hover:scale-105 active:scale-95">
+                     <FileText className="w-3.5 h-3.5" /> Export
                    </button>
                 </div>
 
-                <div className="mt-8 md:mt-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    <h2 className="text-2xl font-bold text-white">Analysis Complete</h2>
+                <div className="mt-6 lg:mt-0 text-center lg:text-left flex-1">
+                  <div className="flex flex-col lg:flex-row items-center gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                      <Github className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-white metallic-text tracking-tighter">Analysis Complete</h2>
+                      <p className="text-silver-600 font-bold text-xs mt-1 block max-w-sm truncate opacity-60 decoration-white/20 underline underline-offset-4" title={repoInput}>{repoInput}</p>
+                    </div>
                   </div>
-                  <p className="text-slate-500 font-mono text-xs max-w-md truncate" title={repoInput}>{repoInput}</p>
                 </div>
                 
-                <div className="flex items-center gap-6 shrink-0">
-                  {/* Health Score with label + trend */}
-                  <div className="text-center">
-                    <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Repo Health</p>
-                    <div className={`text-5xl font-black tracking-tighter tabular-nums ${
-                      mvpData.health_score > 70 ? 'text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.5)]' : 
-                      mvpData.health_score > 40 ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]' : 
-                      'text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]'
+                <div className="flex flex-col sm:flex-row items-center gap-10 lg:gap-14 shrink-0">
+                  {/* Health Score */}
+                  <div className="text-center group">
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-3">Integrity Score</p>
+                    <div className={`text-6xl font-black tracking-tighter tabular-nums drop-shadow-2xl transition-all duration-700 ${
+                      mvpData.health_score > 70 ? 'text-white' : 
+                      mvpData.health_score > 40 ? 'text-silver-400' : 
+                      'text-red-500'
                     }`}>
-                      {mvpData.health_score}<span className="text-lg opacity-40 font-normal">/100</span>
+                      {mvpData.health_score}<span className="text-xl opacity-20 font-black">/100</span>
                     </div>
-                    <div className={`text-xs font-bold mt-1 ${
-                      mvpData.health_score > 70 ? 'text-emerald-500' : 
-                      mvpData.health_score > 40 ? 'text-amber-500' : 'text-red-500'
+                    <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-3 py-1 px-4 rounded-full border inline-block ${
+                      mvpData.health_score > 70 ? 'text-white border-white/20 bg-white/5' : 
+                      mvpData.health_score > 40 ? 'text-silver-400 border-silver-400/20 bg-silver-400/5' : 'text-red-500 border-red-500/20 bg-red-500/5'
                     }`}>
-                      {mvpData.health_score > 70 ? '✓ Good Shape' : mvpData.health_score > 40 ? '⚠ Needs Work' : '✕ Critical'}
-                    </div>
-                    <div className="text-[10px] text-slate-600 mt-0.5 flex items-center justify-center gap-1">
-                      <TrendingUp className="w-3 h-3" /> First scan baseline
+                      {mvpData.health_score > 70 ? 'OPTIMAL' : mvpData.health_score > 40 ? 'STABLE' : 'CRITICAL'}
                     </div>
                   </div>
 
-                  <div className="w-px h-16 bg-white/10 hidden md:block"></div>
+                  <div className="hidden lg:block w-px h-24 bg-white/5"></div>
                   
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3 min-w-[200px]">
                     <button 
                       onClick={() => setShowRunModal(true)}
-                      className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3 px-6 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 drop-shadow-[0_0_16px_rgba(16,185,129,0.3)] border border-emerald-300/30 hover:scale-105 active:scale-95"
+                      className="btn-pill btn-pill-active py-4 px-8 text-xs flex items-center justify-center gap-3 group bg-white text-black border-transparent shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                     >
-                      <Play className="w-5 h-5 fill-black" /> HOW TO RUN
+                      <Play className="w-5 h-5 fill-black group-hover:scale-110 transition-transform" /> START RUNTIME
                     </button>
                     <button 
                       onClick={handleRetry}
-                      className="bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2.5 px-6 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-2 border border-white/10 hover:scale-105 active:scale-95 text-xs"
+                      className="btn-pill py-4 px-8 text-xs flex items-center justify-center gap-3 border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" /> Re-analyze
+                      <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700 font-black" /> RE-SCAN
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Actionable Warnings — NOT a big red alarm */}
+              {/* Actionable Warnings — Temper intensity, but useful icons & buttons */}
               {(mvpData.errors?.length > 0 || mvpData.isError) && (
-                <div className="rounded-2xl overflow-hidden border border-amber-500/15">
-                  <div className="bg-amber-500/5 px-5 py-3 border-b border-amber-500/10 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                    <span className="text-amber-400 font-bold text-sm">Action Required — {mvpData.errors?.length || 1} issue{mvpData.errors?.length !== 1 ? 's' : ''} found</span>
+                <div className="rounded-[2.5rem] overflow-hidden border border-red-500/10 bg-red-500/[0.03] shadow-inner mb-6 transition-all duration-500 hover:bg-red-500/[0.05]">
+                  <div className="px-8 py-5 border-b border-red-500/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                      </div>
+                      <span className="text-red-500 font-black text-xs uppercase tracking-[0.2em]">Architecture Risks — {mvpData.errors?.length || 1} identified</span>
+                    </div>
+                    <button 
+                      onClick={handleRetry}
+                      className="text-[10px] font-black uppercase tracking-widest text-silver-600 hover:text-white flex items-center gap-1.5 transition-colors"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reset Node
+                    </button>
                   </div>
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-red-500/5">
                     {mvpData.errors?.map((err: string, i: number) => {
                       const isEnv = /env|token|secret|key/i.test(err);
                       const isDep = /depend|package|module|import/i.test(err);
                       const isNet = /network|connect|socket|fetch/i.test(err);
-                      const icon = isEnv ? <Lock className="w-4 h-4 text-amber-400 shrink-0" /> 
+                      const icon = isEnv ? <Lock className="w-4 h-4 text-amber-500 shrink-0" /> 
                                  : isDep ? <Puzzle className="w-4 h-4 text-purple-400 shrink-0" />
                                  : isNet ? <Wifi className="w-4 h-4 text-blue-400 shrink-0" />
-                                 : <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0" />;
-                      const tag = isEnv ? 'ENV' : isDep ? 'DEP' : isNet ? 'NET' : 'WARN';
+                                 : <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />;
+                      const iconSymbol = isEnv ? '🔐' : isDep ? '🧩' : isNet ? '🔌' : '⚠️';
+                      const tag = isEnv ? 'AUTH' : isDep ? 'DEPS' : isNet ? 'NET' : 'RISK';
+                      
                       return (
-                        <div key={i} className="flex items-center justify-between gap-4 px-5 py-3 bg-black/20 hover:bg-black/30 transition-colors group">
-                          <div className="flex items-center gap-3 min-w-0">
-                            {icon}
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${
-                              isEnv ? 'text-amber-400 border-amber-500/20 bg-amber-500/10' :
-                              isDep ? 'text-purple-400 border-purple-500/20 bg-purple-500/10' :
-                              'text-blue-400 border-blue-500/20 bg-blue-500/10'
-                            }`}>{tag}</span>
-                            <span className="text-slate-300 text-sm truncate">{err}</span>
+                        <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-5 hover:bg-white/[0.02] transition-colors group">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all opacity-80">{iconSymbol}</span>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-silver-700 group-hover:text-silver-500 transition-colors mb-0.5">{tag}</span>
+                              <span className="text-silver-400 text-sm font-medium tracking-tight truncate max-w-xl group-hover:text-white transition-colors">{err}</span>
+                            </div>
                           </div>
-                          <button 
-                            onClick={() => copyToClipboard(err, 'Issue copied!')}
-                            className="shrink-0 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            Copy
-                          </button>
+                          <div className="flex items-center gap-2">
+                             <button 
+                              onClick={() => copyToClipboard(err, 'Telemetry copied!')}
+                              className="btn-pill py-2 px-4 text-[9px] font-black uppercase tracking-widest border-white/5 text-silver-600 hover:text-white hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                              Telecopy
+                            </button>
+                            <button className="btn-pill btn-pill-active py-2 px-5 text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 shadow-lg">
+                              Patch Risk
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
-                    {mvpData.isError && (
-                      <div className="px-5 py-3 flex justify-end">
-                        <button onClick={handleRetry} className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-colors text-sm border border-amber-500/20">
-                          <RefreshCw className="w-4 h-4" /> Retry Analysis
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -467,74 +475,79 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
               <div className="grid lg:grid-cols-2 gap-6">
                 
                 {/* 1. Codebase Explanation — structured What / How / Why */}
-                <div className="liquid-glass p-8 rounded-[2rem] border-white/5 flex flex-col gap-5">
+                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
+                  
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-white">
-                      <div className="w-9 h-9 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center">
-                        <Lightbulb className="w-5 h-5 text-yellow-400" />
+                    <div className="flex items-center gap-4 text-white">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner group">
+                        <Lightbulb className="w-6 h-6 text-yellow-400 group-hover:animate-pulse" />
                       </div>
-                      <h3 className="text-xl font-bold">Codebase Explanation</h3>
+                      <h3 className="text-2xl font-black tracking-tight metallic-text">Structural Logic</h3>
                     </div>
-                    <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setEli5Mode(!eli5Mode)}>
-                      <span className={`text-[9px] uppercase font-black tracking-widest ${!eli5Mode ? 'text-white' : 'text-slate-600'}`}>Standard</span>
-                      {eli5Mode ? <ToggleRight className="w-5 h-5 text-yellow-400" /> : <ToggleLeft className="w-5 h-5 text-slate-500" />}
-                      <span className={`text-[9px] uppercase font-black tracking-widest ${eli5Mode ? 'text-yellow-400' : 'text-slate-600'}`}>ELI5</span>
+                    <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-[1.5rem] border border-white/10 cursor-pointer hover:bg-white/10 transition-all" onClick={() => setEli5Mode(!eli5Mode)}>
+                      <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${!eli5Mode ? 'text-white' : 'text-silver-700'}`}>Engineering</span>
+                      {eli5Mode ? <ToggleRight className="w-6 h-6 text-white" /> : <ToggleLeft className="w-6 h-6 text-silver-400" />}
+                      <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${eli5Mode ? 'text-white' : 'text-silver-700'}`}>ELI5</span>
                     </div>
                   </div>
 
                   {eli5Mode ? (
-                    <div className="bg-yellow-400/5 border border-yellow-400/10 rounded-xl p-5">
-                      <p className="text-yellow-200 leading-relaxed text-base font-medium">{mvpData.explanation.eli5_summary}</p>
-                    </div>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-inner relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/5 blur-3xl -z-10" />
+                      <p className="text-silver-100 leading-relaxed text-lg font-medium metallic-text-subtle">{mvpData.explanation.eli5_summary}</p>
+                    </motion.div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-6">
                       {/* What */}
-                      <div className="bg-black/30 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                        <div className="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-1.5 flex items-center gap-1.5">
-                          <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center"><span className="text-blue-400 text-[8px] font-black">W</span></div>
-                          What it does
+                      <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                        <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">01</div>
+                          System core concept
                         </div>
-                        <p className="text-white text-sm leading-relaxed">{mvpData.explanation.summary}</p>
+                        <h4 className="text-white text-lg font-black mb-2 metallic-text">What it does</h4>
+                        <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.summary}</p>
                       </div>
+                      
                       {/* How */}
                       {mvpData.explanation.architecture && (
-                        <div className="bg-black/30 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                          <div className="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-1.5 flex items-center gap-1.5">
-                            <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center"><span className="text-purple-400 text-[8px] font-black">H</span></div>
-                            How it works
+                        <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                          <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">02</div>
+                            Architectural Blueprint
                           </div>
-                          <p className="text-slate-300 text-sm leading-relaxed">{mvpData.explanation.architecture}</p>
+                          <h4 className="text-white text-lg font-black mb-2 metallic-text">How it works</h4>
+                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.architecture}</p>
                         </div>
                       )}
-                      {/* Why */}
+                      
+                      {/* Why (Data Flow) */}
                       {mvpData.explanation.data_flow && (
-                        <div className="bg-black/30 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                          <div className="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-1.5 flex items-center gap-1.5">
-                            <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center"><span className="text-emerald-400 text-[8px] font-black">D</span></div>
-                            Data flow
+                        <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                          <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">03</div>
+                            Strategic Advantage
                           </div>
-                          <p className="text-slate-300 text-sm leading-relaxed">{mvpData.explanation.data_flow}</p>
+                          <h4 className="text-white text-lg font-black mb-2 metallic-text">Why it matters</h4>
+                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.data_flow}</p>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
-                      <h4 className="text-[9px] uppercase tracking-wider text-slate-500 font-black mb-2 flex items-center gap-1"><Layers className="w-3 h-3"/> Tech Stack</h4>
-                      <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white/3 rounded-[1.5rem] p-5 border border-white/5 hover:border-white/10 transition-colors shadow-xl">
+                      <h4 className="text-[9px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-4 flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Framework Integration</h4>
+                      <div className="flex flex-wrap gap-2">
                         {mvpData.tech_stack?.frameworks?.map((tech: string, i: number) => (
-                          <span key={`f-${i}`} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/10 text-blue-300 rounded-md text-xs font-semibold">{tech}</span>
+                          <span key={`f-${i}`} className="px-3 py-1 bg-white/10 border border-white/5 text-white rounded-[0.75rem] text-[10px] font-black uppercase tracking-widest">{tech}</span>
                         ))}
-                        {mvpData.tech_stack?.databases?.map((tech: string, i: number) => (
-                          <span key={`d-${i}`} className="px-2 py-0.5 bg-green-500/10 border border-green-500/10 text-green-300 rounded-md text-xs font-semibold">{tech}</span>
-                        ))}
-                        {!mvpData.tech_stack?.frameworks?.length && !mvpData.tech_stack?.databases?.length && <span className="text-slate-600 text-xs">Unknown</span>}
+                        {!mvpData.tech_stack?.frameworks?.length && <span className="text-silver-800 text-[10px] uppercase font-black">Unknown</span>}
                       </div>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
-                      <h4 className="text-[9px] uppercase tracking-wider text-slate-500 font-black mb-2 flex items-center gap-1"><Code2 className="w-3 h-3"/> Entry Point</h4>
-                      <code className="text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded text-xs font-mono truncate block w-full border border-indigo-500/10">
+                    <div className="bg-white/3 rounded-[1.5rem] p-5 border border-white/5 hover:border-white/10 transition-colors shadow-xl">
+                      <h4 className="text-[9px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-4 flex items-center gap-2"><Code2 className="w-3.5 h-3.5"/> Principal Node</h4>
+                      <code className="text-white bg-white/10 px-4 py-2 rounded-[1rem] text-xs font-black metallic-text truncate block w-full border border-white/5">
                         {mvpData.explanation.entry_point || 'Unknown'}
                       </code>
                     </div>
@@ -556,40 +569,43 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                 </div>
 
                 <div className="flex flex-col gap-6">
-                  {/* 2. Important Files — with hierarchy badges + featured first card */}
-                  <div className="liquid-glass p-6 rounded-[2rem] border-white/5 flex flex-col gap-4">
-                    <div className="flex items-center gap-3 text-white">
-                      <div className="w-9 h-9 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center">
-                        <FolderTree className="w-5 h-5 text-blue-400" />
+                  {/* 2. Important Files — refined hierarchy with clear badges */}
+                  <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                    <div className="flex items-center gap-4 text-white">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                        <FolderTree className="w-6 h-6 text-white" />
                       </div>
-                      <h3 className="text-xl font-bold">Important Files</h3>
+                      <h3 className="text-2xl font-black tracking-tight metallic-text">Principal Components</h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       {mvpData.important_files?.map((file: any, i: number) => {
                         const isEntry = file.is_start_here || i === 0;
                         const isWorker = /worker|queue|celery|task/i.test(file.path);
                         const isClient = /client|web|frontend|extension/i.test(file.path);
-                        const badge = isEntry ? { label: 'ENTRY', color: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/20' }
-                                    : isWorker ? { label: 'ASYNC', color: 'bg-purple-500/20 text-purple-300 border-purple-500/20' }
-                                    : isClient ? { label: 'CLIENT', color: 'bg-blue-500/20 text-blue-300 border-blue-500/20' }
-                                    : { label: 'CORE', color: 'bg-slate-500/20 text-slate-400 border-slate-500/20' };
+                        const badge = isEntry ? { label: 'PRINCIPAL', color: 'bg-white text-black border-transparent shadow-lg font-black' }
+                                    : isWorker ? { label: 'ASYNC', color: 'bg-white/10 text-silver-300 border-white/10 font-bold' }
+                                    : isClient ? { label: 'FRONTEND', color: 'bg-white/10 text-silver-300 border-white/10 font-bold' }
+                                    : { label: 'CORE', color: 'bg-white/10 text-silver-600 border-white/10 font-bold' };
                         
                         if (i === 0) return (
                           <motion.div 
                             key={i}
-                            whileHover={{ scale: 1.01 }}
-                            className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/20 rounded-xl p-4 relative overflow-hidden"
+                            whileHover={{ scale: 1.02 }}
+                            className="bg-white/5 border border-white/20 rounded-[2rem] p-8 relative overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.03)]"
                           >
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -translate-y-8 translate-x-8 blur-xl" />
-                            <div className="flex items-start justify-between gap-3 relative z-10">
-                              <div className="flex items-center gap-3">
-                                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 shrink-0" />
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 blur-[80px] -z-10 rounded-full" />
+                            <div className="flex items-start justify-between gap-6 relative z-10 text-center sm:text-left">
+                              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                                <div className="w-16 h-16 rounded-[1.5rem] bg-white text-black flex items-center justify-center shadow-2xl shrink-0 group">
+                                  <Star className="w-8 h-8 fill-black animate-pulse" />
+                                </div>
                                 <div>
-                                  <div className="flex items-center gap-2">
-                                    <code className="text-sm font-mono text-white font-bold">{file.path}</code>
-                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${badge.color}`}>{badge.label}</span>
+                                  <div className="flex items-center justify-center sm:justify-start gap-3 mb-3 flex-wrap">
+                                    <code className="text-lg font-black text-white metallic-text">{file.path.split('/').pop()}</code>
+                                    <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border ${badge.color}`}>{badge.label}</span>
                                   </div>
-                                  <p className="text-slate-400 text-xs mt-1">{file.reason}</p>
+                                  <p className="text-silver-500 text-sm font-medium leading-relaxed max-w-sm">{file.reason}</p>
+                                  <div className="mt-4 font-mono text-[10px] text-silver-800 break-all">{file.path}</div>
                                 </div>
                               </div>
                             </div>
@@ -598,21 +614,23 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                         return (
                           <motion.div
                             key={i}
-                            whileHover={{ x: 2 }}
-                            className="flex items-start gap-3 p-3 rounded-xl border border-white/5 bg-black/20 hover:border-white/10 hover:bg-black/30 transition-all cursor-default"
+                            whileHover={{ x: 8 }}
+                            className="flex items-center gap-5 p-5 rounded-[2rem] border border-white/5 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.03] transition-all cursor-default shadow-sm group"
                           >
-                            <Code2 className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-white group-hover:text-black transition-all">
+                               <FileCode2 className="w-5 h-5" />
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <code className="text-xs font-mono text-slate-200 truncate">{file.path}</code>
-                                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border shrink-0 ${badge.color}`}>{badge.label}</span>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <code className="text-sm font-black text-white metallic-text-subtle truncate">{file.path.split('/').pop()}</code>
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${badge.color}`}>{badge.label}</span>
                               </div>
-                              <p className="text-slate-500 text-xs mt-0.5 line-clamp-1">{file.reason}</p>
+                              <p className="text-silver-600 text-[11px] mt-1 font-medium line-clamp-1">{file.reason}</p>
                             </div>
                           </motion.div>
                         );
                       })}
-                      {!mvpData.important_files?.length && <p className="text-slate-600 text-sm italic text-center py-4">No files identified.</p>}
+                      {!mvpData.important_files?.length && <p className="text-silver-600 text-sm italic text-center py-4">No critical modules identified.</p>}
                     </div>
                   </div>
 

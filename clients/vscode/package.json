@@ -1,9 +1,14 @@
 {
   "name": "codesage",
-  "displayName": "CodeSage",
-  "description": "AI-powered code analysis and security scanning",
+  "displayName": "AtlasStack",
+  "description": "Premium AI-powered code analysis and security scanning",
   "version": "1.0.0",
-  "publisher": "codesage",
+  "publisher": "atlasstack",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atlasstack/atlasstack"
+  },
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -11,7 +16,7 @@
     "Programming Languages",
     "Debuggers",
     "Machine Learning",
-    "Security"
+    "Linters"
   ],
   "keywords": [
     "code analysis",
@@ -215,7 +220,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
