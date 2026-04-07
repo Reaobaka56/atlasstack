@@ -7,6 +7,7 @@ export class WebSocketClient {
     private maxReconnectAttempts = 5;
     private reconnectDelay = 5000;
     private pingInterval: NodeJS.Timeout | null = null;
+    private chatCallback: ((message: string) => void) | null = null;
 
     async connect(url: string, apiKey?: string): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -68,6 +69,9 @@ export class WebSocketClient {
                 case 'notification':
                     this.handleNotification(message);
                     break;
+                case 'chat_response':
+                    this.handleChatResponse(message);
+                    break;
                 case 'pong':
                     // Ping response, do nothing
                     break;
@@ -109,6 +113,13 @@ export class WebSocketClient {
             case 'error':
                 vscode.window.showErrorMessage(text);
                 break;
+        }
+    }
+
+    private handleChatResponse(message: any): void {
+        const { text } = message;
+        if (this.chatCallback) {
+            this.chatCallback(text);
         }
     }
 
@@ -160,5 +171,20 @@ export class WebSocketClient {
                 analysis_id: analysisId
             }));
         }
+    }
+
+    sendChatMessage(text: string): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'chat',
+                text: text
+            }));
+        } else {
+            vscode.window.showErrorMessage('Not connected to AtlasStack server');
+        }
+    }
+
+    onChatResponse(callback: (message: string) => void): void {
+        this.chatCallback = callback;
     }
 }

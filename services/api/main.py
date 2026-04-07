@@ -10,6 +10,10 @@ from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+import os
+import json
+import re
+from huggingface_hub import InferenceClient
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -144,6 +148,40 @@ async def websocket_endpoint(websocket: WebSocket):
                         "analysis_id": analysis_id,
                     }
                 )
+            elif message_type == "chat":
+                # Handle AI chat
+                user_text = data.get("text", "")
+                hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+                
+                if not hf_token:
+                    await websocket.send_json({
+                        "type": "chat_response",
+                        "text": "HF_TOKEN is not set in the backend .env. Please configure it to enable AI chat."
+                    })
+                    continue
+
+                try:
+                    client = InferenceClient(api_key=hf_token)
+                    prompt = f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}"
+                    
+                    response = client.chat.completions.create(
+                        model="Qwen/Qwen2.5-Coder-32B-Instruct",
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=1000,
+                        temperature=0.7
+                    )
+                    
+                    ai_text = response.choices[0].message.content
+                    await websocket.send_json({
+                        "type": "chat_response",
+                        "text": ai_text
+                    })
+                except Exception as chat_err:
+                    logger.error(f"Chat generation error: {chat_err}")
+                    await websocket.send_json({
+                        "type": "chat_response",
+                        "text": f"Sorry, I encountered an error: {str(chat_err)}"
+                    })
             elif message_type == "ping":
                 await websocket.send_json({"type": "pong"})
             else:

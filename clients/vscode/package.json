@@ -31,7 +31,8 @@
     "onLanguage:typescript",
     "onLanguage:java",
     "onLanguage:go",
-    "onLanguage:rust"
+    "onLanguage:rust",
+    "onView:codesage.chat"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -49,6 +50,11 @@
       {
         "command": "codesage.analyzeWorkspace",
         "title": "Analyze Workspace",
+        "category": "CodeSage"
+      },
+      {
+        "command": "codesage.openChat",
+        "title": "AI Architect Chat",
         "category": "CodeSage"
       },
       {
@@ -112,6 +118,18 @@
           "id": "codesageResults",
           "name": "CodeSage Analysis",
           "when": "codesage:connected"
+        }
+      ],
+      "codesage": [
+        {
+          "id": "codesage.chat",
+          "type": "webview",
+          "name": "AI Architect"
+        },
+        {
+          "id": "codesageResults",
+          "type": "tree",
+          "name": "Analysis Results"
         }
       ]
     },

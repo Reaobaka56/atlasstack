@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { AnalysisProvider } from './analysisProvider';
 import { WebSocketClient } from './websocketClient';
 import { Decorators } from './decorators';
+import { ChatViewProvider } from './chatViewProvider';
 
 let analysisProvider: AnalysisProvider;
 let wsClient: WebSocketClient;
@@ -14,9 +15,13 @@ export function activate(context: vscode.ExtensionContext) {
     analysisProvider = new AnalysisProvider();
     wsClient = new WebSocketClient();
     decorators = new Decorators();
+    const chatProvider = new ChatViewProvider(context.extensionUri, wsClient);
 
     // Register tree data provider
     vscode.window.registerTreeDataProvider('codesageResults', analysisProvider);
+    
+    // Register webview view provider
+    vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider);
 
     // Register commands
     context.subscriptions.push(
@@ -27,7 +32,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('codesage.configure', configure),
         vscode.commands.registerCommand('codesage.connect', connect),
         vscode.commands.registerCommand('codesage.disconnect', disconnect),
-        vscode.commands.registerCommand('codesage.refreshResults', () => analysisProvider.refresh())
+        vscode.commands.registerCommand('codesage.refreshResults', () => analysisProvider.refresh()),
+        vscode.commands.registerCommand('codesage.openChat', () => {
+            vscode.commands.executeCommand('codesage.chat.focus');
+        })
     );
 
     // Set up real-time analysis if enabled

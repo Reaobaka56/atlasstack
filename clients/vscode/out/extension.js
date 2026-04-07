@@ -39,6 +39,7 @@ const vscode = __importStar(require("vscode"));
 const analysisProvider_1 = require("./analysisProvider");
 const websocketClient_1 = require("./websocketClient");
 const decorators_1 = require("./decorators");
+const chatViewProvider_1 = require("./chatViewProvider");
 let analysisProvider;
 let wsClient;
 let decorators;
@@ -48,10 +49,15 @@ function activate(context) {
     analysisProvider = new analysisProvider_1.AnalysisProvider();
     wsClient = new websocketClient_1.WebSocketClient();
     decorators = new decorators_1.Decorators();
+    const chatProvider = new chatViewProvider_1.ChatViewProvider(context.extensionUri, wsClient);
     // Register tree data provider
     vscode.window.registerTreeDataProvider('codesageResults', analysisProvider);
+    // Register webview view provider
+    vscode.window.registerWebviewViewProvider(chatViewProvider_1.ChatViewProvider.viewType, chatProvider);
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand('codesage.analyzeFile', analyzeFile), vscode.commands.registerCommand('codesage.analyzeSelection', analyzeSelection), vscode.commands.registerCommand('codesage.analyzeWorkspace', analyzeWorkspace), vscode.commands.registerCommand('codesage.showResults', showResults), vscode.commands.registerCommand('codesage.configure', configure), vscode.commands.registerCommand('codesage.connect', connect), vscode.commands.registerCommand('codesage.disconnect', disconnect), vscode.commands.registerCommand('codesage.refreshResults', () => analysisProvider.refresh()));
+    context.subscriptions.push(vscode.commands.registerCommand('codesage.analyzeFile', analyzeFile), vscode.commands.registerCommand('codesage.analyzeSelection', analyzeSelection), vscode.commands.registerCommand('codesage.analyzeWorkspace', analyzeWorkspace), vscode.commands.registerCommand('codesage.showResults', showResults), vscode.commands.registerCommand('codesage.configure', configure), vscode.commands.registerCommand('codesage.connect', connect), vscode.commands.registerCommand('codesage.disconnect', disconnect), vscode.commands.registerCommand('codesage.refreshResults', () => analysisProvider.refresh()), vscode.commands.registerCommand('codesage.openChat', () => {
+        vscode.commands.executeCommand('codesage.chat.focus');
+    }));
     // Set up real-time analysis if enabled
     const config = vscode.workspace.getConfiguration('codesage');
     if (config.get('enableRealTimeAnalysis')) {

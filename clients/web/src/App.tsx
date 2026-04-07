@@ -69,8 +69,25 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
   currentPage: Page,
   token: string | null,
   onLogout: () => void
-}) => (
-  <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6">
+}) => {
+  const handleDownloadExtension = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // 1. Trigger download
+    const link = document.createElement('a');
+    link.href = '/atlasstack.vsix';
+    link.download = 'atlasstack.vsix';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // 2. Open VS Code
+    setTimeout(() => {
+      window.location.href = 'vscode://';
+    }, 500);
+  };
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6">
     <div className="max-w-7xl mx-auto flex items-center justify-between">
       <div 
         className="flex items-center gap-4 group cursor-pointer"
@@ -96,13 +113,13 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
         <div className="flex items-center gap-4">
           {token ? (
             <>
-              <a href="/atlasstack.vsix" download className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
+              <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
               <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
               <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
             </>
           ) : (
             <>
-              <a href="/atlasstack.vsix" download className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
+              <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
               <button 
                 onClick={() => onNavigate('login')}
                 className="btn-primary py-2.5 text-sm"
@@ -115,7 +132,8 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
       </div>
     </div>
   </nav>
-);
+  );
+};
 
 const FeatureCard = ({ feature }: { feature: Feature; key?: React.Key }) => (
   <motion.div 
@@ -252,6 +270,20 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  const handleDownloadExtension = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const link = document.createElement('a');
+    link.href = '/atlasstack.vsix';
+    link.download = 'atlasstack.vsix';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+      window.location.href = 'vscode://';
+    }, 500);
+  };
+
   const now = new Date();
   const hours = now.getHours();
   const greeting = hours < 12 ? 'Good Morning' : hours < 18 ? 'Good Afternoon' : 'Good Evening';
@@ -320,9 +352,12 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
                Start Analysis Now
              </button>
-             <a href="/atlasstack.vsix" download className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3">
+             <button 
+               onClick={handleDownloadExtension}
+               className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3"
+             >
                Install VS Code Extension <ChevronRight className="w-5 h-5" />
-             </a>
+             </button>
           </div>
         </motion.div>
 

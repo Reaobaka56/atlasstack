@@ -51,6 +51,60 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
   const [expandedDiff, setExpandedDiff] = useState<number | null>(null);
   const [analyzingStep, setAnalyzingStep] = useState(0);
 
+  // Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{role: 'user'|'ai', text: string}[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const webSocket = useRef<WebSocket | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isAiTyping]);
+
+  // WebSocket for Chat
+  useEffect(() => {
+    const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws';
+    const socket = new WebSocket(wsUrl);
+    webSocket.current = socket;
+
+    socket.onopen = () => console.log('Web Chat Socket Connected');
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'chat_response') {
+          setIsAiTyping(false);
+          setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+        }
+      } catch (e) {
+        console.error('WS Error:', e);
+      }
+    };
+    socket.onclose = () => console.log('Web Chat Socket Disconnected');
+
+    return () => socket.close();
+  }, [API_URL]);
+
+  const handleSendChat = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || !webSocket.current) return;
+
+    const text = chatInput;
+    setChatMessages(prev => [...prev, { role: 'user', text }]);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    webSocket.current.send(JSON.stringify({
+      type: 'chat',
+      text: text
+    }));
+  };
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3500);
