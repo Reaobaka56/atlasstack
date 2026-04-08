@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document provides a high-level overview of the CodeSage Platform architecture.
+This document provides a high-level overview of the AtlasStack Platform architecture.
 
 ## Core Services
 

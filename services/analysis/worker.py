@@ -1,5 +1,5 @@
 """
-CodeSage Analysis Worker
+AtlasStack Analysis Worker
 Celery worker for processing analysis tasks
 """
 
@@ -16,7 +16,7 @@ logger = structlog.get_logger()
 
 # Initialize Celery
 app = Celery(
-    "codesage_analysis",
+    "atlasstack_analysis",
     broker=settings.RABBITMQ_URL,
     backend=settings.REDIS_URL,
     include=[

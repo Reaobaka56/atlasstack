@@ -1,5 +1,5 @@
 """
-CodeSage Model Training Pipeline
+AtlasStack Model Training Pipeline
 Supports SFT (Supervised Fine-Tuning) and RLHF training
 """
 
@@ -71,7 +71,7 @@ def run_rlhf_training(config: dict, base_model_path: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CodeSage Training Pipeline")
+    parser = argparse.ArgumentParser(description="AtlasStack Training Pipeline")
     parser.add_argument(
         "--mode", type=str, choices=["sft", "rlhf", "both"], required=True, help="Training mode"
     )

@@ -1,5 +1,5 @@
 """
-CodeSage LLM Service
+AtlasStack LLM Service
 Model serving API for code analysis and generation
 """
 
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CodeSage LLM Service",
+    title="AtlasStack LLM Service",
     description="Language model serving for code analysis",
     version="1.0.0",
     lifespan=lifespan,

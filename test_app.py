@@ -3,8 +3,8 @@ import traceback
 from fastapi.testclient import TestClient
 
 # Add api folder to path
-sys.path.append(r"C:\Users\reaob\Downloads\PythonProject33\codesage\services\api")
-sys.path.append(r"C:\Users\reaob\Downloads\PythonProject33\codesage")
+sys.path.append(r"C:\Users\reaob\Downloads\PythonProject33\atlasstack\services\api")
+sys.path.append(r"C:\Users\reaob\Downloads\PythonProject33\atlasstack")
 
 from services.api.main import app
 

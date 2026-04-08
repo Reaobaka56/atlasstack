@@ -30,8 +30,8 @@ import {
 } from 'lucide-react';
 
 // --- Constants & API Config ---
-const API_URL_STORAGE_KEY = "codesage_api_url";
-const TOKEN_KEY = "codesage_access_token";
+const API_URL_STORAGE_KEY = "atlasstack_api_url";
+const TOKEN_KEY = "atlasstack_access_token";
 
 const normalizeApiUrl = (value?: string | null) => (value || '').trim().replace(/\/$/, '');
 

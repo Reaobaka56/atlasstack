@@ -33,13 +33,13 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Create non-root user
-RUN groupadd -r codesage && useradd -r -g codesage codesage
+RUN groupadd -r atlasstack && useradd -r -g atlasstack atlasstack
 
 # Copy application code
-COPY --chown=codesage:codesage . .
+COPY --chown=atlasstack:atlasstack . .
 
 # Switch to non-root user
-USER codesage
+USER atlasstack
 
 # Expose port
 EXPOSE 8000

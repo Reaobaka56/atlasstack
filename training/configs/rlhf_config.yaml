@@ -79,7 +79,7 @@ training:
   # Weights & Biases
   wandb:
     enabled: true
-    project: "codesage-training"
+    project: "atlasstack-training"
     entity: null
     tags:
       - "rlhf"

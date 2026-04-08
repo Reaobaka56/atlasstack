@@ -5,8 +5,8 @@ This guide helps new contributors get the project running locally and understand
 ## 1) Checkout and Setup
 
 ```bash
-git clone https://github.com/your-org/codesage-platform.git
-cd codesage-platform
+git clone https://github.com/your-org/atlasstack-platform.git
+cd atlasstack-platform
 cp .env.example .env
 # Edit .env with real secrets (see `.env.example`)
 ```

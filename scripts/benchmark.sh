@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "CodeSage Platform - Benchmark Script"
+echo "AtlasStack Platform - Benchmark Script"
 echo "=========================================="
 
 # Configuration
@@ -140,11 +140,11 @@ EOF_PY
 # Generate report
 print_status "Generating benchmark report..."
 cat > $OUTPUT_DIR/report.md << 'EOF_REPORT'
-# CodeSage Platform Benchmark Report
+# AtlasStack Platform Benchmark Report
 
 ## Summary
 
-This report contains benchmark results for the CodeSage Platform API.
+This report contains benchmark results for the AtlasStack Platform API.
 
 ## Test Configuration
 

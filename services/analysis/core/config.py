@@ -16,13 +16,13 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "production"
 
     # Database
-    DATABASE_URL: str = "postgresql://codesage:codesage_secret@localhost:5432/codesage"
+    DATABASE_URL: str = "postgresql://atlasstack:atlasstack_secret@localhost:5432/atlasstack"
 
     # Redis
     REDIS_URL: str = "redis://:redis_secret@localhost:6379/0"
 
     # RabbitMQ / Celery
-    RABBITMQ_URL: str = "amqp://codesage:rabbitmq_secret@localhost:5672/"
+    RABBITMQ_URL: str = "amqp://atlasstack:rabbitmq_secret@localhost:5672/"
     CELERY_WORKER_CONCURRENCY: int = 4
     CELERY_TASK_ACKS_LATE: bool = True
 

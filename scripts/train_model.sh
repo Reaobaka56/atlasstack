@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "CodeSage Model Training Pipeline"
+echo "AtlasStack Model Training Pipeline"
 echo "=========================================="
 
 # Configuration

@@ -5,7 +5,7 @@ Locust load testing configuration
 from locust import HttpUser, between, task
 
 
-class CodeSageUser(HttpUser):
+class AtlasStackUser(HttpUser):
     """Simulated user for load testing"""
     
     wait_time = between(1, 5)

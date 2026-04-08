@@ -53,7 +53,7 @@ const IDEPageInner = ({ repoUrl, onBack }: { repoUrl: string, onBack: () => void
   // Agent / Terminal State
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<{role: 'user'|'assistant', text: string}[]>([
-    { role: 'assistant', text: `Welcome to CodeSage Local IDE powered by WebContainers. I have booted up a Node.js OS right here in your browser. Open the terminal panel to interact with it!` }
+    { role: 'assistant', text: `Welcome to AtlasStack Local IDE powered by WebContainers. I have booted up a Node.js OS right here in your browser. Open the terminal panel to interact with it!` }
   ]);
   const [isAgentActive, setIsAgentActive] = useState(false);
   const [agentLogs, setAgentLogs] = useState<string[]>(['[System] WebContainer Operating System booting...']);
@@ -98,7 +98,7 @@ const IDEPageInner = ({ repoUrl, onBack }: { repoUrl: string, onBack: () => void
         setAgentLogs(prev => [...prev, '[System] WebContainer OS Successfully Booted.', '[System] Providing Mock Boilerplate...']);
         
         await wc.mount({
-          'package.json': { file: { contents: '{\\n  "name": "codesage-demo",\\n  "version": "1.0.0",\\n  "scripts": { "start": "node index.js" }\\n}' } },
+          'package.json': { file: { contents: '{\\n  "name": "atlasstack-demo",\\n  "version": "1.0.0",\\n  "scripts": { "start": "node index.js" }\\n}' } },
           'index.js': { file: { contents: 'const http = require("http");\\n\\nhttp.createServer((req, res) => res.end("Hello from WebContainer!")).listen(3011, () => console.log("Serving at http://localhost:3011"));\\n' } },
           'src': { directory: { 'utils.js': { file: { contents: 'export const hello = () => "world";' } } } }
         });
@@ -230,7 +230,7 @@ const IDEPageInner = ({ repoUrl, onBack }: { repoUrl: string, onBack: () => void
           </button>
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-indigo-400" />
-            <span className="text-[11px] font-bold tracking-widest uppercase text-white/90">CodeSage Engine</span>
+            <span className="text-[11px] font-bold tracking-widest uppercase text-white/90">AtlasStack Engine</span>
           </div>
         </div>
         
@@ -472,5 +472,5 @@ const FileTreeNode = ({ node, depth, activeFile, onSelect }: any) => {
 };
 """
 
-with open(r"c:\Users\reaob\Downloads\PythonProject33\codesage\clients\web\src\IDEPage.tsx", "w", encoding='utf-8') as f:
+with open(r"c:\Users\reaob\Downloads\PythonProject33\atlasstack\clients\web\src\IDEPage.tsx", "w", encoding='utf-8') as f:
     f.write(IDE_PAGE_CODE)

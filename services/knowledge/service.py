@@ -1,5 +1,5 @@
 """
-CodeSage Knowledge Service
+AtlasStack Knowledge Service
 Manages code knowledge graph and vector search
 """
 
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CodeSage Knowledge Service",
+    title="AtlasStack Knowledge Service",
     description="Knowledge graph and vector search for code",
     version="1.0.0",
     lifespan=lifespan,
