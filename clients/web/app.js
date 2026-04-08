@@ -1,9 +1,9 @@
-const API_URL_STORAGE_KEY = "codesage.apiUrl";
+const API_URL_STORAGE_KEY = "atlasstack.apiUrl";
 
 const normalizeApiUrl = (value) => (value || "").trim().replace(/\/$/, "");
 
 const detectDefaultApiUrl = () => {
-  const fromWindow = normalizeApiUrl(window.CODESAGE_API_URL);
+  const fromWindow = normalizeApiUrl(window.ATLASSTACK_API_URL);
   if (fromWindow) {
     return fromWindow;
   }

@@ -116,7 +116,7 @@ class WebSocketClient {
         if (status === 'completed') {
             vscode.window.showInformationMessage(`Analysis ${analysis_id} completed`, 'View Results').then(selection => {
                 if (selection === 'View Results') {
-                    vscode.commands.executeCommand('codesage.showResults');
+                    vscode.commands.executeCommand('atlasstack.showResults');
                 }
             });
         }
@@ -159,7 +159,7 @@ class WebSocketClient {
     }
     attemptReconnect(url, apiKey) {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            vscode.window.showErrorMessage('Lost connection to CodeSage server. Please check your connection and try again.', 'Reconnect').then(selection => {
+            vscode.window.showErrorMessage('Lost connection to AtlasStack server. Please check your connection and try again.', 'Reconnect').then(selection => {
                 if (selection === 'Reconnect') {
                     this.reconnectAttempts = 0;
                     this.connect(url, apiKey);

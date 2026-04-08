@@ -41,7 +41,7 @@ export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; on
 };
 
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
-  const API_URL = apiUrlProp || (window as any).CODESAGE_API_URL || "http://localhost:8005";
+  const API_URL = apiUrlProp || (window as any).ATLASSTACK_API_URL || "http://localhost:8005";
   const [step, setStep] = useState<'connect' | 'input' | 'analyzing' | 'dashboard'>(analysisId ? 'analyzing' : 'connect');
   const [repoInput, setRepoInput] = useState(repoUrl || '');
   const [mvpData, setMvpData] = useState<any>(null);

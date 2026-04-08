@@ -36,7 +36,7 @@ const TOKEN_KEY = "atlasstack_access_token";
 const normalizeApiUrl = (value?: string | null) => (value || '').trim().replace(/\/$/, '');
 
 const detectDefaultApiUrl = () => {
-  const fromWindow = normalizeApiUrl((window as any).CODESAGE_API_URL);
+  const fromWindow = normalizeApiUrl((window as any).ATLASSTACK_API_URL);
   if (fromWindow) return fromWindow;
 
   const fromQuery = normalizeApiUrl(new URLSearchParams(window.location.search).get('api'));

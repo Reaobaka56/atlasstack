@@ -38,7 +38,7 @@ const vscode = __importStar(require("vscode"));
 class ChatViewProvider {
     _extensionUri;
     _wsClient;
-    static viewType = 'codesage.chat';
+    static viewType = 'atlasstack.chat';
     _view;
     constructor(_extensionUri, _wsClient) {
         this._extensionUri = _extensionUri;

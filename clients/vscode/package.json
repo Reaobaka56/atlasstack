@@ -25,15 +25,7 @@
     "ai",
     "static analysis"
   ],
-  "activationEvents": [
-    "onLanguage:python",
-    "onLanguage:javascript",
-    "onLanguage:typescript",
-    "onLanguage:java",
-    "onLanguage:go",
-    "onLanguage:rust",
-    "onView:atlasstack.chat"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -117,19 +109,22 @@
         {
           "id": "atlasstackResults",
           "name": "AtlasStack Analysis",
-          "when": "atlasstack:connected"
+          "when": "atlasstack:connected",
+          "icon": "$(shield)"
         }
       ],
       "atlasstack": [
         {
           "id": "atlasstack.chat",
           "type": "webview",
-          "name": "AI Architect"
+          "name": "AI Architect",
+          "icon": "$(comment-discussion)"
         },
         {
           "id": "atlasstackResults",
           "type": "tree",
-          "name": "Analysis Results"
+          "name": "Analysis Results",
+          "icon": "$(list-unordered)"
         }
       ]
     },

@@ -67,12 +67,12 @@ class AnalysisProvider {
         return Promise.resolve([]);
     }
     async analyzeCode(code, language, filePath) {
-        const config = vscode.workspace.getConfiguration('codesage');
+        const config = vscode.workspace.getConfiguration('atlasstack');
         const serverUrl = config.get('serverUrl');
         const apiKey = config.get('apiKey');
         const analysisTypes = config.get('analysisTypes') || ['security', 'performance'];
         if (!serverUrl) {
-            throw new Error('CodeSage server URL not configured');
+            throw new Error('AtlasStack server URL not configured');
         }
         const headers = {
             'Content-Type': 'application/json'
@@ -122,7 +122,7 @@ class SeverityItem extends AnalysisItem {
         super(`${severity.toUpperCase()} (${count})`, collapsibleState);
         this.severity = severity;
         this.count = count;
-        this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor(`codesage.${severity}`));
+        this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor(`atlasstack.${severity}`));
         this.contextValue = 'severity';
     }
 }
@@ -133,7 +133,7 @@ class FindingItem extends AnalysisItem {
         this.finding = finding;
         this.description = `Line ${finding.line_start}: ${finding.message.substring(0, 50)}...`;
         this.tooltip = finding.message;
-        this.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor(`codesage.${finding.severity}`));
+        this.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor(`atlasstack.${finding.severity}`));
         this.command = {
             command: 'vscode.open',
             title: 'Open File',
