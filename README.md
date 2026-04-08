@@ -1,4 +1,9 @@
+<p align="center">
+  <img src="docs/images/logo.png" width="300" alt="AtlasStack Logo">
+</p>
+
 # AtlasStack
+
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
@@ -14,6 +19,16 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 - **"Explain Like I'm 10":** Toggleable ELI5 summaries for every codebase analysis.
 - **Lite Mode Backend:** Runs entirely on Python + SQLite — no Docker needed.
 - **Real Auth:** User registration, bcrypt password hashing, JWT tokens, analysis history saved per user.
+
+---
+
+## 📸 Screenshots
+
+### Landing Page
+![Landing Page](docs/images/landing_page.png)
+
+### Deep Analysis View
+![Analysis View](docs/images/analysis_view.png)
 
 ---
 
