@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { WebSocketClient } from './websocketClient';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'codesage.chat';
+    public static readonly viewType = 'atlasstack.chat';
     private _view?: vscode.WebviewView;
 
     constructor(

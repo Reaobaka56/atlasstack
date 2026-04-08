@@ -2,10 +2,10 @@ _format_version: "3.0"
 _transform: true
 
 services:
-  - name: codesage-api
+  - name: atlasstack-api
     url: http://api:8000
     routes:
-      - name: codesage-api-route
+      - name: atlasstack-api-route
         paths:
           - /api
           - /docs

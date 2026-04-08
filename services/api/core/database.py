@@ -70,7 +70,7 @@ class AnalysisRecord(Base):
 # SQLAlchemy async engine
 if settings.LITE_MODE:
     engine = create_async_engine(
-        "sqlite+aiosqlite:///./codesage_lite.db",
+        "sqlite+aiosqlite:///./atlasstack_lite.db",
         echo=settings.DEBUG,
     )
 else:

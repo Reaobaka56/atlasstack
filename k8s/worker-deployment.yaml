@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker
-  namespace: codesage
+  namespace: atlasstack
   labels:
     app: worker
     component: analysis
@@ -23,39 +23,39 @@ spec:
     spec:
       containers:
         - name: worker
-          image: codesage/worker:latest
+          image: atlasstack/worker:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: metrics
           envFrom:
             - configMapRef:
-                name: codesage-config
+                name: atlasstack-config
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: codesage-secrets
+                  name: atlasstack-secrets
                   key: DATABASE_URL
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: codesage-secrets
+                  name: atlasstack-secrets
                   key: REDIS_URL
             - name: RABBITMQ_URL
               valueFrom:
                 secretKeyRef:
-                  name: codesage-secrets
+                  name: atlasstack-secrets
                   key: RABBITMQ_URL
             - name: LLM_SERVICE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: codesage-config
+                  name: atlasstack-config
                   key: LLM_SERVICE_URL
             - name: KNOWLEDGE_SERVICE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: codesage-config
+                  name: atlasstack-config
                   key: KNOWLEDGE_SERVICE_URL
           resources:
             requests:
@@ -87,7 +87,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: worker
-  namespace: codesage
+  namespace: atlasstack
   labels:
     app: worker
 spec:
@@ -103,7 +103,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: worker-hpa
-  namespace: codesage
+  namespace: atlasstack
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

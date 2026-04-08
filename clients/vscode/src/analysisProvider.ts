@@ -69,13 +69,13 @@ export class AnalysisProvider implements vscode.TreeDataProvider<AnalysisItem> {
     }
 
     async analyzeCode(code: string, language: string, filePath?: string): Promise<AnalysisResult> {
-        const config = vscode.workspace.getConfiguration('codesage');
+        const config = vscode.workspace.getConfiguration('atlasstack');
         const serverUrl = config.get<string>('serverUrl');
         const apiKey = config.get<string>('apiKey');
         const analysisTypes = config.get<string[]>('analysisTypes') || ['security', 'performance'];
 
         if (!serverUrl) {
-            throw new Error('CodeSage server URL not configured');
+            throw new Error('AtlasStack server URL not configured');
         }
 
         const headers: Record<string, string> = {
@@ -138,7 +138,7 @@ class SeverityItem extends AnalysisItem {
         
         this.iconPath = new vscode.ThemeIcon(
             'warning',
-            new vscode.ThemeColor(`codesage.${severity}`)
+            new vscode.ThemeColor(`atlasstack.${severity}`)
         );
         
         this.contextValue = 'severity';
@@ -154,7 +154,7 @@ class FindingItem extends AnalysisItem {
         
         this.iconPath = new vscode.ThemeIcon(
             'circle-filled',
-            new vscode.ThemeColor(`codesage.${finding.severity}`)
+            new vscode.ThemeColor(`atlasstack.${finding.severity}`)
         );
         
         this.command = {

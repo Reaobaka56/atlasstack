@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "CodeSage Platform - Setup Script"
+echo "AtlasStack Platform - Setup Script"
 echo "=========================================="
 
 # Colors for output
@@ -89,7 +89,7 @@ sleep 10
 
 # Check PostgreSQL
 print_status "Checking PostgreSQL..."
-until ${COMPOSE_CMD} exec -T postgres pg_isready -U codesage > /dev/null 2>&1; do
+until ${COMPOSE_CMD} exec -T postgres pg_isready -U atlasstack > /dev/null 2>&1; do
     print_warning "Waiting for PostgreSQL..."
     sleep 2
 done
@@ -144,7 +144,7 @@ fi
 # Print service URLs
 echo ""
 echo "=========================================="
-echo "CodeSage Platform is starting up!"
+echo "AtlasStack Platform is starting up!"
 echo "=========================================="
 echo ""
 echo "Service URLs:"

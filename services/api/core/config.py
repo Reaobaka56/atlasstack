@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     WORKERS: int = 4
 
     # Database
-    DATABASE_URL: str = "postgresql://codesage:codesage_secret@localhost:5432/codesage"
+    DATABASE_URL: str = "postgresql://atlasstack:atlasstack_secret@localhost:5432/atlasstack"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
 
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     WEAVIATE_URL: str = "http://localhost:8080"
 
     # RabbitMQ / Celery
-    RABBITMQ_URL: str = "amqp://codesage:rabbitmq_secret@localhost:5672/"
+    RABBITMQ_URL: str = "amqp://atlasstack:rabbitmq_secret@localhost:5672/"
     CELERY_WORKER_CONCURRENCY: int = 4
     CELERY_TASK_ACKS_LATE: bool = True
 

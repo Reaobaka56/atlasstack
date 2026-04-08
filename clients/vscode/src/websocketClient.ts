@@ -92,7 +92,7 @@ export class WebSocketClient {
                 'View Results'
             ).then(selection => {
                 if (selection === 'View Results') {
-                    vscode.commands.executeCommand('codesage.showResults');
+                    vscode.commands.executeCommand('atlasstack.showResults');
                 }
             });
         } else if (status === 'failed') {
@@ -141,7 +141,7 @@ export class WebSocketClient {
     private attemptReconnect(url: string, apiKey?: string): void {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             vscode.window.showErrorMessage(
-                'Lost connection to CodeSage server. Please check your connection and try again.',
+                'Lost connection to AtlasStack server. Please check your connection and try again.',
                 'Reconnect'
             ).then(selection => {
                 if (selection === 'Reconnect') {

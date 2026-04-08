@@ -2,7 +2,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: api-hpa
-  namespace: codesage
+  namespace: atlasstack
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -56,7 +56,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: api-pdb
-  namespace: codesage
+  namespace: atlasstack
 spec:
   minAvailable: 1
   selector:
@@ -67,7 +67,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: worker-pdb
-  namespace: codesage
+  namespace: atlasstack
 spec:
   minAvailable: 1
   selector:

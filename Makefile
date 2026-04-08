@@ -180,13 +180,13 @@ k8s-delete:
 	kubectl delete -f k8s/ --ignore-not-found=true
 
 k8s-status:
-	kubectl get all -n codesage
+	kubectl get all -n atlasstack
 
 k8s-logs-api:
-	kubectl logs -n codesage -l app=api -f
+	kubectl logs -n atlasstack -l app=api -f
 
 k8s-logs-worker:
-	kubectl logs -n codesage -l app=worker -f
+	kubectl logs -n atlasstack -l app=worker -f
 
 # Model Training
 train:
@@ -221,11 +221,11 @@ check-services:
 # Data Management
 backup-db:
 	$(require_compose)
-	$(COMPOSE) exec postgres pg_dump -U codesage codesage > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	$(COMPOSE) exec postgres pg_dump -U atlasstack atlasstack > backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 restore-db:
 	$(require_compose)
-	$(COMPOSE) exec -T postgres psql -U codesage codesage < $(file)
+	$(COMPOSE) exec -T postgres psql -U atlasstack atlasstack < $(file)
 
 # Utilities
 wait-for-services:

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: llm
-  namespace: codesage
+  namespace: atlasstack
   labels:
     app: llm
     component: model-serving
@@ -23,14 +23,14 @@ spec:
     spec:
       containers:
         - name: llm
-          image: codesage/llm:latest
+          image: atlasstack/llm:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
               name: http
           envFrom:
             - configMapRef:
-                name: codesage-config
+                name: atlasstack-config
           env:
             - name: HUGGINGFACE_TOKEN
               valueFrom:
@@ -84,7 +84,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: llm
-  namespace: codesage
+  namespace: atlasstack
   labels:
     app: llm
 spec:
@@ -100,7 +100,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: llm-models-pvc
-  namespace: codesage
+  namespace: atlasstack
 spec:
   accessModes:
     - ReadWriteMany
@@ -113,7 +113,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: llm-hpa
-  namespace: codesage
+  namespace: atlasstack
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

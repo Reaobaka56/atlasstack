@@ -4,26 +4,26 @@ services:
   # Infrastructure
   postgres:
     image: postgres:15-alpine
-    container_name: codesage-postgres
+    container_name: atlasstack-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-codesage}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codesage_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-codesage}
+      POSTGRES_USER: ${POSTGRES_USER:-atlasstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlasstack_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-atlasstack}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U codesage"]
+      test: ["CMD-SHELL", "pg_isready -U atlasstack"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - codesage-network
+      - atlasstack-network
 
   redis:
     image: redis:7-alpine
-    container_name: codesage-redis
+    container_name: atlasstack-redis
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis_secret}
     volumes:
       - redis_data:/data
@@ -35,11 +35,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - codesage-network
+      - atlasstack-network
 
   neo4j:
     image: neo4j:5-community
-    container_name: codesage-neo4j
+    container_name: atlasstack-neo4j
     environment:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-neo4j_secret}
       NEO4J_PLUGINS: '["apoc", "gds"]'
@@ -52,11 +52,11 @@ services:
       - "7474:7474"
       - "7687:7687"
     networks:
-      - codesage-network
+      - atlasstack-network
 
   weaviate:
     image: semitechnologies/weaviate:1.24.0
-    container_name: codesage-weaviate
+    container_name: atlasstack-weaviate
     command:
       - --host
       - 0.0.0.0
@@ -76,14 +76,14 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - codesage-network
+      - atlasstack-network
 
   # Message Queue
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: codesage-rabbitmq
+    container_name: atlasstack-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-codesage}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-atlasstack}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq_secret}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -91,23 +91,23 @@ services:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - codesage-network
+      - atlasstack-network
 
   # Core Services
   api:
     build:
       context: ./services/api
       dockerfile: Dockerfile
-    container_name: codesage-api
+    container_name: atlasstack-api
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-codesage}:${POSTGRES_PASSWORD:-codesage_secret}@postgres:5432/${POSTGRES_DB:-codesage}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-atlasstack}:${POSTGRES_PASSWORD:-atlasstack_secret}@postgres:5432/${POSTGRES_DB:-atlasstack}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=${NEO4J_USER:-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD:-neo4j_secret}
       - WEAVIATE_URL=http://weaviate:8080
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-codesage}:${RABBITMQ_PASSWORD:-rabbitmq_secret}@rabbitmq:5672/
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-atlasstack}:${RABBITMQ_PASSWORD:-rabbitmq_secret}@rabbitmq:5672/
       - LLM_SERVICE_URL=http://llm:8000
       - KNOWLEDGE_SERVICE_URL=http://knowledge:8000
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -130,19 +130,19 @@ services:
       - ./services/api:/app
       - /app/__pycache__
     networks:
-      - codesage-network
+      - atlasstack-network
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
     build:
       context: ./services/analysis
       dockerfile: Dockerfile
-    container_name: codesage-worker
+    container_name: atlasstack-worker
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-codesage}:${POSTGRES_PASSWORD:-codesage_secret}@postgres:5432/${POSTGRES_DB:-codesage}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-atlasstack}:${POSTGRES_PASSWORD:-atlasstack_secret}@postgres:5432/${POSTGRES_DB:-atlasstack}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-codesage}:${RABBITMQ_PASSWORD:-rabbitmq_secret}@rabbitmq:5672/
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-atlasstack}:${RABBITMQ_PASSWORD:-rabbitmq_secret}@rabbitmq:5672/
       - LLM_SERVICE_URL=http://llm:8000
       - KNOWLEDGE_SERVICE_URL=http://knowledge:8000
     depends_on:
@@ -156,14 +156,14 @@ services:
       - ./services/analysis:/app
       - /app/__pycache__
     networks:
-      - codesage-network
+      - atlasstack-network
     command: celery -A worker worker --loglevel=info --concurrency=4
 
   llm:
     build:
       context: ./services/llm
       dockerfile: Dockerfile
-    container_name: codesage-llm
+    container_name: atlasstack-llm
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - MODEL_PATH=${MODEL_PATH:-/models}
@@ -178,7 +178,7 @@ services:
       - ./services/llm:/app
       - /app/__pycache__
     networks:
-      - codesage-network
+      - atlasstack-network
     deploy:
       resources:
         reservations:
@@ -191,7 +191,7 @@ services:
     build:
       context: ./services/knowledge
       dockerfile: Dockerfile
-    container_name: codesage-knowledge
+    container_name: atlasstack-knowledge
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - NEO4J_URI=bolt://neo4j:7687
@@ -210,25 +210,25 @@ services:
       - ./services/knowledge:/app
       - /app/__pycache__
     networks:
-      - codesage-network
+      - atlasstack-network
 
 
   web:
     build:
       context: ./clients/web
       dockerfile: Dockerfile
-    container_name: codesage-web
+    container_name: atlasstack-web
     ports:
       - "5173:80"
     depends_on:
       - api
     networks:
-      - codesage-network
+      - atlasstack-network
 
   # Monitoring
   prometheus:
     image: prom/prometheus:v2.50.0
-    container_name: codesage-prometheus
+    container_name: atlasstack-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -241,11 +241,11 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - codesage-network
+      - atlasstack-network
 
   grafana:
     image: grafana/grafana:10.3.0
-    container_name: codesage-grafana
+    container_name: atlasstack-grafana
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
@@ -259,11 +259,11 @@ services:
     depends_on:
       - prometheus
     networks:
-      - codesage-network
+      - atlasstack-network
 
   jaeger:
     image: jaegertracing/all-in-one:1.50
-    container_name: codesage-jaeger
+    container_name: atlasstack-jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
@@ -271,12 +271,12 @@ services:
       - "4317:4317"
       - "4318:4318"
     networks:
-      - codesage-network
+      - atlasstack-network
 
   # API Gateway
   kong:
     image: kong:3.5
-    container_name: codesage-kong
+    container_name: atlasstack-kong
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
@@ -293,7 +293,7 @@ services:
       - "8009:8001"
       - "8444:8444"
     networks:
-      - codesage-network
+      - atlasstack-network
 
 volumes:
   postgres_data:
@@ -307,5 +307,5 @@ volumes:
   grafana_data:
 
 networks:
-  codesage-network:
+  atlasstack-network:
     driver: bridge

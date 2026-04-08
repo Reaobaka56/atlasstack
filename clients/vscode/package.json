@@ -1,5 +1,5 @@
 {
-  "name": "codesage",
+  "name": "atlasstack",
   "displayName": "AtlasStack",
   "description": "Premium AI-powered code analysis and security scanning",
   "version": "1.0.0",
@@ -32,102 +32,102 @@
     "onLanguage:java",
     "onLanguage:go",
     "onLanguage:rust",
-    "onView:codesage.chat"
+    "onView:atlasstack.chat"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "codesage.analyzeFile",
+        "command": "atlasstack.analyzeFile",
         "title": "Analyze Current File",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.analyzeSelection",
+        "command": "atlasstack.analyzeSelection",
         "title": "Analyze Selection",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.analyzeWorkspace",
+        "command": "atlasstack.analyzeWorkspace",
         "title": "Analyze Workspace",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.openChat",
+        "command": "atlasstack.openChat",
         "title": "AI Architect Chat",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.showResults",
+        "command": "atlasstack.showResults",
         "title": "Show Analysis Results",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.configure",
+        "command": "atlasstack.configure",
         "title": "Configure",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.connect",
+        "command": "atlasstack.connect",
         "title": "Connect to Server",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       },
       {
-        "command": "codesage.disconnect",
+        "command": "atlasstack.disconnect",
         "title": "Disconnect",
-        "category": "CodeSage"
+        "category": "AtlasStack"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "codesage.analyzeSelection",
+          "command": "atlasstack.analyzeSelection",
           "when": "editorHasSelection",
-          "group": "codesage@1"
+          "group": "atlasstack@1"
         },
         {
-          "command": "codesage.analyzeFile",
-          "group": "codesage@2"
+          "command": "atlasstack.analyzeFile",
+          "group": "atlasstack@2"
         }
       ],
       "explorer/context": [
         {
-          "command": "codesage.analyzeFile",
+          "command": "atlasstack.analyzeFile",
           "when": "explorerResourceIsFile",
-          "group": "codesage@1"
+          "group": "atlasstack@1"
         }
       ],
       "commandPalette": [
         {
-          "command": "codesage.analyzeFile"
+          "command": "atlasstack.analyzeFile"
         },
         {
-          "command": "codesage.analyzeSelection"
+          "command": "atlasstack.analyzeSelection"
         },
         {
-          "command": "codesage.analyzeWorkspace"
+          "command": "atlasstack.analyzeWorkspace"
         },
         {
-          "command": "codesage.showResults"
+          "command": "atlasstack.showResults"
         }
       ]
     },
     "views": {
       "explorer": [
         {
-          "id": "codesageResults",
-          "name": "CodeSage Analysis",
-          "when": "codesage:connected"
+          "id": "atlasstackResults",
+          "name": "AtlasStack Analysis",
+          "when": "atlasstack:connected"
         }
       ],
-      "codesage": [
+      "atlasstack": [
         {
-          "id": "codesage.chat",
+          "id": "atlasstack.chat",
           "type": "webview",
           "name": "AI Architect"
         },
         {
-          "id": "codesageResults",
+          "id": "atlasstackResults",
           "type": "tree",
           "name": "Analysis Results"
         }
@@ -136,41 +136,41 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codesage",
-          "title": "CodeSage",
+          "id": "atlasstack",
+          "title": "AtlasStack",
           "icon": "$(shield)"
         }
       ]
     },
     "configuration": {
-      "title": "CodeSage",
+      "title": "AtlasStack",
       "properties": {
-        "codesage.serverUrl": {
+        "atlasstack.serverUrl": {
           "type": "string",
           "default": "http://localhost:8000",
-          "description": "CodeSage server URL"
+          "description": "AtlasStack server URL"
         },
-        "codesage.apiKey": {
+        "atlasstack.apiKey": {
           "type": "string",
           "default": "",
           "description": "API key for authentication"
         },
-        "codesage.enableRealTimeAnalysis": {
+        "atlasstack.enableRealTimeAnalysis": {
           "type": "boolean",
           "default": true,
           "description": "Enable real-time analysis as you type"
         },
-        "codesage.analysisDelay": {
+        "atlasstack.analysisDelay": {
           "type": "number",
           "default": 1000,
           "description": "Delay in ms before triggering analysis"
         },
-        "codesage.enableDecorations": {
+        "atlasstack.enableDecorations": {
           "type": "boolean",
           "default": true,
           "description": "Show visual decorations for findings"
         },
-        "codesage.analysisTypes": {
+        "atlasstack.analysisTypes": {
           "type": "array",
           "default": [
             "security",
@@ -187,7 +187,7 @@
             ]
           }
         },
-        "codesage.severityThreshold": {
+        "atlasstack.severityThreshold": {
           "type": "string",
           "default": "low",
           "description": "Minimum severity level to report",
@@ -199,7 +199,7 @@
             "critical"
           ]
         },
-        "codesage.useSSL": {
+        "atlasstack.useSSL": {
           "type": "boolean",
           "default": false,
           "description": "Use SSL/TLS for connection"
@@ -208,7 +208,7 @@
     },
     "colors": [
       {
-        "id": "codesage.critical",
+        "id": "atlasstack.critical",
         "description": "Color for critical severity findings",
         "defaults": {
           "dark": "#FF0000",
@@ -217,7 +217,7 @@
         }
       },
       {
-        "id": "codesage.high",
+        "id": "atlasstack.high",
         "description": "Color for high severity findings",
         "defaults": {
           "dark": "#FF6B6B",
@@ -226,7 +226,7 @@
         }
       },
       {
-        "id": "codesage.medium",
+        "id": "atlasstack.medium",
         "description": "Color for medium severity findings",
         "defaults": {
           "dark": "#FFA500",
@@ -235,7 +235,7 @@
         }
       },
       {
-        "id": "codesage.low",
+        "id": "atlasstack.low",
         "description": "Color for low severity findings",
         "defaults": {
           "dark": "#FFD93D",

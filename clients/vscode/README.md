@@ -2,7 +2,7 @@
 
 AI-powered code analysis and security scanning.
 
-CodeSage brings the power of **AtlasStack** directly to your editor. Analyze your codebase, identify vulnerabilities, and get AI-driven fixes without leaving your IDE.
+AtlasStack brings the power of AI directly to your editor. Analyze your codebase, identify vulnerabilities, and get AI-driven fixes without leaving your IDE.
 
 ## Features
 
@@ -15,7 +15,7 @@ CodeSage brings the power of **AtlasStack** directly to your editor. Analyze you
 ## Getting Started
 
 1. Install the extension.
-2. Click the **CodeSage** icon in the activity bar.
+2. Click the **AtlasStack** icon in the activity bar.
 3. Configure your server URL (default: `http://localhost:8000`).
 4. Run **Analyze Current File** or **Analyze Workspace**.
 
@@ -23,9 +23,9 @@ CodeSage brings the power of **AtlasStack** directly to your editor. Analyze you
 
 This extension can be configured in VS Code settings (`ctrl+,`):
 
-- `codesage.serverUrl`: The URL of your CodeSage backend.
-- `codesage.apiKey`: Your API key for authentication.
-- `codesage.enableRealTimeAnalysis`: Toggle background scanning.
+- `atlasstack.serverUrl`: The URL of your AtlasStack backend.
+- `atlasstack.apiKey`: Your API key for authentication.
+- `atlasstack.enableRealTimeAnalysis`: Toggle background scanning.
 
 ## Support
 

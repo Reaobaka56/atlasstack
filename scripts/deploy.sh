@@ -2,14 +2,14 @@
 set -e
 
 echo "=========================================="
-echo "CodeSage Platform - Deployment Script"
+echo "AtlasStack Platform - Deployment Script"
 echo "=========================================="
 
 # Configuration
 ENVIRONMENT=${1:-staging}
-REGISTRY=${REGISTRY:-"codesage"}
+REGISTRY=${REGISTRY:-"atlasstack"}
 VERSION=${VERSION:-"latest"}
-NAMESPACE=${NAMESPACE:-"codesage"}
+NAMESPACE=${NAMESPACE:-"atlasstack"}
 
 echo "Environment: $ENVIRONMENT"
 echo "Registry: $REGISTRY"

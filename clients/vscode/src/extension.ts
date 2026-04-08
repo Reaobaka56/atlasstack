@@ -9,7 +9,7 @@ let wsClient: WebSocketClient;
 let decorators: Decorators;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('CodeSage extension is now active');
+    console.log('AtlasStack extension is now active');
 
     // Initialize components
     analysisProvider = new AnalysisProvider();
@@ -18,28 +18,28 @@ export function activate(context: vscode.ExtensionContext) {
     const chatProvider = new ChatViewProvider(context.extensionUri, wsClient);
 
     // Register tree data provider
-    vscode.window.registerTreeDataProvider('codesageResults', analysisProvider);
+    vscode.window.registerTreeDataProvider('atlasstackResults', analysisProvider);
     
     // Register webview view provider
     vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider);
 
     // Register commands
     context.subscriptions.push(
-        vscode.commands.registerCommand('codesage.analyzeFile', analyzeFile),
-        vscode.commands.registerCommand('codesage.analyzeSelection', analyzeSelection),
-        vscode.commands.registerCommand('codesage.analyzeWorkspace', analyzeWorkspace),
-        vscode.commands.registerCommand('codesage.showResults', showResults),
-        vscode.commands.registerCommand('codesage.configure', configure),
-        vscode.commands.registerCommand('codesage.connect', connect),
-        vscode.commands.registerCommand('codesage.disconnect', disconnect),
-        vscode.commands.registerCommand('codesage.refreshResults', () => analysisProvider.refresh()),
-        vscode.commands.registerCommand('codesage.openChat', () => {
-            vscode.commands.executeCommand('codesage.chat.focus');
+        vscode.commands.registerCommand('atlasstack.analyzeFile', analyzeFile),
+        vscode.commands.registerCommand('atlasstack.analyzeSelection', analyzeSelection),
+        vscode.commands.registerCommand('atlasstack.analyzeWorkspace', analyzeWorkspace),
+        vscode.commands.registerCommand('atlasstack.showResults', showResults),
+        vscode.commands.registerCommand('atlasstack.configure', configure),
+        vscode.commands.registerCommand('atlasstack.connect', connect),
+        vscode.commands.registerCommand('atlasstack.disconnect', disconnect),
+        vscode.commands.registerCommand('atlasstack.refreshResults', () => analysisProvider.refresh()),
+        vscode.commands.registerCommand('atlasstack.openChat', () => {
+            vscode.commands.executeCommand('atlasstack.chat.focus');
         })
     );
 
     // Set up real-time analysis if enabled
-    const config = vscode.workspace.getConfiguration('codesage');
+    const config = vscode.workspace.getConfiguration('atlasstack');
     if (config.get('enableRealTimeAnalysis')) {
         setupRealTimeAnalysis(context);
     }
@@ -49,14 +49,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Show welcome message
     vscode.window.showInformationMessage(
-        'CodeSage is ready! Use "CodeSage: Analyze Current File" to get started.',
+        'AtlasStack is ready! Use \"AtlasStack: Analyze Current File\" to get started.',
         'Analyze File',
         'Configure'
     ).then(selection => {
         if (selection === 'Analyze File') {
-            vscode.commands.executeCommand('codesage.analyzeFile');
+            vscode.commands.executeCommand('atlasstack.analyzeFile');
         } else if (selection === 'Configure') {
-            vscode.commands.executeCommand('codesage.configure');
+            vscode.commands.executeCommand('atlasstack.configure');
         }
     });
 }
@@ -82,7 +82,7 @@ async function analyzeFile() {
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'CodeSage: Analyzing file...',
+        title: 'AtlasStack: Analyzing file...',
         cancellable: false
     }, async (progress) => {
         try {
@@ -128,7 +128,7 @@ async function analyzeSelection() {
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'CodeSage: Analyzing selection...',
+        title: 'AtlasStack: Analyzing selection...',
         cancellable: false
     }, async () => {
         try {
@@ -177,13 +177,13 @@ async function analyzeWorkspace() {
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'CodeSage: Analyzing workspace...',
+        title: 'AtlasStack: Analyzing workspace...',
         cancellable: true
     }, async (progress, token) => {
         try {
             // This would trigger a background analysis job
             vscode.window.showInformationMessage(
-                'Workspace analysis started. Results will be available in the CodeSage panel.',
+                'Workspace analysis started. Results will be available in the AtlasStack panel.',
                 'OK'
             );
         } catch (error) {
@@ -193,21 +193,21 @@ async function analyzeWorkspace() {
 }
 
 function showResults() {
-    vscode.commands.executeCommand('codesageResults.focus');
+    vscode.commands.executeCommand('atlasstackResults.focus');
 }
 
 async function configure() {
-    vscode.commands.executeCommand('workbench.action.openSettings', 'codesage');
+    vscode.commands.executeCommand('workbench.action.openSettings', 'atlasstack');
 }
 
 async function connect() {
-    const config = vscode.workspace.getConfiguration('codesage');
+    const config = vscode.workspace.getConfiguration('atlasstack');
     const serverUrl = config.get<string>('serverUrl');
     const apiKey = config.get<string>('apiKey');
 
     if (!serverUrl) {
         vscode.window.showWarningMessage(
-            'CodeSage server URL not configured',
+            'AtlasStack server URL not configured',
             'Configure'
         ).then(selection => {
             if (selection === 'Configure') {
@@ -219,8 +219,8 @@ async function connect() {
 
     try {
         await wsClient.connect(serverUrl, apiKey);
-        vscode.commands.executeCommand('setContext', 'codesage:connected', true);
-        vscode.window.showInformationMessage('Connected to CodeSage server');
+        vscode.commands.executeCommand('setContext', 'atlasstack:connected', true);
+        vscode.window.showInformationMessage('Connected to AtlasStack server');
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to connect: ${error}`);
     }
@@ -228,12 +228,12 @@ async function connect() {
 
 async function disconnect() {
     wsClient.disconnect();
-    vscode.commands.executeCommand('setContext', 'codesage:connected', false);
-    vscode.window.showInformationMessage('Disconnected from CodeSage server');
+    vscode.commands.executeCommand('setContext', 'atlasstack:connected', false);
+    vscode.window.showInformationMessage('Disconnected from AtlasStack server');
 }
 
 function setupRealTimeAnalysis(context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration('codesage');
+    const config = vscode.workspace.getConfiguration('atlasstack');
     const delay = config.get<number>('analysisDelay') || 1000;
 
     let timeout: NodeJS.Timeout | undefined;
