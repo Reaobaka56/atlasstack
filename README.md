@@ -12,7 +12,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## ⚡ Highlights
+##  Highlights
 
 - **Deep Repo Analysis:** Clones any public GitHub repo and produces a structured report: architecture, data flow, important files, security fixes, and a health score.
 - **Embedded Web IDE:** A full VS Code-like development environment directly in the browser.
@@ -22,13 +22,12 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### Landing Page
 ![Landing Page](docs/images/landing_page.png)
 
-### Deep Analysis View
-![Analysis View](docs/images/analysis_view.png)
+
 
 ---
 
