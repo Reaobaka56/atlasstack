@@ -4,7 +4,6 @@
 
 # AtlasStack
 
-
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
 
@@ -22,7 +21,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 ### Landing Page
 ![Landing Page](docs/images/landing_page.png)
@@ -32,11 +31,49 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## Tech Stack
+## 🏗️ Architecture
 
+AtlasStack is built as a distributed system of specialized services coordinated via an API Gateway.
+
+```mermaid
+flowchart TD
+  A[Client / UI / CLI] -->|REST| B(API Gateway)
+  B -->|Queue| C(Analysis Worker)
+  C -->|Model calls| D(LLM Service)
+  C -->|Index| E(Knowledge Service)
+  E -->|Search| B
+  subgraph Data Stores
+    F[(PostgreSQL)]
+    G[(Redis)]
+    H[(Neo4j)]
+    I[(Weaviate)]
+  end
+  B --> F
+  B --> G
+  C --> F
+  C --> G
+  E --> H
+  E --> I
+```
+
+For more details, see the [Architecture Deep Dive](docs/architecture.md).
+
+---
+
+##  Tech Stack
+
+### Core
 - **Frontend:** React, TypeScript, Vite, Monaco Editor, Tailwind CSS, Framer Motion
 - **Backend (Lite Mode):** Python 3.12, FastAPI, SQLite, Qwen2.5-Coder via HuggingFace Inference API
-- **Enterprise Infrastructure (Optional):** Docker Compose, Kubernetes, RabbitMQ, Neo4j, PostgreSQL, Redis
+
+### Enterprise Infrastructure (Optional)
+- **Message Broker:** RabbitMQ
+- **Graph Database:** Neo4j (Code dependency maps)
+- **Vector Database:** Weaviate (Semantic code search)
+- **Caching & Sessions:** Redis
+- **Primary Data:** PostgreSQL
+- **Observability:** Prometheus, Grafana, Jaeger (Tracing)
+- **Orchestration:** Docker Compose, Kubernetes
 
 ---
 
@@ -88,6 +125,17 @@ npm run dev
 
 ---
 
+##  IDE Integration
+
+### Visual Studio Code
+The AtlasStack VS Code extension brings AI-driven analysis directly to your workspace.
+
+1.  **Build/Install:** Open [clients/vscode](clients/vscode) and follow the README to build the `.vsix`.
+2.  **Connect:** Open VS Code settings and set `atlasstack.serverUrl` to your backend (default: `http://localhost:8005`).
+3.  **Analyze:** Use the AtlasStack icon in the Activity Bar to run deep repository scans.
+
+---
+
 ## API Endpoints
 
 | Method | Path | Auth | Description |
@@ -125,6 +173,49 @@ atlasstack/
 ├── test_app2.py          # Lite Mode entry point
 └── docker-compose.yml    # Full stack deployment
 ```
+
+---
+
+##  AI Model Training
+
+AtlasStack supports custom model fine-tuning via [training/](training). You can run the pipeline to adapt the analysis engine to specific coding standards or languages.
+
+```bash
+# Run Supervised Fine-Tuning (SFT)
+make train-sft
+
+# Run RLHF pipeline
+make train-rlhf
+```
+
+---
+
+##  Developer Reference
+
+### Makefile Commands
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Start full Docker stack |
+| `make test` | Run unit + integration tests |
+| `make lint` | Run flake8 and pylint |
+| `make format` | Format code with black/isort |
+| `make benchmark` | Run performance test suite |
+| `make clean` | Remove all containers & cache |
+
+---
+
+##  Configuration Reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HF_TOKEN` | - | HuggingFace Token (required for real AI) |
+| `LITE_MODE` | `true` | Toggle between SQLite and full Postgres stack |
+| `JWT_SECRET` | - | Secret key for auth tokens |
+| `DEFAULT_MODEL` | `Qwen2.5-Coder` | The LLM used for analysis |
+| `NEO4J_PASSWORD` | - | Password for graph database |
+
+See `.env.example` for the full list of configuration options.
 
 ---
 
