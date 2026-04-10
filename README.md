@@ -34,7 +34,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 AtlasStack is built as a distributed system of specialized services coordinated via an API Gateway.
 
