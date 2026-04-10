@@ -38,7 +38,7 @@ from core.database import close_db, init_db
 from middleware.auth import AuthMiddleware
 from middleware.logging import LoggingMiddleware
 from middleware.rate_limit import RateLimitMiddleware
-from routers import analysis, auth, health, repository
+from routers import analysis, auth, health, repository, graph_router
 
 logger = structlog.get_logger()
 tracer = trace.get_tracer(__name__) if HAS_TELEMETRY else None
@@ -95,6 +95,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router, prefix="/api/v1", tags=["Auth"])
 app.include_router(repository.router, prefix="/api/v1", tags=["Repositories"])
 app.include_router(analysis.router, prefix="/api/v1", tags=["Analysis"])
+app.include_router(graph_router.router)
 
 
 @app.exception_handler(Exception)

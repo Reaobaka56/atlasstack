@@ -5,10 +5,37 @@ import {
   ArrowLeft, Search, ShieldCheck, Zap, Layers, FolderTree, Lightbulb, 
   Wrench, Play, Code2, Copy, ToggleLeft, ToggleRight, ListChecks, FileWarning, Star, AlertTriangle,
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
-  FileCode2, MessageSquare, Send, X, MessagesSquare
+  FileCode2, MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
 import { useRef as useReactRef } from 'react';
 import mermaid from 'mermaid';
+import ArchitectureMap from './ArchitectureMap';
+
+const ATLAS_MOCK_GRAPH = {
+  repo: "atlasstack",
+  score: 100,
+  nodes: [
+    { id: "web", label: "Dashboard", sub: "React/Vite", layer: "client", risk: false, info: "AtlasStack UI Client" },
+    { id: "vscode", label: "IDE Plugin", sub: "Extension", layer: "client", risk: false, info: "CodeSage VSCode Extension" },
+    { id: "kong", label: "API Gateway", sub: "Kong", layer: "infra", risk: false, info: "Rate Limiting & Routing" },
+    { id: "api", label: "Core API", sub: "FastAPI", layer: "core", risk: false, info: "Primary backend service" },
+    { id: "worker", label: "Analyzer", sub: "Celery", layer: "core", risk: false, info: "Async security scanner" },
+    { id: "llm", label: "AI Engine", sub: "Qwen2.5", layer: "infra", risk: false, info: "Local LLM Inference" },
+    { id: "neo4j", label: "Knowledge", sub: "Neo4j", layer: "data", risk: false, info: "Code relationships graph" },
+    { id: "pg", label: "Database", sub: "PostgreSQL", layer: "data", risk: false, info: "User & Repo Metadata" },
+    { id: "weaviate", label: "Vectors", sub: "Weaviate", layer: "data", risk: false, info: "Semantic code representations" }
+  ],
+  edges: [
+    { from: "web", to: "kong", flow: false },
+    { from: "vscode", to: "kong", flow: false },
+    { from: "kong", to: "api", flow: true },
+    { from: "api", to: "worker", flow: true },
+    { from: "api", to: "pg", flow: false },
+    { from: "worker", to: "llm", flow: true },
+    { from: "worker", to: "neo4j", flow: true },
+    { from: "worker", to: "weaviate", flow: true }
+  ]
+};
 
 // Initialize Mermaid
 mermaid.initialize({
@@ -85,6 +112,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [expandedDiff, setExpandedDiff] = useState<number | null>(null);
   const [analyzingStep, setAnalyzingStep] = useState(0);
+  const [archGraph, setArchGraph] = useState<any>(null);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -172,6 +200,25 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
     .then(res => res.json())
     .then(data => {
       setMvpData(data);
+      // Fetch the new graphical map as well
+      fetch(`${API_URL}/api/v1/analysis/graph/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo_url: targetRepo })
+      })
+      .then(r => r.json())
+      .then(graphData => {
+        if (graphData && graphData.nodes) {
+          setArchGraph(graphData);
+        } else {
+          setArchGraph(ATLAS_MOCK_GRAPH as any);
+        }
+      })
+      .catch(e => {
+        console.error("Graph error:", e);
+        setArchGraph(ATLAS_MOCK_GRAPH as any);
+      });
+
       setTimeout(() => setStep('dashboard'), 500);
     })
     .catch(err => {
@@ -208,6 +255,33 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
     .then(res => res.json())
     .then(data => {
       setMvpData(data);
+      
+      // Attempt to load the graph
+      fetch(`${API_URL}/api/v1/analyses/${analysisId}/graph`, {
+        method: 'GET',
+        headers
+      })
+      .then(r => {
+        if (r.ok) return r.json();
+        // Fallback to preview if not found
+        return fetch(`${API_URL}/api/v1/analysis/graph/preview`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ repo_url: data.repo_url })
+        }).then(res => res.json());
+      })
+      .then(graphData => {
+        if (graphData && graphData.nodes) {
+          setArchGraph(graphData);
+        } else {
+          setArchGraph(ATLAS_MOCK_GRAPH as any);
+        }
+      })
+      .catch(e => {
+        console.error("Graph error:", e);
+        setArchGraph(ATLAS_MOCK_GRAPH as any);
+      });
+
       setTimeout(() => setStep('dashboard'), 500);
     })
     .catch(err => {
@@ -670,16 +744,6 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                     </div>
                   )}
 
-                  {/* Architecture Visualization */}
-                  {mvpData.architecture?.mermaid && (
-                    <div className="border-t border-white/5 pt-8">
-                       <h3 className="text-xs font-black text-silver-600 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                         <Network className="w-4 h-4" /> System Topology
-                       </h3>
-                       <Mermaid chart={mvpData.architecture.mermaid} />
-                    </div>
-                  )}
-                </div>
                 </div>
 
                 <div className="flex flex-col gap-6">
@@ -859,6 +923,34 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                   </div>
                 </div>
               </div>
+
+              {/* 4. Architecture / System Topology (Full Width Card) */}
+              {archGraph ? (
+                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
+                   <div className="absolute top-0 right-10 w-32 h-32 bg-indigo-500/10 blur-[80px] -z-10 rounded-full" />
+                   <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
+                       <Network className="w-6 h-6 text-indigo-400" />
+                     </div>
+                     Interactive System Topology
+                   </h3>
+                   <div className="rounded-[2.5rem] mt-2 overflow-hidden bg-black/40 border border-white/5 p-8 backdrop-blur-xl shadow-2xl">
+                     <ArchitectureMap graph={archGraph} />
+                   </div>
+                </div>
+              ) : mvpData.architecture?.mermaid && (
+                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
+                   <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
+                       <Network className="w-6 h-6 text-indigo-400" />
+                     </div>
+                     System Topology
+                   </h3>
+                   <div className="rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 p-6 backdrop-blur-xl">
+                     <Mermaid chart={mvpData.architecture.mermaid} />
+                   </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
