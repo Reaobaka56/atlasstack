@@ -63,6 +63,10 @@ class AnalysisRecord(Base):
     dependencies = Column(JSON, nullable=True)
     errors = Column(JSON, nullable=True)
     run_steps = Column(JSON, nullable=True)
+    architecture = Column(JSON, nullable=True)
+    security_report = Column(JSON, nullable=True)
+    tech_debt_score = Column(Integer, default=0)
+    maturity_level = Column(String, default="Unknown")
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
 

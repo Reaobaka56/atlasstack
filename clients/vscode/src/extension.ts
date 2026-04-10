@@ -7,6 +7,7 @@ import { ChatViewProvider } from './chatViewProvider';
 let analysisProvider: AnalysisProvider;
 let wsClient: WebSocketClient;
 let decorators: Decorators;
+let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('AtlasStack extension is now active');
@@ -15,6 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
     analysisProvider = new AnalysisProvider();
     wsClient = new WebSocketClient();
     decorators = new Decorators();
+    diagnosticCollection = vscode.languages.createDiagnosticCollection('atlasstack');
     const chatProvider = new ChatViewProvider(context.extensionUri, wsClient);
 
     // Register tree data provider
@@ -35,6 +37,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('atlasstack.refreshResults', () => analysisProvider.refresh()),
         vscode.commands.registerCommand('atlasstack.openChat', () => {
             vscode.commands.executeCommand('atlasstack.chat.focus');
+        }),
+        vscode.commands.registerCommand('atlasstack.search', async (query: string) => {
+            try {
+                const results = await analysisProvider.search(query);
+                chatProvider.postMessage({ type: 'searchResults', results });
+            } catch (error) {
+                vscode.window.showErrorMessage(`Search failed: ${error}`);
+            }
         })
     );
 
@@ -239,16 +249,34 @@ function setupRealTimeAnalysis(context: vscode.ExtensionContext) {
     let timeout: NodeJS.Timeout | undefined;
 
     vscode.workspace.onDidChangeTextDocument(
-        event => {
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-
-            timeout = setTimeout(() => {
+            timeout = setTimeout(async () => {
                 const editor = vscode.window.activeTextEditor;
                 if (editor && event.document === editor.document) {
-                    // Trigger lightweight analysis
-                    // analyzeFile();
+                    const content = event.document.getText();
+                    const language = event.document.languageId;
+                    
+                    try {
+                        const results = await analysisProvider.analyzeCode(content, language);
+                        if (results.findings) {
+                            const diagnostics: vscode.Diagnostic[] = results.findings.map((f: any) => {
+                                const range = new vscode.Range(
+                                    f.line - 1, 0,
+                                    f.line - 1, 100
+                                );
+                                const diagnostic = new vscode.Diagnostic(
+                                    range,
+                                    `[AtlasStack] ${f.message} (${f.severity})`,
+                                    f.severity === 'critical' || f.severity === 'high' 
+                                        ? vscode.DiagnosticSeverity.Error 
+                                        : vscode.DiagnosticSeverity.Warning
+                                );
+                                return diagnostic;
+                            });
+                            diagnosticCollection.set(event.document.uri, diagnostics);
+                        }
+                    } catch (e) {
+                        console.error('Real-time scan failed', e);
+                    }
                 }
             }, delay);
         },

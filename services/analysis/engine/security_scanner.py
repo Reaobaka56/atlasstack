@@ -35,6 +35,8 @@ class SecurityFinding:
     remediation: Optional[str] = None
     cwe_id: Optional[str] = None
     owasp_category: Optional[str] = None
+    exploit_poc: Optional[str] = None
+    ai_verified: bool = False
     references: List[str] = field(default_factory=list)
 
 
@@ -271,6 +273,23 @@ class SecurityScanner:
             files_scanned=1,
             rules_applied=len(self.custom_rules),
         )
+
+    async def verify_findings_with_ai(self, result: ScanResult, adapter: Any) -> ScanResult:
+        """Augment scan results with AI-driven verification and exploit PoCs"""
+        for finding in result.findings:
+            if finding.severity in ["critical", "high"]:
+                try:
+                    # Request AI verification for this specific snippet
+                    ai_result = await adapter.analyze(finding.code_snippet, finding.rule_id)
+                    if ai_result and ai_result.get("vulnerabilities"):
+                        # If AI confirms, mark as verified and add PoC
+                        finding.ai_verified = True
+                        finding.exploit_poc = ai_result["vulnerabilities"][0].get("exploit_poc")
+                        finding.message = ai_result["vulnerabilities"][0].get("description", finding.message)
+                except Exception as e:
+                    logger.warning(f"AI verification failed for finding {finding.rule_id}: {e}")
+        
+        return result
 
     def scan_directory(
         self, directory: str, include_patterns: Optional[List[str]] = None

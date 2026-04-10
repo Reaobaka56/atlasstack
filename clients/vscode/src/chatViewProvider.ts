@@ -24,10 +24,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage(data => {
+        webviewView.webview.onDidReceiveMessage(async data => {
             switch (data.type) {
                 case 'sendMessage': {
                     this._wsClient.sendChatMessage(data.value);
+                    break;
+                }
+                case 'searchCode': {
+                    // This will be handled in the extension.ts or passed back
+                    vscode.commands.executeCommand('atlasstack.search', data.value);
+                    break;
+                }
+                case 'openFile': {
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(data.path));
+                    await vscode.window.showTextDocument(doc);
                     break;
                 }
             }
@@ -39,10 +49,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
-        const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
-        const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css'));
+    public postMessage(message: any) {
+        this._view?.webview.postMessage(message);
+    }
 
+    private _getHtmlForWebview(webview: vscode.Webview) {
         return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -52,12 +63,47 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 					body {
 						background-color: #0d1117;
 						color: #e6edf3;
-						padding: 20px;
+						padding: 0;
 						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 						display: flex;
 						flex-direction: column;
 						height: 100vh;
 						margin: 0;
+					}
+
+					.tabs {
+						display: flex;
+						background: rgba(255, 255, 255, 0.02);
+						border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+						padding: 0 10px;
+					}
+
+					.tab {
+						padding: 12px 16px;
+						font-size: 11px;
+						font-weight: 800;
+						text-transform: uppercase;
+						letter-spacing: 0.1em;
+						cursor: pointer;
+						color: #8b949e;
+						transition: all 0.2s;
+					}
+
+					.tab.active {
+						color: #fff;
+						border-bottom: 2px solid #fff;
+					}
+
+					.content-pane {
+						display: none;
+						flex: 1;
+						flex-direction: column;
+						padding: 16px;
+						overflow: hidden;
+					}
+
+					.content-pane.active {
+						display: flex;
 					}
 
 					.chat-container {
@@ -66,8 +112,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 						display: flex;
 						flex-direction: column;
 						gap: 16px;
-						margin-bottom: 20px;
-						padding-right: 8px;
+						margin-bottom: 12px;
 					}
 
 					.message {
@@ -75,7 +120,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 						border-radius: 12px;
 						max-width: 90%;
 						line-height: 1.5;
-						font-size: 13px;
+						font-size: 12px;
 						animation: fadeIn 0.3s ease-out;
 					}
 
@@ -98,122 +143,169 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 						border: 1px solid rgba(192, 192, 192, 0.1);
 						color: #c9d1d9;
 						border-bottom-left-radius: 4px;
-						box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+					}
+
+					.search-container {
+						display: flex;
+						flex-direction: column;
+						gap: 12px;
+						height: 100%;
 					}
 
 					.input-container {
 						background: rgba(255, 255, 255, 0.03);
 						border: 1px solid rgba(255, 255, 255, 0.1);
-						border-radius: 16px;
-						padding: 8px;
+						border-radius: 12px;
+						padding: 6px;
 						display: flex;
-						gap: 8px;
-						backdrop-filter: blur(10px);
+						gap: 6px;
 					}
 
-					textarea {
+					textarea, input {
 						flex: 1;
 						background: transparent;
 						border: none;
 						color: #fff;
-						padding: 10px;
-						resize: none;
+						padding: 8px;
 						font-family: inherit;
-						font-size: 13px;
-						max-height: 120px;
+						font-size: 12px;
 					}
 
-					textarea:focus {
-						outline: none;
-					}
+					textarea:focus, input:focus { outline: none; }
 
 					button {
 						background: #fff;
 						color: #000;
 						border: none;
-						padding: 0 16px;
-						border-radius: 12px;
+						padding: 0 12px;
+						border-radius: 8px;
 						cursor: pointer;
 						font-weight: 700;
-						transition: all 0.2s;
-						font-size: 12px;
-					}
-
-					button:hover {
-						background: #e6e6e6;
-						transform: scale(1.02);
-					}
-
-					button:active {
-						transform: scale(0.98);
-					}
-
-					.typing-indicator {
 						font-size: 11px;
-						color: #8b949e;
-						margin-left: 8px;
-						display: none;
 					}
 
-					/* Custom Scrollbar */
+					.results-container {
+						flex: 1;
+						overflow-y: auto;
+						display: flex;
+						flex-direction: column;
+						gap: 8px;
+						margin-top: 10px;
+					}
+
+					.result-card {
+						background: rgba(255,255,255,0.02);
+						border: 1px solid rgba(255,255,255,0.05);
+						padding: 10px;
+						border-radius: 8px;
+						cursor: pointer;
+						transition: all 0.2s;
+					}
+
+					.result-card:hover {
+						background: rgba(255,255,255,0.05);
+						border-color: rgba(255,255,255,0.1);
+					}
+
+					.result-title { font-weight: 800; font-size: 11px; color: #fff; margin-bottom: 4px; }
+					.result-path { font-size: 10px; color: #8b949e; font-family: monospace; }
+
 					::-webkit-scrollbar { width: 4px; }
-					::-webkit-scrollbar-track { background: transparent; }
 					::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 				</style>
 			</head>
 			<body>
-				<div class="chat-container" id="chat">
-					<div class="message ai-message">
-						Hello! I'm your AtlasStack AI architect. How can I help you today?
+				<div class="tabs">
+					<div class="tab active" data-tab="chat-pane">Chat</div>
+					<div class="tab" data-tab="intel-pane">Intelligence</div>
+				</div>
+
+				<div id="chat-pane" class="content-pane active">
+					<div class="chat-container" id="chat">
+						<div class="message ai-message">How can I help you today?</div>
+					</div>
+					<div class="input-container">
+						<textarea id="prompt" placeholder="Ask AI Architect..." rows="1"></textarea>
+						<button id="send">Send</button>
 					</div>
 				</div>
-				
-				<div class="typing-indicator" id="typing">AI is scanning...</div>
 
-				<div class="input-container">
-					<textarea id="prompt" placeholder="Ask anything about your code..." rows="1"></textarea>
-					<button id="send">Send</button>
+				<div id="intel-pane" class="content-pane">
+					<div class="search-container">
+						<div class="input-container">
+							<input id="search-input" placeholder="Semantic search code..." />
+							<button id="search-btn">Search</button>
+						</div>
+						<div class="results-container" id="results">
+							<div style="text-align:center; color:#8b949e; font-size:10px; margin-top:20px;">
+								Search for components, logic, or vulnerabilities.
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<script>
 					const vscode = acquireVsCodeApi();
+					
+					// Tab Logic
+					document.querySelectorAll('.tab').forEach(tab => {
+						tab.addEventListener('click', () => {
+							document.querySelectorAll('.tab, .content-pane').forEach(el => el.classList.remove('active'));
+							tab.classList.add('active');
+							document.getElementById(tab.dataset.tab).classList.add('active');
+						});
+					});
+
+					// Chat Logic
 					const chat = document.getElementById('chat');
 					const prompt = document.getElementById('prompt');
 					const send = document.getElementById('send');
-					const typing = document.getElementById('typing');
-
-					function addMessage(text, type) {
-						const div = document.createElement('div');
-						div.className = 'message ' + type + '-message';
-						div.innerText = text;
-						chat.appendChild(div);
-						chat.scrollTop = chat.scrollHeight;
-					}
 
 					send.addEventListener('click', () => {
 						const text = prompt.value.trim();
 						if (text) {
-							addMessage(text, 'user');
+							const div = document.createElement('div');
+							div.className = 'message user-message';
+							div.innerText = text;
+							chat.appendChild(div);
 							vscode.postMessage({ type: 'sendMessage', value: text });
 							prompt.value = '';
-							typing.style.display = 'block';
 						}
 					});
 
-					prompt.addEventListener('keydown', (e) => {
-						if (e.key === 'Enter' && !e.shiftKey) {
-							e.preventDefault();
-							send.click();
+					// Search Logic
+					const searchInput = document.getElementById('search-input');
+					const searchBtn = document.getElementById('search-btn');
+					const results = document.getElementById('results');
+
+					searchBtn.addEventListener('click', () => {
+						const text = searchInput.value.trim();
+						if (text) {
+							results.innerHTML = '<div style="text-align:center; font-size:10px; color:#8b949e;">Scanning vector space...</div>';
+							vscode.postMessage({ type: 'searchCode', value: text });
 						}
 					});
 
 					window.addEventListener('message', event => {
 						const message = event.data;
-						switch (message.type) {
-							case 'addResponse':
-								typing.style.display = 'none';
-								addMessage(message.value, 'ai');
-								break;
+						if (message.type === 'addResponse') {
+							const div = document.createElement('div');
+							div.className = 'message ai-message';
+							div.innerText = message.value;
+							chat.appendChild(div);
+							chat.scrollTop = chat.scrollHeight;
+						} else if (message.type === 'searchResults') {
+							results.innerHTML = '';
+							if (message.results.length === 0) {
+								results.innerHTML = '<div style="text-align:center; font-size:10px; color:#8b949e;">No results found.</div>';
+							}
+							message.results.forEach(res => {
+								const card = document.createElement('div');
+								card.className = 'result-card';
+								card.innerHTML = \`<div class="result-title">\${res.name}</div><div class="result-path">\${res.file_path}</div>\`;
+								card.onclick = () => vscode.postMessage({ type: 'openFile', path: res.file_path });
+								results.appendChild(card);
+							});
 						}
 					});
 				</script>

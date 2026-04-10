@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from datetime import datetime
 from core.database import get_db, AnalysisRecord
+from core.github_client import get_github_client
 from middleware.auth import PermissionChecker
 
 logger = structlog.get_logger()
@@ -51,6 +52,13 @@ class MVPAnalysisResponse(BaseModel):
     health_score: int
     dependencies: list
     tech_stack: dict
+    architecture: Optional[dict] = None
+    security_report: Optional[dict] = None
+    tech_debt_score: int = 0
+    maturity_level: str = "Unknown"
+    forecast: Optional[dict] = None # Predicted maintenance cost
+    security_report: Optional[dict] = None
+    architecture: Optional[dict] = None
 
 
 class Finding(BaseModel):
@@ -143,6 +151,9 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
     import git
     import json
     import re
+    from services.analysis.engine.architecture_mapper import get_mapper
+    from services.analysis.engine.dependency_analyzer import get_dependency_analyzer
+    from services.analysis.engine.security_scanner import get_scanner
 
     analysis_id = str(uuid.uuid4())
     # Extract user from request state if authenticated
@@ -273,12 +284,55 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             json_str = content
             
         result_json = json.loads(json_str)
+        
+        # --- PHASE 1 ENHANCEMENTS ---
+        # 1. Architecture Mapping
+        mapper = get_mapper()
+        arch_data = mapper.map_repository(temp_dir)
+        result_json["architecture"] = arch_data
+        
+        # 2. Dependency Risk Analysis
+        dep_analyzer = get_dependency_analyzer()
+        deps = dep_analyzer.scan_project(temp_dir)
+        result_json["security_report"] = {
+            "dependencies": [ {
+                "name": d.name, 
+                "version": d.version, 
+                "risk_score": d.risk_score,
+                "risk_factors": d.risk_factors,
+                "vulnerabilities": d.vulnerabilities
+            } for d in deps ],
+            "overall_risk": sum(d.risk_score for d in deps) / len(deps) if deps else 0
+        }
+        
+        # 4. Tech Debt & Maturity (Hybrid Calculation)
+        # Formula: Base from AI health score, adjusted by count of real vulns and fixes
+        vuln_count = len(result_json.get("security_report", {}).get("dependencies", []))
+        fix_count = len(result_json.get("fixes", []))
+        
+        # Tech Debt Score (0-100, 100 is worst)
+        # We invert health score and add penalties
+        base_debt = 100 - result_json.get("health_score", 50)
+        penalty = (vuln_count * 5) + (fix_count * 2)
+        tech_debt_score = min(100, base_debt + penalty)
+        
+        # Maturity Level
+        if tech_debt_score < 20: maturity = "Elite"
+        elif tech_debt_score < 40: maturity = "Standard"
+        elif tech_debt_score < 70: maturity = "Legacy"
+        else: maturity = "Critical Debt"
+        
+        result_json["tech_debt_score"] = tech_debt_score
+        result_json["maturity_level"] = maturity
+        
         parsed = MVPAnalysisResponse(**result_json)
 
         # Persist result to DB
         if request.save_result:
             record.status = "completed"
             record.health_score = parsed.health_score
+            record.tech_debt_score = parsed.tech_debt_score
+            record.maturity_level = parsed.maturity_level
             record.summary = parsed.explanation.get("summary", "") if isinstance(parsed.explanation, dict) else ""
             record.eli5_summary = parsed.explanation.get("eli5_summary", "") if isinstance(parsed.explanation, dict) else ""
             record.tech_stack = parsed.tech_stack if isinstance(parsed.tech_stack, dict) else {}
@@ -287,6 +341,8 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             record.dependencies = parsed.dependencies
             record.errors = parsed.errors
             record.run_steps = parsed.run_steps
+            record.architecture = parsed.architecture
+            record.security_report = parsed.security_report
             record.completed_at = datetime.utcnow()
             await db.commit()
 
@@ -507,6 +563,8 @@ async def get_analysis_detail(
         "repo_url": record.repo_url,
         "status": record.status,
         "health_score": record.health_score,
+        "tech_debt_score": getattr(record, "tech_debt_score", 0),
+        "maturity_level": getattr(record, "maturity_level", "Unknown"),
         "explanation": {"summary": record.summary, "eli5_summary": record.eli5_summary},
         "tech_stack": record.tech_stack,
         "important_files": record.important_files,
@@ -514,9 +572,47 @@ async def get_analysis_detail(
         "dependencies": record.dependencies,
         "errors": record.errors,
         "run_steps": record.run_steps,
+        "architecture": getattr(record, "architecture", {}),
+        "security_report": getattr(record, "security_report", {}),
         "created_at": record.created_at.isoformat(),
         "completed_at": record.completed_at.isoformat() if record.completed_at else None,
     }
+
+@router.post("/analyses/{analysis_id}/fixes/{fix_index}/pr")
+async def create_fix_pr(
+    analysis_id: str,
+    fix_index: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(PermissionChecker(["user"])),
+):
+    """Trigger a GitHub PR for a specific fix."""
+    from sqlalchemy import select
+    result = await db.execute(
+        select(AnalysisRecord).where(
+            AnalysisRecord.id == analysis_id,
+            AnalysisRecord.user_id == current_user["id"]
+        )
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    if not record.fixes or fix_index >= len(record.fixes):
+        raise HTTPException(status_code=404, detail="Fix index out of range")
+
+    fix = record.fixes[fix_index]
+    github = get_github_client()
+    
+    try:
+        pr_result = await github.create_pr(record.repo_url, fix)
+        return {
+            "status": "success",
+            "pr_url": pr_result.get("html_url"),
+            "pr_number": pr_result.get("number")
+        }
+    except Exception as e:
+        logger.error("PR failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to create PR: {str(e)}")
 
 
 @router.post("/analysis/{analysis_id}/regenerate")
@@ -585,24 +681,56 @@ async def list_analysis_rules(
     return {"rules": rules, "total": len(rules)}
 
 
-@router.get("/languages")
-async def supported_languages(
+@router.post("/search")
+async def search_workspace(
+    query: str = Query(..., min_length=1),
     current_user: dict = Depends(PermissionChecker(["user"])),
 ):
-    """Get list of supported programming languages"""
-    return {
-        "languages": [
-            {"id": "python", "name": "Python", "extensions": [".py"]},
-            {"id": "javascript", "name": "JavaScript", "extensions": [".js", ".jsx"]},
-            {"id": "typescript", "name": "TypeScript", "extensions": [".ts", ".tsx"]},
-            {"id": "java", "name": "Java", "extensions": [".java"]},
-            {"id": "go", "name": "Go", "extensions": [".go"]},
-            {"id": "rust", "name": "Rust", "extensions": [".rs"]},
-            {"id": "cpp", "name": "C++", "extensions": [".cpp", ".cc", ".hpp"]},
-            {"id": "c", "name": "C", "extensions": [".c", ".h"]},
-            {"id": "csharp", "name": "C#", "extensions": [".cs"]},
-            {"id": "php", "name": "PHP", "extensions": [".php"]},
-            {"id": "ruby", "name": "Ruby", "extensions": [".rb"]},
-            {"id": "swift", "name": "Swift", "extensions": [".swift"]},
-        ]
+    """Semantic code search across the workspace."""
+    import httpx
+    from core.config import settings
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                f"{settings.KNOWLEDGE_SERVICE_URL}/api/v1/search",
+                json={"query": query, "search_type": "hybrid", "limit": 10}
+            )
+            res.raise_for_status()
+            return res.json()
+    except Exception as e:
+        logger.error("Search failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Search service currently unavailable")
+
+
+@router.get("/analyses/{analysis_id}/forecast")
+async def get_debt_forecast(
+    analysis_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(PermissionChecker(["user"])),
+):
+    """Predict future technical debt growth."""
+    from sqlalchemy import select
+    result = await db.execute(
+        select(AnalysisRecord).where(
+            AnalysisRecord.id == analysis_id,
+            AnalysisRecord.user_id == current_user["id"]
+        )
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    # Forecasting Algorithm:
+    # Maintenance Interest = (Critical Vulns * 2) + (Total Files / 10)
+    vuln_impact = len(record.security_report.get("dependencies", [])) * 2 if record.security_report else 0
+    complexity_impact = len(record.important_files) * 0.5 if record.important_files else 0
+    
+    forecast = {
+        "current_debt_hours": record.tech_debt_score * 4, # 4h per debt point
+        "interest_rate_monthly": f"{min(15, vuln_impact + complexity_impact)}%",
+        "predicted_debt_12m": record.tech_debt_score * 4 * 1.5,
+        "critical_files_decay": [f["path"] for f in (record.important_files or [])[:3]]
     }
+    
+    return forecast

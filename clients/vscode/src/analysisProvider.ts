@@ -109,6 +109,31 @@ export class AnalysisProvider implements vscode.TreeDataProvider<AnalysisItem> {
         return response.data;
     }
 
+    async search(query: string): Promise<any[]> {
+        const config = vscode.workspace.getConfiguration('atlasstack');
+        const serverUrl = config.get<string>('serverUrl');
+        const apiKey = config.get<string>('apiKey');
+
+        if (!serverUrl) {
+            throw new Error('AtlasStack server URL not configured');
+        }
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const response = await axios.post<any[]>(
+            `${serverUrl}/api/v1/search?query=${encodeURIComponent(query)}`,
+            {},
+            { headers }
+        );
+
+        return response.data;
+    }
+
     getFindings(): Finding[] {
         return this.findings;
     }

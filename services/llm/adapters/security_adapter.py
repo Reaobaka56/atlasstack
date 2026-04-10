@@ -17,37 +17,42 @@ logger = structlog.get_logger()
 class SecurityAdapter(BaseAdapter):
     """Adapter for security analysis tasks"""
 
-    SYSTEM_PROMPT = """You are a security expert analyzing code for vulnerabilities.
-Your task is to identify security issues and provide actionable recommendations.
-Be specific about the vulnerability type, location, and remediation steps."""
+    SYSTEM_PROMPT = """You are a senior security researcher and exploit developer.
+Your task is to identify deep, non-obvious security vulnerabilities in the provided code.
+You must distinguish between generic linting warnings and real, exploitable bugs.
+Every finding must include a CWE ID, an OWASP Top 10 (2021) category, and a Proof-of-Concept (PoC) exploit scenario where applicable."""
 
     async def analyze(self, code: str, language: str) -> dict:
-        """Analyze code for security vulnerabilities"""
-        prompt = f"""Analyze the following {language} code for security vulnerabilities:
+        """Analyze code for security vulnerabilities with high-confidence AI verification"""
+        prompt = f"""Perform a deep security audit of the following {language} code.
+Focus on actual exploitable vulnerabilities rather than style issues.
 
 ```{language}
 {code}
 ```
 
-Identify any security issues and provide:
-1. Vulnerability type (e.g., SQL injection, XSS, command injection)
-2. Severity (Critical, High, Medium, Low)
-3. Line numbers where the issue occurs
-4. Explanation of the vulnerability
-5. Suggested fix with code example
+For every vulnerability found, provide:
+1. Vulnerability type and CWE ID (e.g., SQL Injection - CWE-89)
+2. OWASP Top 10 (2021) Category
+3. Severity (Critical, High, Medium, Low)
+4. Exploit Scenario / PoC: Describe exactly how an attacker could exploit this.
+5. Mitigation: Provide the secure code implementation.
 
 Format your response as JSON:
 {{
     "vulnerabilities": [
         {{
             "type": "vulnerability type",
+            "cwe_id": "CWE-XXX",
+            "owasp_category": "AXX:2021",
             "severity": "severity level",
-            "line": line number,
-            "description": "explanation",
-            "fix": "suggested fix"
+            "description": "detailed technical explanation",
+            "exploit_poc": "step-by-step exploit scenario",
+            "render_poc": true/false (if it's a visual vuln like XSS),
+            "fix": "complete secure code replacement"
         }}
     ],
-    "summary": "brief summary"
+    "summary": "executive summary of the security posture"
 }}"""
 
         try:
