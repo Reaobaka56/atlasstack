@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Any
 
 import structlog
-from engine.ast_parser import ASTParser, get_parser, ParsedFile
+from services.analysis.engine.ast_parser import ASTParser, get_parser, ParsedFile
 
 logger = structlog.get_logger()
 
@@ -155,6 +155,12 @@ class ArchitectureMapper:
             return primary_module
         return None
 
+    def _generate_mermaid(self, nodes: Dict[str, ServiceNode], interactions: List[Interaction]) -> str:
+        lines = ["graph TD"]
+        for node in nodes.values():
+            lines.append(f"    {node.id}[{node.name}]")
+        for i in interactions:
+            lines.append(f"    {i.source_id} --> {i.target_id}")
         return "\n".join(lines)
 
     def calculate_impact(self, changed_files: List[str], nodes: Dict[str, ServiceNode], interactions: List[Interaction]) -> Dict[str, Any]:

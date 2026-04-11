@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import structlog
 
-from engine.ast_parser import get_parser, ParsedFile
+from services.analysis.engine.ast_parser import get_parser, ParsedFile
 
 logger = structlog.get_logger()
 

@@ -8,11 +8,11 @@ import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import structlog
 
-from engine.ast_parser import ASTParser, get_parser, ParsedFile
+from services.analysis.engine.ast_parser import ASTParser, get_parser, ParsedFile
 
 logger = structlog.get_logger()
 

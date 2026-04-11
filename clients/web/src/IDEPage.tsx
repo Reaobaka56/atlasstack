@@ -767,7 +767,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                   {mvpData.security_report && (
                     <div className="liquid-glass p-8 rounded-[2.5rem] border-red-500/10 bg-red-500/[0.02] shadow-xl">
                       <h3 className="text-xs font-black text-red-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                        <Shield className="w-5 h-5" /> Supply Chain Security
+                        <ShieldCheck className="w-5 h-5" /> Supply Chain Security
                       </h3>
                       
                       <div className="grid grid-cols-2 gap-4 mb-8">

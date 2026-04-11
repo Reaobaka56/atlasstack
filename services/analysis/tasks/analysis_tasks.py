@@ -13,10 +13,10 @@ from celery.exceptions import MaxRetriesExceededError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.config import settings
-from engine.ast_parser import get_parser
-from engine.performance_analyzer import get_analyzer
-from engine.security_scanner import get_scanner
-from engine.taint_analysis import get_taint_analyzer
+from services.analysis.engine.ast_parser import get_parser
+from services.analysis.engine.performance_analyzer import get_analyzer
+from services.analysis.engine.security_scanner import get_scanner
+from services.analysis.engine.taint_analysis import get_taint_analyzer
 
 logger = structlog.get_logger()
 
