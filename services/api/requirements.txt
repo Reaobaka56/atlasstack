@@ -6,6 +6,7 @@ python-socketio==5.11.0
 
 # Database
 sqlalchemy==2.0.25
+aiosqlite==0.20.0
 
 alembic==1.13.1
 redis==5.0.1
