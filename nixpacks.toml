@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python311", "git"]
+
+[phases.install]
+cmds = ["pip install -r services/api/requirements.txt"]
+
+[start]
+cmd = "python test_app2.py"

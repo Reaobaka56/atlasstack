@@ -50,7 +50,9 @@ async def catch_exceptions_middleware(request: Request, call_next):
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting AtlasStack in Lite Mode...")
-    print("API docs: http://localhost:8005/docs")
-    print("Health:   http://localhost:8005/health")
-    uvicorn.run(app, host="0.0.0.0", port=8005, reload=False)
+    import os
+    port = int(os.environ.get("PORT", 8005))
+    print(f"Starting AtlasStack in Lite Mode on port {port}...")
+    print(f"API docs: http://localhost:{port}/docs")
+    print(f"Health:   http://localhost:{port}/health")
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=False)
