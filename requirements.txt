@@ -1,0 +1,6 @@
+-r services/api/requirements.txt
+-r services/analysis/requirements.txt
+tree-sitter
+tree-sitter-python
+tree-sitter-javascript
+tree-sitter-typescript
