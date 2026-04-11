@@ -1,8 +1,19 @@
+providers = ["python"]
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.11"
+
 [phases.setup]
-nixPkgs = ["python311", "git"]
+nixPkgs = ["python311", "gcc", "git"]
 
 [phases.install]
-cmds = ["pip install -r services/api/requirements.txt"]
+cmds = [
+    "python -m venv /opt/venv",
+    "/opt/venv/bin/pip install --upgrade pip",
+    "/opt/venv/bin/pip install -r services/api/requirements.txt",
+    "/opt/venv/bin/pip install -r services/analysis/requirements.txt",
+    "/opt/venv/bin/pip install tree-sitter tree-sitter-python tree-sitter-javascript tree-sitter-typescript"
+]
 
 [start]
-cmd = "python test_app2.py"
+cmd = "/opt/venv/bin/python test_app2.py"

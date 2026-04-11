@@ -16,7 +16,7 @@ const ATLAS_MOCK_GRAPH = {
   score: 100,
   nodes: [
     { id: "web", label: "Dashboard", sub: "React/Vite", layer: "client", risk: false, info: "AtlasStack UI Client" },
-    { id: "vscode", label: "IDE Plugin", sub: "Extension", layer: "client", risk: false, info: "CodeSage VSCode Extension" },
+    { id: "vscode", label: "IDE Plugin", sub: "Extension", layer: "client", risk: false, info: "AtlasStack VSCode Extension" },
     { id: "kong", label: "API Gateway", sub: "Kong", layer: "infra", risk: false, info: "Rate Limiting & Routing" },
     { id: "api", label: "Core API", sub: "FastAPI", layer: "core", risk: false, info: "Primary backend service" },
     { id: "worker", label: "Analyzer", sub: "Celery", layer: "core", risk: false, info: "Async security scanner" },
