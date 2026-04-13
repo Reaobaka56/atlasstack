@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,8 @@ import {
   X,
   ArrowLeft,
   GitBranch,
-  Play
+  Play,
+  KeyRound
 } from 'lucide-react';
 
 // --- Constants & API Config ---
@@ -60,7 +61,7 @@ interface Feature {
   icon: React.ReactNode;
 }
 
-type Page = 'landing' | 'login' | 'ide' | 'dashboard';
+type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset';
 
 // --- Components ---
 
@@ -147,12 +148,17 @@ const FeatureCard = ({ feature }: { feature: Feature; key?: React.Key }) => (
   </motion.div>
 );
 
-const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onLoginSuccess: (token: string) => void, apiUrl: string, key?: React.Key }) => {
+const LoginPage = ({ onBack, onLoginSuccess, apiUrl, initialResetToken }: { onBack: () => void, onLoginSuccess: (token: string) => void, apiUrl: string, initialResetToken?: string | null, key?: React.Key }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'otp' | 'reset'>(initialResetToken ? 'reset' : 'login');
   const [isError, setIsError] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(initialResetToken || null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +185,123 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onL
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatusMessage("Sending verification code...");
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      await res.json();
+      setMode('otp');
+      setStatusMessage(null);
+    } catch (err: any) {
+      setIsError(true);
+      setStatusMessage(`Error: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOTPChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      const digits = value.replace(/\D/g, '').slice(0, 6).split('');
+      const newOtp = [...otpDigits];
+      digits.forEach((d, i) => { if (i + index < 6) newOtp[i + index] = d; });
+      setOtpDigits(newOtp);
+      const nextIdx = Math.min(index + digits.length, 5);
+      document.getElementById(`otp-${nextIdx}`)?.focus();
+      return;
+    }
+    if (value && !/^\d$/.test(value)) return;
+    const newOtp = [...otpDigits];
+    newOtp[index] = value;
+    setOtpDigits(newOtp);
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleOTPKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const otp = otpDigits.join('');
+    if (otp.length !== 6) {
+      setIsError(true);
+      setStatusMessage("Please enter the complete 6-digit code.");
+      return;
+    }
+    setStatusMessage("Verifying code...");
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        throw new Error(payload.detail || "Verification failed");
+      }
+      setResetToken(payload.reset_token);
+      setMode('reset');
+      setStatusMessage(null);
+    } catch (err: any) {
+      setIsError(true);
+      setStatusMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setIsError(true);
+      setStatusMessage("Passwords do not match.");
+      return;
+    }
+    setStatusMessage("Resetting password...");
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: resetToken, new_password: newPassword }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        throw new Error(payload.detail || "Reset failed");
+      }
+      setStatusMessage("Password reset successfully! Redirecting to sign in...");
+      setTimeout(() => { setMode('login'); setStatusMessage(null); }, 2000);
+    } catch (err: any) {
+      setIsError(true);
+      setStatusMessage(`Reset failed: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const backAction = () => {
+    setStatusMessage(null);
+    if (mode === 'otp') setMode('forgot');
+    else if (mode === 'reset' && !initialResetToken) setMode('otp');
+    else if (mode === 'forgot') setMode('login');
+    else onBack();
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -188,81 +311,228 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl }: { onBack: () => void, onL
     >
       <div className="w-full max-w-lg">
         <button 
-          onClick={onBack}
+          onClick={backAction}
           className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-12 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to platform
+          {mode === 'login' || mode === 'register' ? 'Back to platform' : 'Back'}
         </button>
         
         <div className="liquid-glass p-12 rounded-[3rem] border-white/5 shadow-2xl">
-          {/* Tab switcher */}
-          <div className="flex mb-10 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
-            <button type="button" onClick={() => setMode('login')} className={`flex-1 py-3 text-sm font-bold transition-colors ${mode === 'login' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Sign In</button>
-            <button type="button" onClick={() => setMode('register')} className={`flex-1 py-3 text-sm font-bold transition-colors ${mode === 'register' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Register</button>
-          </div>
-          <h2 className="text-4xl mb-2 metallic-text">{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
-          <p className="text-slate-500 mb-10">{mode === 'login' ? 'Enter your credentials to access the analysis engine.' : 'Create a free account to save your analyses.'}</p>
-          
-          <form onSubmit={handleLogin} className="space-y-8">
-            <div className="space-y-3">
-              <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                <input 
-                  type="email" 
-                  className="input-field pl-16" 
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+          {/* --- Forgot Password Mode: Email entry --- */}
+          {mode === 'forgot' && (
+            <>
+              <div className="w-16 h-16 rounded-2xl mb-8 flex items-center justify-center bg-white/5 text-white border border-white/10 mx-auto">
+                <Mail className="w-8 h-8" />
               </div>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                <input 
-                  type="password" 
-                  className="input-field pl-16" 
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+              <h2 className="text-4xl mb-2 metallic-text text-center">Forgot Password</h2>
+              <p className="text-slate-500 mb-10 text-center">Enter your email and we'll send you a 6-digit verification code.</p>
+              <form onSubmit={handleForgotPassword} className="space-y-8">
+                <div className="space-y-3">
+                  <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                    <input 
+                      type="email" 
+                      className="input-field pl-16" 
+                      placeholder="name@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={isLoading} className="btn-primary w-full py-5 text-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  {isLoading ? <><div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Sending...</> : 'Send Verification Code'}
+                </button>
+                {statusMessage && (
+                  <p className={`text-sm text-center ${isError ? "text-red-400 animate-pulse" : "text-emerald-400"}`}>{statusMessage}</p>
+                )}
+              </form>
+            </>
+          )}
+
+          {/* --- OTP Verification Mode --- */}
+          {mode === 'otp' && (
+            <>
+              <div className="w-16 h-16 rounded-2xl mb-8 flex items-center justify-center bg-white/5 text-white border border-white/10 mx-auto">
+                <KeyRound className="w-8 h-8" />
               </div>
-            </div>
-            
-            <button 
-              type="button" 
-              onClick={async () => {
-                try {
-                  const res = await fetch(`${apiUrl}/api/v1/auth/github/login`);
-                  const data = await res.json();
-                  if (data.url) {
-                    window.location.href = data.url;
-                  } else {
-                    alert('GitHub OAuth not configured. Check GITHUB_CLIENT_ID in .env');
-                  }
-                } catch (e) {
-                  alert('Cannot reach backend. Make sure the API is running at ' + apiUrl);
-                }
-              }}
-              className="w-full py-5 text-lg font-bold bg-[#24292e] text-white rounded-2xl hover:bg-[#2f363d] transition-colors flex items-center justify-center gap-3 border border-white/10"
-            >
-              <Github className="w-6 h-6" /> Continue with GitHub
-            </button>
-            <button type="submit" className="btn-primary w-full py-5 text-lg">{mode === 'login' ? 'Sign In with Email' : 'Create Account'}</button>
-            {statusMessage && (
-              <p className={`text-sm text-center animate-pulse ${isError ? "text-red-400" : "text-slate-500"}`}>{statusMessage}</p>
-            )}
-          </form>
+              <h2 className="text-4xl mb-2 metallic-text text-center">Enter Code</h2>
+              <p className="text-slate-500 mb-3 text-center">We sent a 6-digit code to</p>
+              <p className="text-white font-bold text-center mb-10 text-sm">{email}</p>
+              <form onSubmit={handleVerifyOTP} className="space-y-8">
+                <div className="flex justify-center gap-3">
+                  {otpDigits.map((digit, i) => (
+                    <input
+                      key={i}
+                      id={`otp-${i}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={digit}
+                      onChange={(e) => handleOTPChange(i, e.target.value)}
+                      onKeyDown={(e) => handleOTPKeyDown(i, e)}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                        handleOTPChange(0, paste);
+                      }}
+                      className="w-14 h-16 text-center text-2xl font-bold bg-white/5 border border-white/10 rounded-2xl text-white focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all"
+                      autoFocus={i === 0}
+                    />
+                  ))}
+                </div>
+                <button type="submit" disabled={isLoading} className="btn-primary w-full py-5 text-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  {isLoading ? <><div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Verifying...</> : 'Verify Code'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => { setOtpDigits(['','','','','','']); setStatusMessage(null); handleForgotPassword(new Event('submit') as any); }}
+                  className="w-full text-center text-xs text-slate-500 hover:text-indigo-400 transition-colors uppercase tracking-[0.2em] font-bold"
+                >
+                  Resend Code
+                </button>
+                {statusMessage && (
+                  <p className={`text-sm text-center ${isError ? "text-red-400 animate-pulse" : "text-emerald-400"}`}>{statusMessage}</p>
+                )}
+              </form>
+            </>
+          )}
+
+          {/* --- Reset Password Mode --- */}
+          {mode === 'reset' && (
+            <>
+              <div className="w-16 h-16 rounded-2xl mb-8 flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h2 className="text-4xl mb-2 metallic-text text-center">New Password</h2>
+              <p className="text-slate-500 mb-10 text-center">Create a strong new password for your account.</p>
+              <form onSubmit={handleResetPassword} className="space-y-8">
+                <div className="space-y-3">
+                  <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">New Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                    <input 
+                      type="password" 
+                      className="input-field pl-16" 
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      minLength={8}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                    <input 
+                      type="password" 
+                      className="input-field pl-16" 
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      minLength={8}
+                      required
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={isLoading} className="btn-primary w-full py-5 text-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  {isLoading ? <><div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Resetting...</> : 'Reset Password'}
+                </button>
+                {statusMessage && (
+                  <p className={`text-sm text-center ${isError ? "text-red-400 animate-pulse" : "text-emerald-400"}`}>{statusMessage}</p>
+                )}
+              </form>
+            </>
+          )}
+
+          {/* --- Login / Register Mode --- */}
+          {(mode === 'login' || mode === 'register') && (
+            <>
+              {/* Tab switcher */}
+              <div className="flex mb-10 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                <button type="button" onClick={() => setMode('login')} className={`flex-1 py-3 text-sm font-bold transition-colors ${mode === 'login' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Sign In</button>
+                <button type="button" onClick={() => setMode('register')} className={`flex-1 py-3 text-sm font-bold transition-colors ${mode === 'register' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Register</button>
+              </div>
+              <h2 className="text-4xl mb-2 metallic-text">{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
+              <p className="text-slate-500 mb-10">{mode === 'login' ? 'Enter your credentials to access the analysis engine.' : 'Create a free account to save your analyses.'}</p>
+              
+              <form onSubmit={handleLogin} className="space-y-8">
+                <div className="space-y-3">
+                  <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                    <input 
+                      type="email" 
+                      className="input-field pl-16" 
+                      placeholder="name@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold ml-1">Password</label>
+                    {mode === 'login' && (
+                      <button 
+                        type="button" 
+                        onClick={() => { setStatusMessage(null); setMode('forgot'); }}
+                        className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors font-bold"
+                      >
+                        Forgot Password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                    <input 
+                      type="password" 
+                      className="input-field pl-16" 
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <button 
+                  type="button" 
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`${apiUrl}/api/v1/auth/github/login`);
+                      const data = await res.json();
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else {
+                        alert('GitHub OAuth not configured. Check GITHUB_CLIENT_ID in .env');
+                      }
+                    } catch (e) {
+                      alert('Cannot reach backend. Make sure the API is running at ' + apiUrl);
+                    }
+                  }}
+                  className="w-full py-5 text-lg font-bold bg-[#24292e] text-white rounded-2xl hover:bg-[#2f363d] transition-colors flex items-center justify-center gap-3 border border-white/10"
+                >
+                  <Github className="w-6 h-6" /> Continue with GitHub
+                </button>
+                <button type="submit" className="btn-primary w-full py-5 text-lg">{mode === 'login' ? 'Sign In with Email' : 'Create Account'}</button>
+                {statusMessage && (
+                  <p className={`text-sm text-center animate-pulse ${isError ? "text-red-400" : "text-slate-500"}`}>{statusMessage}</p>
+                )}
+              </form>
+            </>
+          )}
         </div>
       </div>
     </motion.div>
   );
 };
+
 
 const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro, setIsPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, setIsPro: (val: boolean) => void, key?: React.Key }) => {
   const [repoUrl, setRepoUrl] = useState('');
@@ -330,7 +600,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
 
   return (
     <div className="min-h-screen pt-32 pb-20 px-6 sm:px-10 lg:px-20 max-w-7xl mx-auto">
-      {/* Hero Section — Centered Cluely Style */}
+      {/* Hero Section â€” Centered Cluely Style */}
       <section className="text-center mb-32 flex flex-col items-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -361,7 +631,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           </div>
         </motion.div>
 
-        {/* Hero Visual — The Tool Preview */}
+        {/* Hero Visual â€” The Tool Preview */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -443,7 +713,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
         </motion.div>
       </section>
 
-      {/* Feature Grid — 2-Column Cluely Pattern */}
+      {/* Feature Grid â€” 2-Column Cluely Pattern */}
       <section className="py-48 space-y-32">
         <div className="text-center max-w-3xl mx-auto mb-20">
            <h2 className="text-4xl sm:text-6xl metallic-text font-display-bold mb-8">Engineering with <br/> superpowers.</h2>
@@ -580,7 +850,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           </p>
           {isPro && (
             <div className="mt-6 inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-5 py-2 rounded-full text-sm font-bold">
-              <CheckCircle2 className="w-4 h-4 text-indigo-400" /> You are on Pro (Test Mode) —
+              <CheckCircle2 className="w-4 h-4 text-indigo-400" /> You are on Pro (Test Mode) â€”
               <button onClick={() => { localStorage.removeItem('atlas_pro'); setIsPro(false); }} className="underline hover:no-underline text-indigo-400 ml-1">Disable</button>
             </div>
           )}
@@ -601,7 +871,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
               price: "$19",
               desc: "For serious developers who want to eliminate tech debt.",
               features: ["Unlimited Repositories", "Unlimited Scans", "Auto-Fix Patches", "GitHub PR Integration"],
-              button: isPro ? "✓ Pro Active" : "Test Pro Mode",
+              button: isPro ? "âœ“ Pro Active" : "Test Pro Mode",
               action: () => {
                 localStorage.setItem('atlas_pro', '1');
                 window.location.reload();
@@ -659,7 +929,7 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
       <section className="py-32 text-center border-t border-white/5">
         <h2 className="text-3xl metallic-text mb-6">Why I built AtlasStack</h2>
         <p className="text-lg text-silver-400 leading-relaxed italic mb-8 max-w-2xl mx-auto">
-          "I was tired of spending hours on routine engineering tasks—fixing low-level bugs, resolving tech debt, and updating dependencies. I wanted an autonomous engineer that could analyze a repository and submit PRs while my team focused on the hard problems. That's why I built AtlasStack."
+          "I was tired of spending hours on routine engineering tasksâ€”fixing low-level bugs, resolving tech debt, and updating dependencies. I wanted an autonomous engineer that could analyze a repository and submit PRs while my team focused on the hard problems. That's why I built AtlasStack."
         </p>
         <div className="text-white font-semibold text-lg">Reaobaka Mogajane</div>
         <div className="text-slate-500 text-sm mt-1 uppercase tracking-widest">Founder, AtlasStack</div>
@@ -716,10 +986,25 @@ export default function App() {
     localStorage.setItem(API_URL_STORAGE_KEY, normalized);
   }, [apiUrl]);
 
+  // Check for reset_token in URL params
+  const [resetToken, setResetToken] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('reset_token');
+  });
+
   useEffect(() => {
-    // Handle GitHub Auth Callback — GitHub redirects back to the frontend with ?code=...
+    // Handle GitHub Auth Callback â€” GitHub redirects back to the frontend with ?code=...
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
+    const resetTk = params.get("reset_token");
+
+    if (resetTk) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setResetToken(resetTk);
+      setCurrentPage('reset');
+      return;
+    }
+
     if (code) {
       window.history.replaceState({}, document.title, window.location.pathname);
       
@@ -810,14 +1095,22 @@ export default function App() {
             isPro={isPro}
             setIsPro={setIsPro}
           />
-        ) : (
+        ) : currentPage === 'login' ? (
           <LoginPage 
             key="login"
             onBack={() => setCurrentPage('landing')}
             onLoginSuccess={handleLoginSuccess}
             apiUrl={apiUrl}
           />
-        )}
+        ) : currentPage === 'reset' ? (
+          <LoginPage 
+            key="reset"
+            onBack={() => { setResetToken(null); setCurrentPage('login'); }}
+            onLoginSuccess={handleLoginSuccess}
+            apiUrl={apiUrl}
+            initialResetToken={resetToken}
+          />
+        ) : null}
       </AnimatePresence>
     </div>
   );

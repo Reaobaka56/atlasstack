@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     GITLAB_TOKEN: Optional[str] = None
     BITBUCKET_TOKEN: Optional[str] = None
 
+    # SMTP Settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@atlasstack.ai"
+
     # Monitoring
     OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = None
     PROMETHEUS_MULTIPROC_DIR: str = "/tmp"

@@ -5,16 +5,17 @@ Authentication endpoints - improved with real user persistence and password hash
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db, UserRecord
 from middleware.auth import (
-    create_access_token, create_refresh_token,
+    create_access_token, create_refresh_token, create_reset_token,
     hash_password, verify_password, verify_token
 )
+from utils.email import send_otp_email
 
 router = APIRouter()
 
@@ -135,6 +136,124 @@ async def get_me(db: AsyncSession = Depends(get_db), request=None):
     """Get current user info - handled via request.state.user in middleware."""
     # This is a placeholder; actual user extraction handled by PermissionChecker
     return {"message": "Use Authorization header to identify yourself"}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+
+# In-memory OTP store: { email: { "otp": str, "expires": float, "user_id": str } }
+import time
+import random
+import string
+
+_otp_store: dict[str, dict] = {}
+
+
+def _generate_otp() -> str:
+    """Generate a 6-digit numeric OTP."""
+    return ''.join(random.choices(string.digits, k=6))
+
+
+def _cleanup_expired_otps():
+    """Remove expired OTPs from the store."""
+    now = time.time()
+    expired = [k for k, v in _otp_store.items() if v["expires"] < now]
+    for k in expired:
+        del _otp_store[k]
+
+
+@router.post("/auth/forgot-password")
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a 6-digit OTP to the user's email for password reset verification."""
+    _cleanup_expired_otps()
+
+    result = await db.execute(select(UserRecord).where(UserRecord.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        otp = _generate_otp()
+        _otp_store[payload.email.lower()] = {
+            "otp": otp,
+            "expires": time.time() + 600,  # 10 minutes
+            "user_id": user.id,
+        }
+        background_tasks.add_task(send_otp_email, payload.email, otp)
+
+    # Always return success to prevent email enumeration
+    return {"message": "If an account with that email exists, a verification code has been sent."}
+
+
+@router.post("/auth/verify-otp")
+async def verify_otp(
+    payload: VerifyOTPRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify the 6-digit OTP and return a reset token if valid."""
+    _cleanup_expired_otps()
+
+    email_key = payload.email.lower()
+    stored = _otp_store.get(email_key)
+
+    if not stored:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code.",
+        )
+
+    if stored["otp"] != payload.otp.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect verification code.",
+        )
+
+    # OTP is valid — issue a reset token and remove the OTP
+    user_id = stored["user_id"]
+    del _otp_store[email_key]
+
+    reset_token = create_reset_token(user_id=user_id, email=payload.email)
+    return {"reset_token": reset_token, "message": "Code verified. You may now reset your password."}
+
+
+@router.post("/auth/reset-password")
+async def reset_password(
+    payload: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset password using a valid reset token (obtained after OTP verification)."""
+    decoded = verify_token(payload.token)
+    if not decoded or decoded.get("type") != "reset":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    user_id = decoded.get("sub")
+    result = await db.execute(select(UserRecord).where(UserRecord.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    user.hashed_password = hash_password(payload.new_password)
+    await db.commit()
+    return {"message": "Password has been reset successfully. You can now sign in."}
 
 
 class GithubAuthRequest(BaseModel):

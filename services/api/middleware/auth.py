@@ -63,6 +63,14 @@ def create_refresh_token(user_id: str) -> str:
     )
 
 
+def create_reset_token(user_id: str, email: str) -> str:
+    expire = datetime.utcnow() + timedelta(hours=1)
+    return jwt.encode(
+        {"sub": user_id, "email": email, "exp": expire, "iat": datetime.utcnow(), "type": "reset"},
+        settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM,
+    )
+
+
 def verify_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
@@ -119,6 +127,7 @@ PUBLIC_PATHS = {
     "/", "/health", "/ready", "/live", "/metrics",
     "/docs", "/redoc", "/openapi.json",
     "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh",
+    "/api/v1/auth/forgot-password", "/api/v1/auth/verify-otp", "/api/v1/auth/reset-password",
     "/api/v1/analysis/mvp",
 }
 
