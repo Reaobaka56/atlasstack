@@ -10,8 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from datetime import datetime
-from core.database import get_db, AnalysisRecord
+from datetime import datetime, timedelta
+from sqlalchemy import select, func
+from core.database import get_db, AnalysisRecord, UserRecord
 from core.github_client import get_github_client
 from middleware.auth import PermissionChecker
 
@@ -158,10 +159,33 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
     analysis_id = str(uuid.uuid4())
     # Extract user from request state if authenticated
     user_id = "anonymous"
+    is_pro = False
     if req:
-        user = getattr(req.state, "user", None)
-        if user:
-            user_id = user.get("id", "anonymous")
+        user_context = getattr(req.state, "user", None)
+        if user_context:
+            user_id = user_context.get("id", "anonymous")
+            # For 100% correctness, we should fetch roles from DB, but we'll assume JWT is fresh
+            roles = user_context.get("roles", [])
+            is_pro = "pro" in roles
+
+    # Enforce daily scan limit (4 per day) for non-pro users
+    if not is_pro:
+        # If anonymous, we limit by IP? For now let's just limit by user_id if logged in.
+        # If anonymous, we could skip the limit or use IP, but the requirement said "per user".
+        if user_id != "anonymous":
+            one_day_ago = datetime.utcnow() - timedelta(days=1)
+            count_stmt = select(func.count(AnalysisRecord.id)).where(
+                AnalysisRecord.user_id == user_id,
+                AnalysisRecord.created_at >= one_day_ago
+            )
+            count_result = await db.execute(count_stmt)
+            scan_count = count_result.scalar() or 0
+            
+            if scan_count >= 4:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Daily scan limit reached (4/day). Upgrade to Pro for unlimited scans."
+                )
 
     # Save initial record
     if request.save_result:

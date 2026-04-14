@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1018,7 +1018,7 @@ export default function App() {
         if (data.access_token) {
           localStorage.setItem(TOKEN_KEY, data.access_token);
           setToken(data.access_token);
-          setCurrentPage('landing'); // redirect to landing after login
+          setCurrentPage('dashboard'); // redirect to dashboard after login
         } else {
           console.error("GitHub OAuth failed:", data);
           alert(`GitHub login failed: ${data.detail || 'Unknown error'}`);
@@ -1033,7 +1033,7 @@ export default function App() {
 
   const handleLoginSuccess = (newToken: string) => {
     setToken(newToken);
-    setCurrentPage('landing');
+    setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {

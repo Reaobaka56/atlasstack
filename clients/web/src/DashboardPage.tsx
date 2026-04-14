@@ -5,8 +5,10 @@ import {
   Github, Plus, Zap, Shield, TrendingUp, AlertTriangle,
   CheckCircle2, Calendar, Activity, Star, ArrowLeft,
   Search, RefreshCw, ExternalLink, Cpu, FileCode2,
-  Menu, X as CloseIcon, LogOut
+  Menu, X as CloseIcon, LogOut,
+  MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
+import ArchitectureMap from './ArchitectureMap';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
@@ -114,6 +116,63 @@ export const DashboardPage = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tipIdx] = useState(() => Math.floor(Math.random() * TIPS.length));
 
+  // Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{role: 'user'|'ai', text: string}[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const webSocket = useRef<WebSocket | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Architecture Map State
+  const [selectedArchGraph, setSelectedArchGraph] = useState<any>(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isAiTyping]);
+
+  // WebSocket for Chat
+  useEffect(() => {
+    const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws';
+    const socket = new WebSocket(wsUrl);
+    webSocket.current = socket;
+
+    socket.onopen = () => console.log('Dashboard Chat Socket Connected');
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'chat_response') {
+          setIsAiTyping(false);
+          setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+        }
+      } catch (e) {
+        console.error('WS Error:', e);
+      }
+    };
+    socket.onclose = () => console.log('Dashboard Chat Socket Disconnected');
+
+    return () => socket.close();
+  }, [apiUrl]);
+
+  const handleSendChat = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || !webSocket.current) return;
+
+    const text = chatInput;
+    setChatMessages(prev => [...prev, { role: 'user', text }]);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    webSocket.current.send(JSON.stringify({
+      type: 'chat',
+      text: text
+    }));
+  };
+
   useEffect(() => {
     fetchAnalyses();
   }, [token]);
@@ -133,6 +192,27 @@ export const DashboardPage = ({
       setLoading(false);
     }
   };
+
+  // Fetch graph for the most recent analysis automatically
+  useEffect(() => {
+    if (analyses.length > 0 && !selectedArchGraph) {
+        const fetchRecentGraph = async () => {
+            try {
+                const recent = analyses[0];
+                const res = await fetch(`${apiUrl}/api/v1/analyses/${recent.id}/graph`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setSelectedArchGraph(data);
+                }
+            } catch (e) {
+                console.warn("Could not fetch recent graph for dashboard preview", e);
+            }
+        };
+        fetchRecentGraph();
+    }
+  }, [analyses, token]);
 
   const filtered = analyses.filter((a) =>
     a.repo_url.toLowerCase().includes(search.toLowerCase())
@@ -586,8 +666,133 @@ export const DashboardPage = ({
               </motion.div>
             </div>
           </div>
+
+          {/* Architecture Preview Section */}
+          {selectedArchGraph && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="liquid-glass border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-10 w-64 h-64 bg-white/5 blur-[120px] -z-10 rounded-full" />
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                    <Network className="w-7 h-7 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Fleet Command: Node Topology</h3>
+                    <p className="text-silver-600 font-bold text-xs mt-1 uppercase tracking-widest">Active visualization for {selectedArchGraph.repo?.split('/').pop() || 'Recent Node'}</p>
+                  </div>
+                </div>
+                <button
+                   onClick={() => onViewAnalysis(analyses[0].id, analyses[0].repo_url)}
+                   className="btn-pill py-3 px-6 text-[10px] font-black uppercase tracking-[0.2em] border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400 flex items-center gap-2"
+                >
+                  Enter IDE <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              
+              <div className="rounded-[2.5rem] overflow-hidden bg-black/40 border border-white/5 p-8 backdrop-blur-xl shadow-2xl">
+                <ArchitectureMap graph={selectedArchGraph} />
+              </div>
+            </motion.div>
+          )}
+
         </div>
       </main>
+
+      {/* Floating AI Chat Widget */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <AnimatePresence>
+          {isChatOpen && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+            >
+              <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
+                    <MessagesSquare className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Architect</h3>
+                    <div className="flex items-center gap-1.5 text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
+                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Fleet Wide Intelligence
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="text-silver-700 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                {chatMessages.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                    <Zap className="w-12 h-12 mb-4 text-silver-600" />
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Fleet Link Active.<br/>Monitoring node cluster health.</p>
+                  </div>
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed ${
+                      msg.role === 'user' 
+                        ? 'bg-white text-black rounded-tr-none' 
+                        : 'bg-white/5 text-silver-300 border border-white/10 rounded-tl-none'
+                    }`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                {isAiTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-white/5 text-silver-300 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.4s]" />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form onSubmit={handleSendChat} className="p-6 bg-black/40 border-t border-white/5">
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask AtlasStack AI..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-14 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
+                  />
+                  <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button 
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${
+            isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'
+          }`}
+        >
+          {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
+          {!isChatOpen && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-black rounded-full flex items-center justify-center">
+               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            </div>
+          )}
+        </button>
+      </div>
+
     </div>
   );
 };

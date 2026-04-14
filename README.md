@@ -21,11 +21,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-<<<<<<< HEAD
-##  Screenshots
-=======
 ## Screenshots
->>>>>>> 4f67a0268ec132d7484f57bade95353dddd8f3e3
 
 ### Landing Page
 ![Landing Page](docs/images/landing_page.png)

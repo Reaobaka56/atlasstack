@@ -71,6 +71,15 @@ class AnalysisRecord(Base):
     completed_at = Column(DateTime, nullable=True)
 
 
+class OTPRecord(Base):
+    __tablename__ = "otps"
+    email = Column(String, primary_key=True)
+    otp = Column(String, nullable=False)
+    user_id = Column(String, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # SQLAlchemy async engine
 if settings.LITE_MODE:
     engine = create_async_engine(

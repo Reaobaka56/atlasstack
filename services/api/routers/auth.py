@@ -7,10 +7,10 @@ from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db, UserRecord
+from core.database import get_db, UserRecord, OTPRecord
 from middleware.auth import (
     create_access_token, create_refresh_token, create_reset_token,
     hash_password, verify_password, verify_token
@@ -152,25 +152,15 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8)
 
 
-# In-memory OTP store: { email: { "otp": str, "expires": float, "user_id": str } }
+# OTP Helpers
 import time
 import random
 import string
-
-_otp_store: dict[str, dict] = {}
-
+from datetime import datetime, timedelta
 
 def _generate_otp() -> str:
     """Generate a 6-digit numeric OTP."""
     return ''.join(random.choices(string.digits, k=6))
-
-
-def _cleanup_expired_otps():
-    """Remove expired OTPs from the store."""
-    now = time.time()
-    expired = [k for k, v in _otp_store.items() if v["expires"] < now]
-    for k in expired:
-        del _otp_store[k]
 
 
 @router.post("/auth/forgot-password")
@@ -180,18 +170,25 @@ async def forgot_password(
     db: AsyncSession = Depends(get_db),
 ):
     """Send a 6-digit OTP to the user's email for password reset verification."""
-    _cleanup_expired_otps()
+    # Cleanup expired OTPs in DB
+    await db.execute(delete(OTPRecord).where(OTPRecord.expires_at < datetime.utcnow()))
 
     result = await db.execute(select(UserRecord).where(UserRecord.email == payload.email))
     user = result.scalar_one_or_none()
 
     if user and user.is_active:
         otp = _generate_otp()
-        _otp_store[payload.email.lower()] = {
-            "otp": otp,
-            "expires": time.time() + 600,  # 10 minutes
-            "user_id": user.id,
-        }
+        # UPSERT OTP: Overwrite any existing OTP for this email
+        await db.execute(delete(OTPRecord).where(OTPRecord.email == payload.email.lower()))
+        
+        new_otp = OTPRecord(
+            email=payload.email.lower(),
+            otp=otp,
+            user_id=user.id,
+            expires_at=datetime.utcnow() + timedelta(minutes=10)
+        )
+        db.add(new_otp)
+        await db.commit()
         background_tasks.add_task(send_otp_email, payload.email, otp)
 
     # Always return success to prevent email enumeration
@@ -204,10 +201,13 @@ async def verify_otp(
     db: AsyncSession = Depends(get_db),
 ):
     """Verify the 6-digit OTP and return a reset token if valid."""
-    _cleanup_expired_otps()
-
     email_key = payload.email.lower()
-    stored = _otp_store.get(email_key)
+    
+    # Refresh/Cleanup check
+    await db.execute(delete(OTPRecord).where(OTPRecord.expires_at < datetime.utcnow()))
+
+    result = await db.execute(select(OTPRecord).where(OTPRecord.email == email_key))
+    stored = result.scalar_one_or_none()
 
     if not stored:
         raise HTTPException(
@@ -215,15 +215,16 @@ async def verify_otp(
             detail="Invalid or expired verification code.",
         )
 
-    if stored["otp"] != payload.otp.strip():
+    if stored.otp != payload.otp.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect verification code.",
         )
 
     # OTP is valid — issue a reset token and remove the OTP
-    user_id = stored["user_id"]
-    del _otp_store[email_key]
+    user_id = stored.user_id
+    await db.delete(stored)
+    await db.commit()
 
     reset_token = create_reset_token(user_id=user_id, email=payload.email)
     return {"reset_token": reset_token, "message": "Code verified. You may now reset your password."}
