@@ -493,7 +493,7 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl, initialResetToken }: { onBa
                     <input 
                       type="password" 
                       className="input-field pl-16" 
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      placeholder="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
