@@ -6,14 +6,58 @@ Main FastAPI application entry point
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, WebSocket, Query
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+import time
+import logging
 import os
 import json
 import re
+from datetime import datetime
 from huggingface_hub import InferenceClient
+
+from middleware.auth import verify_token
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+# Analytics Middleware
+class AnalyticsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        
+        # Try to identify user
+        user_id = "anonymous"
+        if hasattr(request.state, "user"):
+            user_id = request.state.user.get("id", "anonymous")
+            
+        response = await call_next(request)
+        
+        process_time = time.time() - start_time
+        structlog.get_logger().info(
+            "request_log",
+            path=request.url.path,
+            method=request.method,
+            status_code=response.status_code,
+            duration_ms=int(process_time * 1000),
+            user_id=user_id
+        )
+        return response
+
+# LLM Retry Logic
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    reraise=True
+)
+async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
+    return client.chat.completions.create(
+        model=model,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature
+    )
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -72,6 +116,7 @@ app = FastAPI(
 
 # Add middleware (order matters - first added = first executed)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(AnalyticsMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -131,8 +176,17 @@ async def root():
 
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
     """WebSocket endpoint for real-time updates"""
+    if not token:
+        await websocket.close(code=1008, reason="Unauthorized")
+        return
+
+    decoded = verify_token(token)
+    if not decoded:
+        await websocket.close(code=1008, reason="Unauthorized")
+        return
+        
     await websocket.accept()
     try:
         while True:
@@ -165,7 +219,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     client = InferenceClient(api_key=hf_token)
                     prompt = f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}"
                     
-                    response = client.chat.completions.create(
+                    response = await call_llm_with_retry(
+                        client=client,
                         model="Qwen/Qwen2.5-Coder-32B-Instruct",
                         messages=[{"role": "user", "content": prompt}],
                         max_tokens=1000,

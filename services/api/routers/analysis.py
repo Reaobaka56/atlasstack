@@ -13,11 +13,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 from sqlalchemy import select, func
 from core.database import get_db, AnalysisRecord, UserRecord
+from utils.security import decrypt_token
 from core.github_client import get_github_client
 from middleware.auth import PermissionChecker
+from utils.llm import call_llm_with_retry
 
 logger = structlog.get_logger()
 router = APIRouter()
+
+from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+
+_executor = ThreadPoolExecutor(max_workers=4)
+
+def validate_repo_url(url: str):
+    """Validate repository URL to prevent SSRF and illegal paths."""
+    ALLOWED_DOMAINS = ["github.com", "gitlab.com", "bitbucket.org"]
+    try:
+        parsed = urlparse(url)
+        if parsed.hostname not in ALLOWED_DOMAINS:
+            raise HTTPException(status_code=400, detail="Only GitHub, GitLab, and Bitbucket are allowed.")
+        if not re.match(r'^/[\w\-./]+$', parsed.path):
+            raise HTTPException(status_code=400, detail="Invalid repository path format.")
+        return url
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=400, detail="Invalid repository URL")
+
+
+async def get_repo_size_mb(path: str) -> float:
+    """Calculate directory size in MB."""
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+    return total_size / (1024 * 1024)
 
 
 # Pydantic models
@@ -57,9 +90,7 @@ class MVPAnalysisResponse(BaseModel):
     security_report: Optional[dict] = None
     tech_debt_score: int = 0
     maturity_level: str = "Unknown"
-    forecast: Optional[dict] = None # Predicted maintenance cost
-    security_report: Optional[dict] = None
-    architecture: Optional[dict] = None
+    forecast: Optional[dict] = None
 
 
 class Finding(BaseModel):
@@ -142,6 +173,8 @@ mock_findings = [
 
 @router.post("/analysis/mvp", response_model=MVPAnalysisResponse)
 async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: AsyncSession = Depends(get_db)):
+    """MVP Endpoint for full repository analysis - with DB persistence and security guards."""
+    validate_repo_url(request.repo_url)
     """MVP Endpoint for full repository analysis - with DB persistence"""
     import os
     import tempfile
@@ -224,7 +257,18 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
     temp_dir = tempfile.mkdtemp()
     try:
         logger.info(f"Cloning {request.repo_url} into {temp_dir}")
-        git.Repo.clone_from(request.repo_url, temp_dir, depth=1)
+        
+        # Offload blocking git operation to thread pool
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            _executor,
+            lambda: git.Repo.clone_from(request.repo_url, temp_dir, depth=1)
+        )
+        
+        # Guard: Check repo size
+        size_mb = await get_repo_size_mb(temp_dir)
+        if size_mb > 500: # 500MB limit
+            raise HTTPException(status_code=413, detail="Repository is too large (max 500MB)")
         
         file_tree = []
         key_contents = {}
@@ -291,7 +335,8 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
         messages = [{"role": "user", "content": prompt}]
         
         # Using a reliable, open instruction model suitable for coding and JSON
-        response = client.chat.completions.create(
+        response = await call_llm_with_retry(
+            client=client,
             model="Qwen/Qwen2.5-Coder-32B-Instruct", 
             messages=messages, 
             max_tokens=2000,
@@ -451,6 +496,8 @@ async def analyze_code(
     )
 
 
+
+
 @router.post("/analyze/batch")
 async def analyze_batch(
     request: BatchAnalysisRequest,
@@ -536,7 +583,12 @@ async def get_analysis_findings(
 
 
 @router.get("/analyses")
-async def get_my_analyses(db: AsyncSession = Depends(get_db), req: Request = None):
+async def get_my_analyses(
+    db: AsyncSession = Depends(get_db), 
+    req: Request = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100)
+):
     # Check if user is logged in
     user_context = getattr(req.state, "user", None)
     if not user_context:
@@ -544,23 +596,37 @@ async def get_my_analyses(db: AsyncSession = Depends(get_db), req: Request = Non
         
     user_id = user_context.get("id")
     from sqlalchemy import select
+    
+    # Count total for frontend metadata
+    count_stmt = select(func.count(AnalysisRecord.id)).where(AnalysisRecord.user_id == user_id)
+    total_result = await db.execute(count_stmt)
+    total_count = total_result.scalar() or 0
+    
     result = await db.execute(
         select(AnalysisRecord)
         .where(AnalysisRecord.user_id == user_id)
         .order_by(AnalysisRecord.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     records = result.scalars().all()
     
-    return [
-        {
-            "id": r.id,
-            "repo_url": r.repo_url,
-            "status": r.status,
-            "health_score": r.health_score,
-            "created_at": r.created_at
-        }
-        for r in records
-    ]
+    return {
+        "analyses": [
+            {
+                "id": r.id,
+                "repo_url": r.repo_url,
+                "status": r.status,
+                "health_score": r.health_score,
+                "created_at": r.created_at
+            }
+            for r in records
+        ],
+        "total": total_count,
+        "skip": skip,
+        "limit": limit,
+        "has_more": (skip + limit) < total_count
+    }
 
 
 @router.get("/analyses/{analysis_id}")
@@ -625,7 +691,16 @@ async def create_fix_pr(
         raise HTTPException(status_code=404, detail="Fix index out of range")
 
     fix = record.fixes[fix_index]
-    github = get_github_client()
+    
+    # Fetch user to get their github token
+    user_result = await db.execute(select(UserRecord).where(UserRecord.id == current_user["id"]))
+    user_rec = user_result.scalar_one_or_none()
+    
+    token = None
+    if user_rec and user_rec.github_token:
+        token = decrypt_token(user_rec.github_token)
+        
+    github = get_github_client(token=token)
     
     try:
         pr_result = await github.create_pr(record.repo_url, fix)

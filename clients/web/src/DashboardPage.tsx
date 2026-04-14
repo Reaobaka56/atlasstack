@@ -137,7 +137,8 @@ export const DashboardPage = ({
 
   // WebSocket for Chat
   useEffect(() => {
-    const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws';
+    if (!token) return;
+    const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(token);
     const socket = new WebSocket(wsUrl);
     webSocket.current = socket;
 

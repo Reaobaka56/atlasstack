@@ -16,6 +16,7 @@ from middleware.auth import (
     hash_password, verify_password, verify_token
 )
 from utils.email import send_otp_email
+from utils.security import encrypt_token, decrypt_token
 
 router = APIRouter()
 
@@ -337,6 +338,9 @@ async def github_callback(payload: GithubAuthRequest, db: AsyncSession = Depends
         # login or register
         result = await db.execute(select(UserRecord).where(UserRecord.email == email))
         user = result.scalar_one_or_none()
+        
+        encrypted_token = encrypt_token(token)
+        
         if not user:
             user_id = str(uuid.uuid4())
             user = UserRecord(
@@ -344,11 +348,11 @@ async def github_callback(payload: GithubAuthRequest, db: AsyncSession = Depends
                 email=email,
                 hashed_password=hash_password(secrets.token_urlsafe(16)),
                 roles=["user"],
-                github_token=token
+                github_token=encrypted_token
             )
             db.add(user)
         else:
-            user.github_token = token
+            user.github_token = encrypted_token
             
         await db.commit()
     

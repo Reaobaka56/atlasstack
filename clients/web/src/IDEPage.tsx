@@ -102,7 +102,7 @@ export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; on
 };
 
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
-  const API_URL = apiUrlProp || (window as any).ATLASSTACK_API_URL || "http://localhost:8005";
+  const API_URL = apiUrlProp || (process as any).env?.REACT_APP_API_URL || (window as any).ATLASSTACK_API_URL || "http://localhost:8005";
   const [step, setStep] = useState<'connect' | 'input' | 'analyzing' | 'dashboard'>(analysisId ? 'analyzing' : 'connect');
   const [repoInput, setRepoInput] = useState(repoUrl || '');
   const [mvpData, setMvpData] = useState<any>(null);
@@ -132,7 +132,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
   // WebSocket for Chat
   useEffect(() => {
-    const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws';
+    if (!token) return;
+    const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(token);
     const socket = new WebSocket(wsUrl);
     webSocket.current = socket;
 

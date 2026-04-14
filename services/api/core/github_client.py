@@ -106,5 +106,5 @@ class GitHubClient:
         finally:
             shutil.rmtree(temp_dir)
 
-def get_github_client() -> GitHubClient:
-    return GitHubClient()
+def get_github_client(token: Optional[str] = None) -> GitHubClient:
+    return GitHubClient(token=token)

@@ -90,6 +90,9 @@ class Settings(BaseSettings):
     DEFAULT_MODEL: str = "codellama-7b"
     MAX_ANALYSIS_TIME: int = 300  # seconds
 
+    # Encryption
+    ENCRYPTION_KEY: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -107,13 +110,17 @@ def get_settings() -> Settings:
 
 import secrets as _secrets
 import logging as _logging
+import os as _os
 
 def _validate_settings(s: "Settings"):
     if s.JWT_SECRET == "your-super-secret-jwt-key-change-in-production":
-        _logging.warning(
-            "WARNING: Using default JWT_SECRET — this is insecure! "
-            "Set JWT_SECRET in your .env file. "
-            f"Suggested value: {_secrets.token_hex(32)}"
-        )
-
-_validate_settings(settings)
+        msg = "CRITICAL: Using default JWT_SECRET! Set JWT_SECRET in .env immediately."
+        if s.ENVIRONMENT == "production":
+            raise ValueError(msg)
+        else:
+            _logging.warning(
+                f"{msg} Suggested value: {_secrets.token_hex(32)}"
+            )
+    
+    if not s.ENCRYPTION_KEY and s.ENVIRONMENT == "production":
+         _logging.warning("WARNING: No ENCRYPTION_KEY set. Sensitive tokens will be stored in plaintext.")
