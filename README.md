@@ -18,6 +18,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 - **"Explain Like I'm 10":** Toggleable ELI5 summaries for every codebase analysis.
 - **Lite Mode Backend:** Runs entirely on Python + SQLite — no Docker needed.
 - **Premium CLI Tool:** Analyze repositories and view history directly from your terminal.
+- **Autonomous Training Data Collection:** Captures scan inputs and LLM outputs to build a high-quality fine-tuning dataset automatically.
 - **Real Auth:** User registration, bcrypt password hashing, JWT tokens, analysis history saved per user.
 
 ---
@@ -224,6 +225,16 @@ make train-sft
 make train-rlhf
 ```
 
+### Autonomous Data Collection
+
+AtlasStack can automatically harvest its own analysis results to build a specialized dataset for future training.
+
+- **Storage**: Data is saved in [JSONL format](https://jsonlines.org/) for easy ingestion by the `DatasetLoader`.
+- **Default Path**: `training/datasets/collected_scans.jsonl`
+- **Toggle**: Enable or disable via `COLLECT_TRAINING_DATA` in your `.env`.
+
+Every collected entry includes the system **instruction**, the repository **context**, and the structured **LLM response**, along with metadata like the repo URL and scan timestamp.
+
 ---
 
 ##  Developer Reference
@@ -249,6 +260,8 @@ make train-rlhf
 | `LITE_MODE` | `true` | Toggle between SQLite and full Postgres stack |
 | `JWT_SECRET` | - | Secret key for auth tokens |
 | `DEFAULT_MODEL` | `Qwen2.5-Coder` | The LLM used for analysis |
+| `COLLECT_TRAINING_DATA` | `true` | Toggle scan data harvesting |
+| `TRAINING_DATA_PATH` | `training/datasets/collected_scans.jsonl` | Path to store collected training pairs |
 | `NEO4J_PASSWORD` | - | Password for graph database |
 
 See `.env.example` for the full list of configuration options.
