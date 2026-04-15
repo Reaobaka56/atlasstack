@@ -17,6 +17,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 - **Embedded Web IDE:** A full VS Code-like development environment directly in the browser.
 - **"Explain Like I'm 10":** Toggleable ELI5 summaries for every codebase analysis.
 - **Lite Mode Backend:** Runs entirely on Python + SQLite — no Docker needed.
+- **Premium CLI Tool:** Analyze repositories and view history directly from your terminal.
 - **Real Auth:** User registration, bcrypt password hashing, JWT tokens, analysis history saved per user.
 
 ---
@@ -93,7 +94,12 @@ cp .env.example .env
 ### 2) Install Python dependencies
 
 ```bash
-pip install -r services/api/requirements.txt
+# Recommended: Use a virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+pip install -e .  # Registers the 'atlas' command
 ```
 
 ### 3) Start the backend (Lite Mode)
@@ -132,6 +138,37 @@ The AtlasStack VS Code extension brings AI-driven analysis directly to your work
 1.  **Build/Install:** Open [clients/vscode](clients/vscode) and follow the README to build the `.vsix`.
 2.  **Connect:** Open VS Code settings and set `atlasstack.serverUrl` to your backend (default: `http://localhost:8005`).
 3.  **Analyze:** Use the AtlasStack icon in the Activity Bar to run deep repository scans.
+
+---
+
+##  Terminal CLI
+
+The AtlasStack CLI is a powerful tool for developers who live in the terminal.
+
+### Installation & Setup
+
+1. **Create Environment**:
+   ```bash
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1  # Windows
+   # source .venv/bin/activate   # macOS/Linux
+   ```
+
+2. **Install CLI**:
+   ```bash
+   pip install -r requirements.txt
+   pip install -e .
+   ```
+
+### Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `atlas scan .` | Scan the current local directory |
+| `atlas analyze <url>` | Analyze a remote GitHub repository |
+| `atlas history` | View your past analysis records |
+| `atlas view <id>` | See detailed results for a specific scan |
+| `atlas config` | Update your Hugging Face credentials |
 
 ---
 
