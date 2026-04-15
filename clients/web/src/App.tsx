@@ -608,9 +608,14 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-silver-400 mb-8 backdrop-blur-xl">
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-             Autonomous Engineering Standard
+          <div className="flex items-center gap-3 mb-8 justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-silver-400 backdrop-blur-xl">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               Autonomous Engineering Standard
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 backdrop-blur-xl">
+               New: Atlas CLI v1.0 Available
+            </div>
           </div>
           <h1 className="text-5xl sm:text-7xl lg:text-8xl metallic-text font-display-bold mb-8 max-w-4xl mx-auto">
             Architect <br/> the future.
@@ -626,7 +631,13 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                onClick={handleDownloadExtension}
                className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3"
              >
-               Install VS Code Extension <ChevronRight className="w-5 h-5" />
+               VS Code Extension <ChevronRight className="w-5 h-5" />
+             </button>
+             <button 
+               onClick={() => document.getElementById('docs')?.scrollIntoView({ behavior: 'smooth' })}
+               className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3 border-indigo-500/20 text-indigo-400"
+             >
+               <Terminal className="w-5 h-5" /> Atlas CLI
              </button>
           </div>
         </motion.div>
@@ -740,6 +751,37 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                       <div className="h-2 w-3/4 bg-white/5 rounded-full" />
                       <div className="h-2 w-1/2 bg-white/5 rounded-full" />
                       <div className="h-2 w-2/3 bg-white/5 rounded-full" />
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div className="liquid-glass p-12 rounded-[2.5rem] bg-indigo-500/5 flex flex-col justify-between group h-[500px] overflow-hidden border-indigo-500/10">
+             <div>
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-[8px] font-black uppercase tracking-widest border border-indigo-500/30">New Release</div>
+                 <h3 className="text-3xl text-white font-display-bold">Atlas <br/> CLI Engine</h3>
+               </div>
+               <p className="text-silver-400 text-base leading-relaxed max-w-xs">A high-fidelity terminal interface using <b>Rich</b> rendering to bring autonomous engineering to your local machine.</p>
+             </div>
+             <div className="relative mt-12 transform translate-y-8 group-hover:translate-y-4 transition-transform duration-700">
+                <div className="bg-[#050508] rounded-2xl p-6 border border-white/10 shadow-2xl font-mono text-[10px]">
+                   <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-silver-700 ml-2">powershell - atlas.py</span>
+                   </div>
+                   <div className="space-y-2">
+                      <div className="text-white">█████╗ ████████╗██╗      █████╗</div>
+                      <div className="text-indigo-400">[info] Initializing analysis engine...</div>
+                      <div className="flex gap-2">
+                        <span className="text-emerald-400">?</span>
+                        <span className="text-silver-400">Analyzing repository...</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className="w-1/2 h-full bg-indigo-500" />
+                      </div>
                    </div>
                 </div>
              </div>
