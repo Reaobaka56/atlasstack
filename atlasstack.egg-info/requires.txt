@@ -1,0 +1,12 @@
+typer>=0.9.0
+rich>=13.0.0
+tenacity>=8.2.3
+GitPython>=3.1.41
+httpx>=0.26.0
+pydantic-settings>=2.1.0
+pydantic>=2.0.0
+structlog>=24.1.0
+sqlalchemy>=2.0.25
+aiosqlite>=0.20.0
+huggingface-hub>=0.24.0
+python-dotenv>=1.0.0

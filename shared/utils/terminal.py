@@ -121,6 +121,30 @@ def render_analysis_report(data: dict):
         for step in steps:
             console.print(f"  [muted]•[/muted] [silver]{step}[/silver]")
 
+def render_history_table(records):
+    """Renders a beautiful table of past analyses."""
+    table = Table(title="[premium]AtlasStack Analysis History[/premium]", box=box.ROUNDED, expand=True)
+    table.add_column("ID", style="muted", no_wrap=True)
+    table.add_column("Repository / Path", style="silver")
+    table.add_column("Date", style="cyan")
+    table.add_column("Health", justify="center")
+    table.add_column("Status", justify="right")
+
+    for r in records:
+        health_color = "success" if (r.health_score or 0) > 70 else "warning" if (r.health_score or 0) > 40 else "danger"
+        status_color = "success" if r.status == "completed" else "warning"
+        
+        table.add_row(
+            str(r.id)[:8],
+            r.repo_url,
+            r.created_at.strftime("%Y-%m-%d %H:%M"),
+            f"[{health_color}]{r.health_score or 'N/A'}[/{health_color}]",
+            f"[{status_color}]{r.status}[/{status_color}]"
+        )
+    
+    console.print(table)
+    console.print(f"\n[muted]Use 'atlas view <ID>' to see full details for a specific scan.[/muted]")
+
 def create_progress():
     """Returns a pre-configured progress bar for analysis."""
     return Progress(

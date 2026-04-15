@@ -1,0 +1,9 @@
+README.md
+atlas.py
+pyproject.toml
+atlasstack.egg-info/PKG-INFO
+atlasstack.egg-info/SOURCES.txt
+atlasstack.egg-info/dependency_links.txt
+atlasstack.egg-info/entry_points.txt
+atlasstack.egg-info/requires.txt
+atlasstack.egg-info/top_level.txt
