@@ -19,7 +19,8 @@ from huggingface_hub import InferenceClient
 from services.analysis.engine.architecture_mapper import get_mapper
 from services.analysis.engine.dependency_analyzer import get_dependency_analyzer
 from services.analysis.engine.security_scanner import get_scanner
-from shared.utils.llm import call_llm_with_retry # Assuming this path from router import
+from services.analysis.core.collector import TrainingDataCollector
+from shared.utils.llm import call_llm_with_retry
 
 logger = structlog.get_logger()
 _executor = ThreadPoolExecutor(max_workers=4)
@@ -31,6 +32,7 @@ class AnalysisOrchestrator:
         self.mapper = get_mapper()
         self.dep_analyzer = get_dependency_analyzer()
         self.scanner = get_scanner()
+        self.collector = TrainingDataCollector()
 
     async def analyze_repository(self, repo_url: str, is_local: bool = False) -> dict:
         """
@@ -82,7 +84,8 @@ class AnalysisOrchestrator:
                             key_contents[rel_path] = f.read()[:2000]
                     except: pass
         
-        prompt = self._build_prompt(display_name, file_tree, key_contents)
+        instruction, input_context = self._build_prompt(display_name, file_tree, key_contents)
+        prompt = f"{instruction}\n\n{input_context}"
         
         client = InferenceClient(api_key=self.hf_token, provider="auto")
         response = await call_llm_with_retry(
@@ -95,6 +98,14 @@ class AnalysisOrchestrator:
         
         content = response.choices[0].message.content
         result_json = self._parse_json(content)
+        
+        # Collect for training
+        self.collector.collect(
+            instruction=instruction,
+            input_data=input_context,
+            output_data=result_json,
+            metadata={"repo_url": display_name, "model": self.default_model}
+        )
         
         # Enhance with local engine data
         result_json["architecture"] = self.mapper.map_repository(path)
@@ -128,46 +139,46 @@ class AnalysisOrchestrator:
         return result_json
 
     def _build_prompt(self, repo_url, file_tree, key_contents):
-        return f"""
+        instruction = """
         You are an expert software architect analyzing a codebase.
-        Repository: {repo_url}
-        Files: {file_tree[:150]}...
-        Key Content: {str(key_contents)[:4000]}
-        
         Analyze this repository and return a structured JSON with ONLY the following format:
-        {{
-            "explanation": {{
+        {
+            "explanation": {
                 "summary": "Full summary in 2-3 sentences.",
                 "eli5_summary": "Engaging fun analogy explanation for a 10-year-old.",
                 "entry_point": "Main entry file.",
                 "architecture": "Overview of layout.",
                 "data_flow": "Detailed data flow explanation."
-            }},
+            },
             "important_files": [
-                {{"path": "file_path.ext", "reason": "Why it's important", "is_start_here": true}}
+                {"path": "file_path.ext", "reason": "Why it's important", "is_start_here": true}
             ],
             "fixes": [
-                {{
+                {
                     "problem": "Issue description", 
                     "eli5_explanation": "Junior dev explanation",
                     "file_path": "target_file.js", 
                     "code_add": "Code to add", 
                     "code_remove": "Code to remove"
-                }}
+                }
             ],
             "errors": ["Warnings/missing deps"],
             "run_steps": ["Shell commands"],
             "health_score": <0-100>,
             "dependencies": [
-                {{"name": "name", "purpose": "explanation"}}
+                {"name": "name", "purpose": "explanation"}
             ],
-            "tech_stack": {{
+            "tech_stack": {
                 "frameworks": ["Detected"],
                 "databases": ["Detected"]
-            }}
-        }}
+            }
+        }
         Return absolute pure JSON.
-        """
+        """.strip()
+        
+        input_context = f"Repository: {repo_url}\nFiles: {file_tree[:150]}\nKey Content: {str(key_contents)[:4000]}"
+        
+        return instruction, input_context
 
     def _parse_json(self, content):
         match = re.search(r'```(?:json)?\s*(.*?)\s*```', content, re.DOTALL)
