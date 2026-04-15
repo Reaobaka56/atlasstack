@@ -27,6 +27,7 @@ _executor = ThreadPoolExecutor(max_workers=4)
 class AnalysisOrchestrator:
     def __init__(self, hf_token: str = None):
         self.hf_token = hf_token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        self.default_model = os.environ.get("DEFAULT_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct")
         self.mapper = get_mapper()
         self.dep_analyzer = get_dependency_analyzer()
         self.scanner = get_scanner()
@@ -83,10 +84,10 @@ class AnalysisOrchestrator:
         
         prompt = self._build_prompt(display_name, file_tree, key_contents)
         
-        client = InferenceClient(api_key=self.hf_token)
+        client = InferenceClient(api_key=self.hf_token, provider="auto")
         response = await call_llm_with_retry(
             client=client,
-            model="Qwen/Qwen2.5-Coder-32B-Instruct", 
+            model=self.default_model, 
             messages=[{"role": "user", "content": prompt}], 
             max_tokens=3000,
             temperature=0.1

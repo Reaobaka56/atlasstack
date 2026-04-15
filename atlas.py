@@ -11,6 +11,10 @@ import re
 import uuid
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Force UTF-8 encoding for Windows terminals
 if hasattr(sys.stdout, 'reconfigure'):
