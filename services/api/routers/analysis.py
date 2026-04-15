@@ -24,6 +24,7 @@ router = APIRouter()
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+from services.analysis.core.orchestrator import AnalysisOrchestrator
 
 _executor = ThreadPoolExecutor(max_workers=4)
 
@@ -254,145 +255,9 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             tech_stack={"frameworks": ["Unknown"], "databases": ["Unknown"]}
         )
         
-    temp_dir = tempfile.mkdtemp()
     try:
-        logger.info(f"Cloning {request.repo_url} into {temp_dir}")
-        
-        # Offload blocking git operation to thread pool
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            _executor,
-            lambda: git.Repo.clone_from(request.repo_url, temp_dir, depth=1)
-        )
-        
-        # Guard: Check repo size
-        size_mb = await get_repo_size_mb(temp_dir)
-        if size_mb > 500: # 500MB limit
-            raise HTTPException(status_code=413, detail="Repository is too large (max 500MB)")
-        
-        file_tree = []
-        key_contents = {}
-        for root, dirs, files in os.walk(temp_dir):
-            if '.git' in dirs:
-                dirs.remove('.git')
-            if 'node_modules' in dirs:
-                dirs.remove('node_modules')
-                
-            for file in files:
-                rel_path = os.path.relpath(os.path.join(root, file), temp_dir)
-                file_tree.append(rel_path)
-                
-                if file in ['package.json', 'README.md', 'index.js', 'app.js', 'server.js', 'main.py', 'requirements.txt', 'docker-compose.yml', 'vite.config.ts'] or getattr(request, 'is_mock', False):
-                    try:
-                        with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
-                            key_contents[rel_path] = f.read()[:2000] # limit size
-                    except Exception:
-                        pass
-        
-        prompt = f"""
-        You are an expert software architect analyzing a codebase.
-        Repository URL: {request.repo_url}
-        Files: {file_tree[:150]}...
-        Key Content: {str(key_contents)[:4000]}
-        
-        Analyze this repository and return a structured JSON with ONLY the following format. Ensure nothing else is provided outside the JSON block:
-        {{
-            "explanation": {{
-                "summary": "What this app does completely and accurately in 2-3 sentences.",
-                "eli5_summary": "Explain how this app works to a 10-year-old using highly engaging fun analogies.",
-                "entry_point": "The main entry file (e.g. server.js, index.js, main.py)",
-                "architecture": "Overview of frontend, backend, and db layout.",
-                "data_flow": "Detailed explanation of how data flows from request to response."
-            }},
-            "important_files": [
-                {{"path": "file_path.ext", "reason": "Why it's important", "is_start_here": true}}
-            ],
-            "fixes": [
-                {{
-                    "problem": "Brief description of issue (e.g. missing middleware, missing script)", 
-                    "eli5_explanation": "Explain this exact issue and why it needs fixing like I'm a junior dev",
-                    "file_path": "target_file.js", 
-                    "code_add": "Exact code to add or replace", 
-                    "code_remove": "Code to remove if applicable"
-                }}
-            ],
-            "errors": ["List of missing dependencies, missing env vars, or serious warnings"],
-            "run_steps": ["Exact shell command 1 like 'npm install'", "Exact shell command 2"],
-            "health_score": <number between 0 and 100 based on structure and quality>,
-            "dependencies": [
-                {{"name": "depend_name", "purpose": "Short explanation of what it does"}}
-            ],
-            "tech_stack": {{
-                "frameworks": ["Detected Framework 1"],
-                "databases": ["Detected Database 1"]
-            }}
-        }}
-
-        Be extremely specific and practical. Return absolute pure JSON.
-        """
-        
-        client = InferenceClient(api_key=hf_token)
-        messages = [{"role": "user", "content": prompt}]
-        
-        # Using a reliable, open instruction model suitable for coding and JSON
-        response = await call_llm_with_retry(
-            client=client,
-            model="Qwen/Qwen2.5-Coder-32B-Instruct", 
-            messages=messages, 
-            max_tokens=2000,
-            temperature=0.1
-        )
-        
-        content = response.choices[0].message.content
-        
-        # Clean up response to find json blocks
-        match = re.search(r'```(?:json)?\s*(.*?)\s*```', content, re.DOTALL)
-        if match:
-            json_str = match.group(1)
-        else:
-            json_str = content
-            
-        result_json = json.loads(json_str)
-        
-        # --- PHASE 1 ENHANCEMENTS ---
-        # 1. Architecture Mapping
-        mapper = get_mapper()
-        arch_data = mapper.map_repository(temp_dir)
-        result_json["architecture"] = arch_data
-        
-        # 2. Dependency Risk Analysis
-        dep_analyzer = get_dependency_analyzer()
-        deps = dep_analyzer.scan_project(temp_dir)
-        result_json["security_report"] = {
-            "dependencies": [ {
-                "name": d.name, 
-                "version": d.version, 
-                "risk_score": d.risk_score,
-                "risk_factors": d.risk_factors,
-                "vulnerabilities": d.vulnerabilities
-            } for d in deps ],
-            "overall_risk": sum(d.risk_score for d in deps) / len(deps) if deps else 0
-        }
-        
-        # 4. Tech Debt & Maturity (Hybrid Calculation)
-        # Formula: Base from AI health score, adjusted by count of real vulns and fixes
-        vuln_count = len(result_json.get("security_report", {}).get("dependencies", []))
-        fix_count = len(result_json.get("fixes", []))
-        
-        # Tech Debt Score (0-100, 100 is worst)
-        # We invert health score and add penalties
-        base_debt = 100 - result_json.get("health_score", 50)
-        penalty = (vuln_count * 5) + (fix_count * 2)
-        tech_debt_score = min(100, base_debt + penalty)
-        
-        # Maturity Level
-        if tech_debt_score < 20: maturity = "Elite"
-        elif tech_debt_score < 40: maturity = "Standard"
-        elif tech_debt_score < 70: maturity = "Legacy"
-        else: maturity = "Critical Debt"
-        
-        result_json["tech_debt_score"] = tech_debt_score
-        result_json["maturity_level"] = maturity
+        orchestrator = AnalysisOrchestrator(hf_token=hf_token)
+        result_json = await orchestrator.analyze_repository(request.repo_url)
         
         parsed = MVPAnalysisResponse(**result_json)
 
