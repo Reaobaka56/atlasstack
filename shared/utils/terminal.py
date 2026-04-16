@@ -11,6 +11,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.theme import Theme
 from rich.live import Live
 from rich.align import Align
+from rich.tree import Tree
 from rich import box
 
 # Custom theme for AtlasStack (Liquid Glass / Silver aesthetic)
@@ -42,7 +43,7 @@ def print_header():
     """
     console.print(Align.center(header_text))
 
-def render_analysis_report(data: dict):
+def render_analysis_report(data: dict, eli5_only: bool = False):
     """Renders a full analysis report in the terminal."""
     
     # 1. Summary Section
@@ -50,6 +51,15 @@ def render_analysis_report(data: dict):
     summary = explanation.get("summary", "No summary available.")
     eli5 = explanation.get("eli5_summary", "")
     
+    if eli5_only:
+        console.print(Panel(
+            Markdown(f"### 🧸 Simple Explanation\n{eli5 or 'No ELI5 summary available.'}"),
+            title="[header]AtlasStack ELI5[/header]",
+            border_style="premium",
+            box=box.ROUNDED
+        ))
+        return
+
     console.print(Panel(
         Markdown(f"### 🎯 Summary\n{summary}\n\n### 🧸 ELI5\n{eli5}"),
         title="[header]Repository Analysis[/header]",
@@ -120,6 +130,33 @@ def render_analysis_report(data: dict):
         console.print("\n[success]🚀 Getting Started[/success]")
         for step in steps:
             console.print(f"  [muted]•[/muted] [silver]{step}[/silver]")
+
+def render_architecture_graph(data: dict):
+    """Renders the architecture map in the terminal."""
+    nodes = data.get("nodes", [])
+    interactions = data.get("interactions", [])
+    
+    tree = Tree("[premium]Architecture Map[/premium]")
+    
+    for node in nodes:
+        node_id = node.get("id", "root")
+        node_name = node.get("name", node_id)
+        node_type = node.get("type", "module")
+        type_color = "cyan" if node_type == "gateway" else "success" if node_type == "service" else "warning" if node_type == "database" else "silver"
+        
+        branch = tree.add(f"[{type_color}]{node_name}[/{type_color}] ([muted]{node_type}[/muted])")
+        
+        # Technologies
+        techs = node.get("technologies", [])
+        if techs:
+            branch.add(f"[header]Stack:[/header] {', '.join(techs)}")
+            
+        # Dependencies (outgoing interactions)
+        deps = [i["to"] for i in interactions if i["from"] == node_id]
+        if deps:
+            branch.add(f"[header]Connects to:[/header] {', '.join(deps)}")
+            
+    console.print(Panel(tree, border_style="silver", box=box.ROUNDED))
 
 def render_history_table(records):
     """Renders a beautiful table of past analyses."""
