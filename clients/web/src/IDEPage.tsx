@@ -198,7 +198,11 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       headers,
       body: JSON.stringify({ repo_url: targetRepo, save_result: !!token })
     })
-    .then(res => res.json())
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Analysis failed');
+      return data;
+    })
     .then(data => {
       setMvpData(data);
       // Fetch the new graphical map as well
@@ -253,7 +257,11 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       method: 'GET',
       headers
     })
-    .then(res => res.json())
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to load analysis');
+      return data;
+    })
     .then(data => {
       setMvpData(data);
       
@@ -378,11 +386,11 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
   const handleCopyMarkdown = () => {
     let md = `# AtlasStack Analysis: ${repoInput}\n\n`;
     md += `> **Repo Health:** ${mvpData.health_score}/100\n\n`;
-    md += `## 🧠 Codebase Explanation\n${eli5Mode ? mvpData.explanation.eli5_summary : mvpData.explanation.summary}\n\n`;
-    md += `**Entry Point:** \`${mvpData.explanation.entry_point}\`\n\n`;
+    md += `## 🧠 Codebase Explanation\n${eli5Mode ? mvpData?.explanation?.eli5_summary : mvpData?.explanation?.summary}\n\n`;
+    md += `**Entry Point:** \`${mvpData?.explanation?.entry_point || 'Unknown'}\`\n\n`;
     if (!eli5Mode) {
-      md += `**Architecture:** ${mvpData.explanation.architecture}\n\n`;
-      md += `**Data Flow:** ${mvpData.explanation.data_flow}\n\n`;
+      md += `**Architecture:** ${mvpData?.explanation?.architecture || 'System Architecture'}\n\n`;
+      md += `**Data Flow:** ${mvpData?.explanation?.data_flow || 'N/A'}\n\n`;
     }
     md += `## ▶️ How to Run\n\`\`\`bash\ngit clone ${repoInput}\n${(mvpData.run_steps || []).join('\n')}\n\`\`\`\n\n`;
     
@@ -673,7 +681,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                   {eli5Mode ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-inner relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/5 blur-3xl -z-10" />
-                      <p className="text-silver-100 leading-relaxed text-lg font-medium metallic-text-subtle">{mvpData.explanation.eli5_summary}</p>
+                      <p className="text-silver-100 leading-relaxed text-lg font-medium metallic-text-subtle">{mvpData?.explanation?.eli5_summary || "No ELI5 summary available."}</p>
                     </motion.div>
                   ) : (
                     <div className="space-y-6">
@@ -684,30 +692,30 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                           System core concept
                         </div>
                         <h4 className="text-white text-lg font-black mb-2 metallic-text">What it does</h4>
-                        <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.summary}</p>
+                        <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData?.explanation?.summary || "No summary available."}</p>
                       </div>
                       
                       {/* How */}
-                      {mvpData.explanation.architecture && (
+                      {mvpData?.explanation?.architecture && (
                         <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
                           <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
                             <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">02</div>
                             Architectural Blueprint
                           </div>
                           <h4 className="text-white text-lg font-black mb-2 metallic-text">How it works</h4>
-                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.architecture}</p>
+                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData?.explanation?.architecture}</p>
                         </div>
                       )}
                       
                       {/* Why (Data Flow) */}
-                      {mvpData.explanation.data_flow && (
+                      {mvpData?.explanation?.data_flow && (
                         <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
                           <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
                             <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">03</div>
                             Strategic Advantage
                           </div>
                           <h4 className="text-white text-lg font-black mb-2 metallic-text">Why it matters</h4>
-                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData.explanation.data_flow}</p>
+                          <p className="text-silver-400 text-sm leading-relaxed font-medium">{mvpData?.explanation?.data_flow}</p>
                         </div>
                       )}
                     </div>
@@ -726,7 +734,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                     <div className="bg-white/3 rounded-[1.5rem] p-5 border border-white/5 hover:border-white/10 transition-colors shadow-xl">
                       <h4 className="text-[9px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-4 flex items-center gap-2"><Code2 className="w-3.5 h-3.5"/> Principal Node</h4>
                       <code className="text-white bg-white/10 px-4 py-2 rounded-[1rem] text-xs font-black metallic-text truncate block w-full border border-white/5">
-                        {mvpData.explanation.entry_point || 'Unknown'}
+                        {mvpData?.explanation?.entry_point || 'Unknown'}
                       </code>
                     </div>
                   </div>

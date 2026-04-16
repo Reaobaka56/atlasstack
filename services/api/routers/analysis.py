@@ -520,7 +520,13 @@ async def get_analysis_detail(
         "health_score": record.health_score,
         "tech_debt_score": getattr(record, "tech_debt_score", 0),
         "maturity_level": getattr(record, "maturity_level", "Unknown"),
-        "explanation": {"summary": record.summary, "eli5_summary": record.eli5_summary},
+        "explanation": {
+            "summary": record.summary, 
+            "eli5_summary": record.eli5_summary,
+            "entry_point": getattr(record, "entry_point", "Unknown"),
+            "architecture": getattr(record, "architecture", {}).get("summary", "System Architecture") if isinstance(getattr(record, "architecture", {}), dict) else "System Architecture",
+            "data_flow": getattr(record, "data_flow", "Data Pipeline")
+        },
         "tech_stack": record.tech_stack,
         "important_files": record.important_files,
         "fixes": record.fixes,
