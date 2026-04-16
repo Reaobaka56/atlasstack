@@ -204,7 +204,23 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       return data;
     })
     .then(data => {
-      setMvpData(data);
+      const sanitized = {
+        ...data,
+        explanation: data.explanation || {
+          summary: "No summary available.",
+          eli5_summary: "No simplified explanation available.",
+          entry_point: "Unknown",
+          architecture: "System Architecture",
+          data_flow: "N/A"
+        },
+        health_score: data.health_score ?? 0,
+        fixes: data.fixes || [],
+        important_files: data.important_files || [],
+        tech_stack: data.tech_stack || [],
+        run_steps: data.run_steps || [],
+      };
+      setMvpData(sanitized);
+      setStep('dashboard');
       // Fetch the new graphical map as well
       fetch(`${API_URL}/api/v1/analysis/graph/preview`, {
         method: 'POST',
@@ -263,7 +279,23 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       return data;
     })
     .then(data => {
-      setMvpData(data);
+      const sanitized = {
+        ...data,
+        explanation: data.explanation || {
+          summary: "No summary available.",
+          eli5_summary: "No simplified explanation available.",
+          entry_point: "Unknown",
+          architecture: "System Architecture",
+          data_flow: "N/A"
+        },
+        health_score: data.health_score ?? 0,
+        fixes: data.fixes || [],
+        important_files: data.important_files || [],
+        tech_stack: data.tech_stack || [],
+        run_steps: data.run_steps || [],
+      };
+      setMvpData(sanitized);
+      setStep('dashboard');
       
       // Attempt to load the graph
       fetch(`${API_URL}/api/v1/analyses/${analysisId}/graph`, {
