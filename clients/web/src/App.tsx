@@ -65,11 +65,12 @@ type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset';
 
 // --- Components ---
 
-const Navbar = ({ onNavigate, currentPage, token, onLogout }: { 
+const Navbar = ({ onNavigate, currentPage, token, onLogout, scrolled }: { 
   onNavigate: (page: Page) => void, 
   currentPage: Page,
   token: string | null,
-  onLogout: () => void
+  onLogout: () => void,
+  scrolled: boolean
 }) => {
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -88,7 +89,9 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout }: {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6">
+    <nav className={`fixed top-0 left-0 right-0 z-50 px-8 py-5 transition-all duration-500 ${
+      scrolled ? 'backdrop-blur-xl bg-black/40 border-b border-white/5 py-3' : 'bg-transparent'
+    }`}>
     <div className="max-w-7xl mx-auto flex items-center justify-between">
       <div 
         className="flex items-center gap-4 group cursor-pointer"
@@ -533,6 +536,37 @@ const LoginPage = ({ onBack, onLoginSuccess, apiUrl, initialResetToken }: { onBa
   );
 };
 
+const CookieBanner = () => {
+  const [show, setShow] = useState(() => !localStorage.getItem('atlasstack_cookies_accepted'));
+
+  if (!show) return null;
+
+  const handleAccept = () => {
+    localStorage.setItem('atlasstack_cookies_accepted', 'true');
+    setShow(false);
+  };
+
+  return (
+    <motion.div 
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="fixed bottom-8 left-8 right-8 md:left-auto md:right-8 md:w-[400px] z-[100]"
+    >
+      <div className="liquid-glass p-8 rounded-[2.5rem] border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl -z-10 rounded-full" />
+        <h4 className="text-white font-bold text-lg mb-3">Cookies & Topology</h4>
+        <p className="text-silver-500 text-sm leading-relaxed mb-6">
+          We use cookies to analyze node traffic and optimize your architectural experience. By continuing, you agree to our standard telemetry protocols.
+        </p>
+        <div className="flex gap-4">
+          <button onClick={handleAccept} className="btn-pill btn-pill-active py-2.5 px-6 text-xs flex-1 justify-center">Accept All</button>
+          <button onClick={() => setShow(false)} className="btn-pill py-2.5 px-6 text-xs flex-1 justify-center">Dismiss</button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 
 const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro, setIsPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, setIsPro: (val: boolean) => void, key?: React.Key }) => {
   const [repoUrl, setRepoUrl] = useState('');
@@ -612,9 +646,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-silver-400 backdrop-blur-xl">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                Autonomous Engineering Standard
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 backdrop-blur-xl">
-               New: Atlas CLI v1.0 Available
             </div>
           </div>
           <h1 className="text-5xl sm:text-7xl lg:text-8xl metallic-text font-display-bold mb-8 max-w-4xl mx-auto">
@@ -968,14 +999,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
         </div>
       </section>
 
-      <section className="py-32 text-center border-t border-white/5">
-        <h2 className="text-3xl metallic-text mb-6">Why I built AtlasStack</h2>
-        <p className="text-lg text-silver-400 leading-relaxed italic mb-8 max-w-2xl mx-auto">
-          "I was tired of spending hours on routine engineering tasksâ€”fixing low-level bugs, resolving tech debt, and updating dependencies. I wanted an autonomous engineer that could analyze a repository and submit PRs while my team focused on the hard problems. That's why I built AtlasStack."
-        </p>
-        <div className="text-white font-semibold text-lg">Reaobaka Mogajane</div>
-        <div className="text-slate-500 text-sm mt-1 uppercase tracking-widest">Founder, AtlasStack</div>
-      </section>
 
       {/* Footer */}
       <footer className="pt-24 pb-16 border-t border-white/5">
@@ -1010,6 +1033,7 @@ export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem(TOKEN_KEY));
   const [isPro, setIsPro] = useState<boolean>(localStorage.getItem('atlas_pro') === '1');
   const [apiUrl, setApiUrl] = useState<string>(detectDefaultApiUrl());
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -1033,6 +1057,14 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('reset_token');
   });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     // Handle GitHub Auth Callback â€” GitHub redirects back to the frontend with ?code=...
@@ -1094,6 +1126,7 @@ export default function App() {
         currentPage={currentPage} 
         token={token}
         onLogout={handleLogout}
+        scrolled={scrolled}
       />
 
       <AnimatePresence mode="wait">
@@ -1154,6 +1187,7 @@ export default function App() {
           />
         ) : null}
       </AnimatePresence>
+      <CookieBanner />
     </div>
   );
 }
