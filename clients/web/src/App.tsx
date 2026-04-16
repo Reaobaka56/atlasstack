@@ -37,6 +37,10 @@ const TOKEN_KEY = "atlasstack_access_token";
 const normalizeApiUrl = (value?: string | null) => (value || '').trim().replace(/\/$/, '');
 
 const detectDefaultApiUrl = () => {
+  // Check for explicitly defined API URL from environment (Vite/webpack style)
+  const envApiUrl = normalizeApiUrl((import.meta as any).env?.VITE_API_URL);
+  if (envApiUrl) return envApiUrl;
+
   const fromWindow = normalizeApiUrl((window as any).ATLASSTACK_API_URL);
   if (fromWindow) return fromWindow;
 
@@ -46,8 +50,18 @@ const detectDefaultApiUrl = () => {
   const fromStorage = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY));
   if (fromStorage) return fromStorage;
 
+  // Render naming convention: myapp-web.onrender.com -> myapp-api.onrender.com
   if (window.location.hostname.includes('onrender.com')) {
-    return `${window.location.protocol}//${window.location.hostname.replace(/-web(?=\.)/, '-api')}`;
+    if (window.location.hostname.includes('-web.')) {
+        return `${window.location.protocol}//${window.location.hostname.replace('-web.', '-api.')}`;
+    }
+    // If we can't guess, fallback to the current origin (e.g. monorepo deploy)
+    return window.location.origin;
+  }
+  
+  // Vercel fallback: often the API is served from the same domain under /api
+  if (window.location.hostname.includes('vercel.app')) {
+    return `${window.location.origin}`;
   }
 
   return 'http://localhost:8005';
