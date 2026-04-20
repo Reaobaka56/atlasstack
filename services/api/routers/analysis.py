@@ -32,15 +32,33 @@ def validate_repo_url(url: str):
     """Validate repository URL to prevent SSRF and illegal paths."""
     ALLOWED_DOMAINS = ["github.com", "gitlab.com", "bitbucket.org"]
     try:
+        if not url:
+             raise HTTPException(status_code=400, detail="Repository URL is required.")
+        
         parsed = urlparse(url)
-        if parsed.hostname not in ALLOWED_DOMAINS:
-            raise HTTPException(status_code=400, detail="Only GitHub, GitLab, and Bitbucket are allowed.")
+        hostname = parsed.hostname
+        if not hostname:
+             # Try adding https:// if missing
+             if not url.startswith(('http://', 'https://')):
+                 parsed = urlparse('https://' + url)
+                 hostname = parsed.hostname
+             else:
+                 raise HTTPException(status_code=400, detail="Invalid repository URL")
+
+        # Allow subdomains like www.
+        base_hostname = hostname.replace('www.', '')
+        if base_hostname not in ALLOWED_DOMAINS:
+            raise HTTPException(status_code=400, detail=f"Only {', '.join(ALLOWED_DOMAINS)} are allowed.")
+            
+        if not parsed.path or parsed.path == '/':
+            raise HTTPException(status_code=400, detail="Repository path is required (e.g. /user/repo).")
+            
         if not re.match(r'^/[\w\-./]+$', parsed.path):
             raise HTTPException(status_code=400, detail="Invalid repository path format.")
         return url
     except Exception as e:
         if isinstance(e, HTTPException): raise e
-        raise HTTPException(status_code=400, detail="Invalid repository URL")
+        raise HTTPException(status_code=400, detail=f"Invalid repository URL: {str(e)}")
 
 
 async def get_repo_size_mb(path: str) -> float:
@@ -300,8 +318,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             dependencies=[],
             tech_stack={"frameworks": [], "databases": []}
         )
-    finally:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 
 @router.post("/analyze", response_model=AnalysisResponse)

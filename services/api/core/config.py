@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # Application
     APP_NAME: str = "AtlasStack API"
-    DEBUG: bool = False
+    DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
     ENVIRONMENT: str = "production"
     LITE_MODE: bool = True
@@ -59,7 +59,14 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 60
 
     # CORS
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+        "https://atlasstack.ai",
+        "*" # Fallback (though browsers may still complain for credentialed requests)
+    ]
 
     # Feature Flags
     ENABLE_SECURITY_SCANNING: bool = True
