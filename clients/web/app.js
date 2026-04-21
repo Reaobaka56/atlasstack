@@ -22,7 +22,7 @@ const detectDefaultApiUrl = () => {
     return `${window.location.protocol}//${window.location.hostname.replace(/-web(?=\.)/, "-api")}`;
   }
 
-  return "http://localhost:8000";
+  return "http://localhost:8005";
 };
 
 let apiUrl = detectDefaultApiUrl();
