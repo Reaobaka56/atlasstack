@@ -7,7 +7,6 @@ import {
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
   FileCode2, MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
-import { useRef as useReactRef } from 'react';
 import mermaid from 'mermaid';
 import ArchitectureMap from './ArchitectureMap';
 
@@ -789,8 +788,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
                 <div className="flex flex-col gap-6">
                   {/* 2. Important Files — refined hierarchy with clear badges */}
-                  <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
-                    <div className="flex items-center gap-4 text-white">
+                    <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                      <div className="flex items-center gap-4 text-white">
                       <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
                         <FolderTree className="w-6 h-6 text-white" />
                       </div>

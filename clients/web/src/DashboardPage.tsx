@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home, GitBranch, Clock, BarChart3, Settings, ChevronRight,
@@ -708,7 +708,7 @@ export const DashboardPage = ({
       <div className="fixed bottom-8 right-8 z-50">
         <AnimatePresence>
           {isChatOpen && (
-            <motion.div 
+              <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}

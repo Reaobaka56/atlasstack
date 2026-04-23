@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Editor from '@monaco-editor/react';
 import { IDEPage } from './IDEPage';
 import { DashboardPage } from './DashboardPage';
+import { AgentEyeDashboard } from './AgentEyeDashboard';
 import { 
   Shield, 
   Zap, 
@@ -75,7 +76,7 @@ interface Feature {
   icon: React.ReactNode;
 }
 
-type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset';
+type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset' | 'eye';
 
 // --- Components ---
 
@@ -133,6 +134,7 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout, scrolled }: {
             <>
               <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
               <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
+              <button onClick={() => onNavigate('eye')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">AgentEye</button>
               <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
             </>
           ) : (
@@ -1168,6 +1170,10 @@ export default function App() {
                setCurrentPage('ide'); 
             }}
           />
+        ) : currentPage === 'eye' ? (
+          <div className="pt-32 px-10 max-w-7xl mx-auto h-[calc(100vh-80px)]">
+            <AgentEyeDashboard />
+          </div>
         ) : currentPage === 'landing' ? (
           <LandingPage 
             key="landing"
