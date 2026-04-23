@@ -62,11 +62,18 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost:5173",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
         "http://0.0.0.0:3000",
+        "http://0.0.0.0:5173",
         "https://atlasstack.ai",
-        "*" # Fallback (though browsers may still complain for credentialed requests)
     ]
+    # Supports preview deployments (Vercel/Render) and local development ports.
+    CORS_ORIGIN_REGEX: str = (
+        r"^https://([a-zA-Z0-9-]+\.)*(atlasstack\.ai|vercel\.app|onrender\.com)$|"
+        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$"
+    )
 
     # Feature Flags
     ENABLE_SECURITY_SCANNING: bool = True
