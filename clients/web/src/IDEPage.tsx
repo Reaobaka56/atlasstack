@@ -101,7 +101,11 @@ export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; on
 };
 
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
-  const API_URL = apiUrlProp || (process as any).env?.REACT_APP_API_URL || (window as any).ATLASSTACK_API_URL || "http://localhost:8005";
+  const defaultApiHost = window.location.hostname;
+  const defaultApiUrl = (defaultApiHost === 'localhost' || defaultApiHost === '127.0.0.1' || defaultApiHost === '0.0.0.0')
+    ? 'http://localhost:8005'
+    : `${window.location.protocol}//${defaultApiHost}:8005`;
+  const API_URL = apiUrlProp || (process as any).env?.REACT_APP_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
   const [step, setStep] = useState<'connect' | 'input' | 'analyzing' | 'dashboard'>(analysisId ? 'analyzing' : 'connect');
   const [repoInput, setRepoInput] = useState(repoUrl || '');
   const [mvpData, setMvpData] = useState<any>(null);
