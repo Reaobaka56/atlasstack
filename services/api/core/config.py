@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     # Supports preview deployments (Vercel/Render) and local development ports.
     CORS_ORIGIN_REGEX: str = (
         r"^https://([a-zA-Z0-9-]+\.)*(atlasstack\.ai|vercel\.app|onrender\.com)$|"
-        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$"
+        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?$"
     )
 
     # Feature Flags
