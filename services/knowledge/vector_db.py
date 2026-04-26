@@ -148,11 +148,73 @@ class VectorDB:
         filters: Optional[Dict] = None,
     ) -> List[Dict]:
         """Search code using vector similarity"""
-        # Note: This requires an embedding model to convert query to vector
-        # For now, return an empty list - in production, use the LLM service
-        # to generate embeddings
-        logger.warning("Vector search requires embeddings - implement with LLM service")
-        return []
+        try:
+            # 1. Get embedding for the query
+            embedding = await self._get_query_embedding(query)
+            if not embedding:
+                logger.warning("Could not generate embedding for query")
+                return []
+
+            # 2. Perform vector search
+            collection = self.client.collections.get(self.collection_name)
+
+            # Build filters if any
+            filter_clause = None
+            if filters:
+                from weaviate.classes.query import Filter
+                # Simple implementation - can be expanded
+                if "language" in filters:
+                    filter_clause = Filter.by_property("language").equal(filters["language"])
+                if "repo_id" in filters:
+                    repo_filter = Filter.by_property("repo_id").equal(filters["repo_id"])
+                    filter_clause = filter_clause & repo_filter if filter_clause else repo_filter
+
+            results = collection.query.near_vector(
+                near_vector=embedding,
+                limit=limit,
+                filters=filter_clause,
+                return_metadata=["distance"],
+            )
+
+            formatted_results = []
+            for obj in results.objects:
+                formatted_results.append(
+                    {
+                        "id": str(obj.uuid),
+                        "type": obj.properties.get("snippet_type", "function"),
+                        "name": obj.properties.get("function_name", "Unknown"),
+                        "file_path": obj.properties.get("file_path"),
+                        "language": obj.properties.get("language"),
+                        "score": 1.0 - (obj.metadata.distance or 0),
+                        "snippet": obj.properties.get("content"),
+                    }
+                )
+
+            return formatted_results
+
+        except Exception as e:
+            logger.error(f"Vector search failed: {e}")
+            return []
+
+    async def _get_query_embedding(self, query: str) -> Optional[List[float]]:
+        """Get embedding for a search query from the LLM service"""
+        import httpx
+        llm_service_url = os.getenv("LLM_SERVICE_URL", "http://llm:8000")
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{llm_service_url}/embeddings",
+                    json={"texts": [query]},
+                    timeout=10.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                embeddings = data.get("embeddings", [])
+                return embeddings[0] if embeddings else None
+        except Exception as e:
+            logger.error(f"Failed to get query embedding: {e}")
+            return None
 
     async def find_similar(
         self,

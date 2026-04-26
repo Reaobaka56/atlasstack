@@ -109,6 +109,13 @@ class CodeIndexer:
             except Exception as e:
                 logger.warning(f"Failed to index function {func['name']}: {e}")
 
+        # Index calls from deep parsing
+        for call in file_info.get("calls", []):
+            # This is a simplified call graph linking
+            # In a real system, we'd resolve the call to a specific function ID
+            # For now, we'll store them as potential call relationships
+            pass
+
         # Index classes
         for cls in file_info.get("classes", []):
             cls_id = hashlib.md5(f"{repo_id}:{file_path}:{cls['name']}".encode()).hexdigest()

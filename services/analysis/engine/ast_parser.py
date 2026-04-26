@@ -73,6 +73,8 @@ class ParsedFile:
     functions: List[FunctionInfo] = field(default_factory=list)
     classes: List[ClassInfo] = field(default_factory=list)
     imports: List[ImportInfo] = field(default_factory=list)
+    calls: List[Dict[str, Any]] = field(default_factory=list)
+    definitions: List[Dict[str, Any]] = field(default_factory=list)
     ast: Optional[Any] = None
     raw_tree: Optional[Tree] = None
     errors: List[str] = field(default_factory=list)
@@ -87,12 +89,13 @@ class ASTParser:
         self._load_languages()
 
     def _load_languages(self):
-        """Load tree-sitter language parsers"""
+        """Load tree-sitter language parsers and queries"""
         try:
             # Try to import language modules
             languages_to_load = [
                 ("python", "tree_sitter_python"),
                 ("javascript", "tree_sitter_javascript"),
+                ("typescript", "tree_sitter_typescript"),
                 ("java", "tree_sitter_java"),
                 ("go", "tree_sitter_go"),
                 ("rust", "tree_sitter_rust"),
@@ -106,16 +109,56 @@ class ASTParser:
                     self.languages[lang_name] = language
 
                     parser = Parser()
-                    # Newer tree-sitter bindings use an attribute setter for language
                     parser.language = language
                     self.parsers[lang_name] = parser
 
-                    logger.debug(f"Loaded {lang_name} parser")
+                    # Load tags queries for deep parsing
+                    self._load_queries(lang_name, language)
+
+                    logger.debug(f"Loaded {lang_name} parser and queries")
                 except ImportError:
                     logger.warning(f"Could not load {lang_name} parser")
 
         except Exception as e:
             logger.error(f"Error loading languages: {e}")
+
+    def _load_queries(self, lang_name: str, language: Language):
+        """Load tree-sitter queries for the language"""
+        # This would typically load from .scm files, but we'll define core ones here for robustness
+        self.queries: Dict[str, Any] = getattr(self, 'queries', {})
+        
+        queries = {
+            "python": """
+                (function_definition name: (identifier) @function.def)
+                (class_definition name: (identifier) @class.def)
+                (import_statement (dotted_name) @import.path)
+                (import_from_statement module: (dotted_name) @import.path)
+                (call function: (identifier) @function.call)
+                (call function: (attribute attribute: (identifier) @method.call))
+            """,
+            "javascript": """
+                (function_declaration name: (identifier) @function.def)
+                (method_definition name: (property_identifier) @method.def)
+                (class_declaration name: (identifier) @class.def)
+                (import_declaration source: (string) @import.path)
+                (call_expression function: (identifier) @function.call)
+                (call_expression function: (member_expression property: (property_identifier) @method.call))
+            """,
+            "go": """
+                (function_declaration name: (identifier) @function.def)
+                (method_declaration name: (field_identifier) @method.def)
+                (type_declaration (type_spec name: (type_identifier) @type.def))
+                (import_spec path: (string_literal) @import.path)
+                (call_expression function: (identifier) @function.call)
+                (call_expression function: (selector_expression field: (field_identifier) @method.call))
+            """
+        }
+        
+        if lang_name in queries:
+            try:
+                self.queries[lang_name] = language.query(queries[lang_name])
+            except Exception as e:
+                logger.error(f"Failed to load queries for {lang_name}: {e}")
 
     def detect_language(self, file_path: str) -> Optional[str]:
         """Detect programming language from file extension"""
@@ -174,6 +217,10 @@ class ASTParser:
         )
 
         # Extract information based on language
+        if language in self.queries:
+            self._extract_deep_info(tree, content, result)
+        
+        # Legacy extraction for backward compatibility
         if language == "python":
             self._extract_python_info(tree, content, result)
         elif language in ["javascript", "typescript"]:
@@ -187,6 +234,35 @@ class ASTParser:
             self._extract_generic_info(tree, content, result)
 
         return result
+
+    def _extract_deep_info(self, tree: Tree, content: str, result: ParsedFile):
+        """Extract deep information using tree-sitter queries"""
+        if result.language not in self.queries:
+            return
+
+        query = self.queries[result.language]
+        captures = query.captures(tree.root_node)
+
+        for node, tag in captures:
+            tag_parts = tag.split(".")
+            category = tag_parts[0]
+            action = tag_parts[1] if len(tag_parts) > 1 else "def"
+
+            info = {
+                "name": content[node.start_byte : node.end_byte],
+                "start_line": node.start_point[0] + 1,
+                "end_line": node.end_point[0] + 1,
+                "type": tag,
+                "node_type": node.type
+            }
+
+            if action == "def":
+                result.definitions.append(info)
+            elif action == "call":
+                result.calls.append(info)
+            elif category == "import":
+                # Imports already handled by legacy, but could be unified
+                pass
 
     def _extract_python_info(self, tree: Tree, content: str, result: ParsedFile):
         """Extract information from Python AST"""

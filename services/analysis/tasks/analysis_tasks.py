@@ -57,49 +57,40 @@ def analyze_repository(
         # Clone repository (simplified - in production, use proper git operations)
         repo_path = f"/tmp/repos/{repo_id}"
 
-        # Perform analysis
-        results = {
+        # Build analysis task group
+        analysis_tasks = []
+        
+        if "security" in analysis_types:
+            analysis_tasks.append(analyze_security.s(repo_path, options.get("security", {})))
+            
+        if "performance" in analysis_types:
+            analysis_tasks.append(analyze_performance.s(repo_path, options.get("performance", {})))
+            
+        if "taint" in analysis_types and settings.ENABLE_TAINT_ANALYSIS:
+            analysis_tasks.append(analyze_taint.s(repo_path, options.get("taint", {})))
+
+        # Run tasks in parallel and use a callback for completion
+        from celery import group
+        
+        job = group(analysis_tasks)
+        result = job.apply_async()
+        
+        # In a real system, we'd use a chord with a callback.
+        # For now, we'll store the group ID and return it so the caller can track it.
+        
+        return {
+            "status": "pending",
             "repo_id": repo_id,
-            "analysis_types": analysis_types,
-            "security": None,
-            "performance": None,
-            "taint": None,
-            "errors": [],
+            "group_id": result.id,
+            "tasks_count": len(analysis_tasks)
         }
 
-        if "security" in analysis_types:
-            security_result = analyze_security.delay(repo_path, options.get("security", {}))
-            results["security"] = security_result.get()
-
-        if "performance" in analysis_types:
-            performance_result = analyze_performance.delay(
-                repo_path, options.get("performance", {})
-            )
-            results["performance"] = performance_result.get()
-
-        if "taint" in analysis_types and settings.ENABLE_TAINT_ANALYSIS:
-            taint_result = analyze_taint.delay(repo_path, options.get("taint", {}))
-            results["taint"] = taint_result.get()
-
-        duration = time.time() - start_time
-
-        # Notify knowledge graph service
-        try:
-            notify_knowledge_service(repo_id, results)
-        except Exception as e:
-            logger.error(f"Failed to notify knowledge service: {e}")
-
-        logger.info(
-            "Repository analysis completed",
-            repo_id=repo_id,
-            duration_seconds=duration,
-        )
-
+    except Exception as exc:
+        logger.error(f"Repository analysis initiation failed: {exc}")
         return {
-            "status": "completed",
+            "status": "failed",
             "repo_id": repo_id,
-            "duration_seconds": duration,
-            "results": results,
+            "error": str(exc),
         }
 
     except Exception as exc:
