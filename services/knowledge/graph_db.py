@@ -170,6 +170,64 @@ class GraphDB:
             record = await result.single()
             return record is not None
 
+    async def create_class(
+        self,
+        class_id: str,
+        file_id: str,
+        name: str,
+        line_start: int,
+        line_end: int,
+        parent_classes: Optional[List[str]] = None,
+    ) -> bool:
+        """Create a class node"""
+        query = """
+        MATCH (f:File {id: $file_id})
+        MERGE (c:Class {id: $class_id})
+        SET c.name = $name,
+            c.line_start = $line_start,
+            c.line_end = $line_end,
+            c.parent_classes = $parent_classes
+        MERGE (f)-[:DEFINES]->(c)
+        RETURN c
+        """
+
+        async with self.driver.session() as session:
+            result = await session.run(
+                query,
+                class_id=class_id,
+                file_id=file_id,
+                name=name,
+                line_start=line_start,
+                line_end=line_end,
+                parent_classes=parent_classes or [],
+            )
+            record = await result.single()
+            return record is not None
+
+    async def create_import_relationship(
+        self,
+        file_id: str,
+        target_path: str,
+        is_from_import: bool = False,
+    ) -> bool:
+        """Create an IMPORTS relationship between a file and a target module/file"""
+        query = """
+        MATCH (f:File {id: $file_id})
+        MERGE (target:Module {path: $target_path})
+        MERGE (f)-[:IMPORTS {is_from: $is_from_import}]->(target)
+        RETURN f, target
+        """
+
+        async with self.driver.session() as session:
+            result = await session.run(
+                query,
+                file_id=file_id,
+                target_path=target_path,
+                is_from_import=is_from_import,
+            )
+            record = await result.single()
+            return record is not None
+
     async def create_call_relationship(
         self,
         caller_id: str,

@@ -151,6 +151,37 @@ class ASTParser:
                 (import_spec path: (string_literal) @import.path)
                 (call_expression function: (identifier) @function.call)
                 (call_expression function: (selector_expression field: (field_identifier) @method.call))
+            """,
+            "typescript": """
+                (function_declaration name: (identifier) @function.def)
+                (method_definition name: (property_identifier) @method.def)
+                (class_declaration name: (identifier) @class.def)
+                (import_declaration source: (string) @import.path)
+                (call_expression function: (identifier) @function.call)
+                (call_expression function: (member_expression property: (property_identifier) @method.call))
+                (interface_declaration name: (identifier) @type.def)
+                (type_alias_declaration name: (identifier) @type.def)
+            """,
+            "java": """
+                (method_declaration name: (identifier) @function.def)
+                (class_declaration name: (identifier) @class.def)
+                (import_declaration (scoped_identifier) @import.path)
+                (method_invocation name: (identifier) @function.call)
+            """,
+            "rust": """
+                (function_item name: (identifier) @function.def)
+                (struct_item name: (type_identifier) @class.def)
+                (impl_item type: (type_identifier) @impl.def)
+                (use_declaration argument: (use_path) @import.path)
+                (call_expression function: (identifier) @function.call)
+                (call_expression function: (field_expression field: (field_identifier) @method.call))
+            """,
+            "cpp": """
+                (function_definition declarator: (function_declarator declarator: (identifier) @function.def))
+                (class_specifier name: (type_identifier) @class.def)
+                (preproc_include path: (string_literal) @import.path)
+                (call_expression function: (identifier) @function.call)
+                (call_expression function: (field_expression field: (field_identifier) @method.call))
             """
         }
         

@@ -120,8 +120,24 @@ class CodeIndexer:
         for cls in file_info.get("classes", []):
             cls_id = hashlib.md5(f"{repo_id}:{file_path}:{cls['name']}".encode()).hexdigest()
 
-            # Create class node (would need to add to graph_db)
+            await self.graph_db.create_class(
+                class_id=cls_id,
+                file_id=file_id,
+                name=cls["name"],
+                line_start=cls.get("line_start", 0),
+                line_end=cls.get("line_end", 0),
+                parent_classes=cls.get("parent_classes"),
+            )
             nodes_created += 1
+
+        # Index imports
+        for imp in file_info.get("imports", []):
+            await self.graph_db.create_import_relationship(
+                file_id=file_id,
+                target_path=imp["module"],
+                is_from_import=imp.get("is_from_import", False),
+            )
+            relationships_created += 1
 
         return nodes_created, relationships_created
 

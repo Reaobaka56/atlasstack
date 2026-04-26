@@ -13,6 +13,7 @@ from celery.exceptions import MaxRetriesExceededError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.config import settings
+from services.analysis.core.cache import cache
 from services.analysis.engine.ast_parser import get_parser
 from services.analysis.engine.performance_analyzer import get_analyzer
 from services.analysis.engine.security_scanner import get_scanner
@@ -32,16 +33,16 @@ def analyze_repository(
 ):
     """
     Analyze an entire repository
-
-    Args:
-        repo_id: Repository ID
-        repo_url: Repository URL
-        branch: Branch to analyze
-        analysis_types: Types of analysis to perform
-        options: Additional analysis options
     """
     analysis_types = analysis_types or ["security", "performance"]
     options = options or {}
+
+    # Check cache first
+    cache_key = cache.get_analysis_key(repo_id, "combined")
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        logger.info("Returning cached analysis results", repo_id=repo_id)
+        return cached_result
 
     logger.info(
         "Starting repository analysis",
