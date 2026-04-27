@@ -1004,6 +1004,30 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
             </motion.div>
             </Show>
           )}
+
+          {step === 'dashboard' && mvpData && (
+            <Show when="signed-out">
+              <motion.div 
+                key="login-required" 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                className="flex flex-col items-center justify-center py-20 text-center"
+              >
+                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8 shadow-2xl">
+                  <Lock className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-4xl font-black text-white metallic-text mb-4">Login to View Analysis</h2>
+                <p className="text-silver-500 max-w-md mb-10 leading-relaxed font-medium">
+                  Deep architectural insights, security vulnerabilities, and logic flows are restricted to authenticated nodes.
+                </p>
+                <SignInButton mode="modal">
+                  <button className="btn-primary px-12 py-5 text-lg font-bold rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all">
+                    Sign In to Unlock Results
+                  </button>
+                </SignInButton>
+              </motion.div>
+            </Show>
+          )}
         </AnimatePresence>
       </div>
 
@@ -1088,7 +1112,9 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
                   {chatMessages.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                      <Zap className="w-12 h-12 mb-4 text-silver-600" />
+                      <div className="w-16 h-16 mb-4 flex items-center justify-center p-2 bg-white/5 rounded-2xl border border-white/10">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-60" />
+                      </div>
                       <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Node Sync Complete.<br/>Ready for architectural queries.</p>
                     </div>
                   )}

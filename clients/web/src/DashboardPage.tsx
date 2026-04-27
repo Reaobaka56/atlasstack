@@ -736,7 +736,9 @@ export const DashboardPage = ({
               <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
                 {chatMessages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                    <Zap className="w-12 h-12 mb-4 text-silver-600" />
+                    <div className="w-16 h-16 mb-4 flex items-center justify-center p-2 bg-white/5 rounded-2xl border border-white/10">
+                      <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-60" />
+                    </div>
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Fleet Link Active.<br/>Monitoring node cluster health.</p>
                   </div>
                 )}
