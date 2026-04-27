@@ -333,6 +333,11 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
                Start Analysis Now
              </button>
+             <Show when="signed-out">
+               <SignInButton mode="modal">
+                 <button className="btn-primary px-10 py-5 rounded-full text-base">Sign In / Login</button>
+               </SignInButton>
+             </Show>
              <button 
                onClick={handleDownloadExtension}
                className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3"
