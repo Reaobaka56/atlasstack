@@ -32,6 +32,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import {
+  Show,
   SignInButton,
   SignUpButton,
   UserButton,
@@ -93,20 +94,12 @@ type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset' | 'eye';
 
 // --- Components ---
 
-export const Show = ({ when, children }: { when: 'signed-in' | 'signed-out', children: React.ReactNode }) => {
-  const { isSignedIn } = useAuth();
-  if (when === 'signed-in' && isSignedIn) return <>{children}</>;
-  if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
-  return null;
-};
-
 const Navbar = ({ onNavigate, currentPage, scrolled }: { 
   onNavigate: (page: Page) => void, 
   currentPage: Page,
   scrolled: boolean
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isSignedIn } = useAuth();
 
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,9 +125,14 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
         <button onClick={() => { onNavigate('eye'); setIsMobileMenuOpen(false); }} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">AgentEye</button>
       </Show>
       <Show when="signed-out">
-        <SignInButton mode="modal">
-          <button className="btn-primary py-2.5 text-sm w-full md:w-auto">Sign In / Register</button>
-        </SignInButton>
+        <div className="flex flex-col w-full gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
+          <SignInButton mode="modal">
+            <button className="btn-primary py-2.5 text-sm w-full md:w-auto">Sign In</button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button className="btn-pill py-2.5 text-sm w-full md:w-auto">Sign Up</button>
+          </SignUpButton>
+        </div>
       </Show>
       <Show when="signed-in">
         <UserButton afterSignOutUrl="/" />
