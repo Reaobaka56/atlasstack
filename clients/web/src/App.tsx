@@ -616,8 +616,8 @@ const LandingPage = ({ onNavigateToIDE, apiUrl, onApiUrlChange, isPro, setIsPro 
               price: "$0",
               desc: "Perfect for testing the waters on a single weekend project.",
               features: ["1 Repository", "5 Scans per month", "Basic Code Analysis", "Community Support"],
-              button: token ? "You're on Free" : "Get Started",
-              action: () => onNavigateToLogin(),
+              button: isSignedIn ? "You're on Free" : "Get Started",
+              action: () => {},
               highlight: false,
             },
             {

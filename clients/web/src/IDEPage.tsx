@@ -283,9 +283,10 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
     });
   };
 
-  const fetchExistingData = () => {
+  const fetchExistingData = async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const clerkToken = await getToken();
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
 
     fetch(`${API_URL}/api/v1/analyses/${analysisId}`, {
       method: 'GET',
@@ -397,7 +398,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
       return;
     }
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const clerkToken = await getToken();
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
     try {
       showToast("Creating PR on GitHub...");
       const res = await fetch(`${API_URL}/api/v1/analyses/${mvpData.id}/fixes/${fixIndex}/pr`, {
@@ -906,7 +908,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                                 >
                                   <Eye className="w-3 h-3" /> {isDiffOpen ? 'Hide' : 'Diff'}
                                 </button>
-                                {token && (
+                                {isSignedIn && (
                                   <button 
                                     onClick={() => handleCreatePr(i)}
                                     className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all gap-1 flex items-center bg-emerald-800/80 hover:bg-emerald-700 text-emerald-300 border border-emerald-700/40"

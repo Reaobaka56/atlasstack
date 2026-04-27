@@ -179,7 +179,7 @@ export const DashboardPage = ({
 
   useEffect(() => {
     fetchAnalyses();
-  }, [token]);
+  }, [getToken]);
 
   const fetchAnalyses = async () => {
     try {
