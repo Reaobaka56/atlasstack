@@ -63,7 +63,7 @@ const Mermaid = ({ chart }: { chart: string }) => {
   }, [chart]);
 
   return (
-    <div className="mermaid bg-black/20 p-8 rounded-[2rem] border border-white/5 flex justify-center" ref={ref}>
+    <div className="mermaid bg-black/20 p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 flex justify-center overflow-x-auto" ref={ref}>
       {chart}
     </div>
   );
@@ -448,7 +448,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-8 flex flex-col items-center custom-scrollbar">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-8 sm:pb-12 px-4 sm:px-8 flex flex-col items-center custom-scrollbar">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMsg && (
@@ -459,20 +459,20 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       </AnimatePresence>
 
       {/* Top Navigation */}
-      <div className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/50 backdrop-blur-xl z-40 px-6 flex items-center justify-between">
+      <div className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/60 backdrop-blur-xl z-[70] px-4 sm:px-6 flex items-center justify-between">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium"
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-[10px] sm:text-sm font-medium"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Home
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back to Home</span><span className="sm:hidden">Back</span>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/50">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/50">
             <Zap className="w-3 h-3 text-blue-400" />
           </div>
-          <span className="font-display font-bold text-white tracking-tight">AtlasStack Dashboard</span>
+          <span className="font-display font-bold text-white tracking-tight text-xs sm:text-base">AtlasStack Dashboard</span>
         </div>
-        <div className="w-24" />
+        <div className="w-10 sm:w-24" />
       </div>
 
       <div className="w-full max-w-6xl mt-6">
@@ -573,24 +573,24 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                    </button>
                 </div>
 
-                <div className="mt-6 lg:mt-0 text-center lg:text-left flex-1">
+                <div className="mt-6 lg:mt-0 text-center lg:text-left flex-1 w-full">
                   <div className="flex flex-col lg:flex-row items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
-                      <Github className="w-7 h-7 text-white" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                      <Github className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
-                    <div>
-                      <h2 className="text-3xl font-black text-white metallic-text tracking-tighter">Analysis Complete</h2>
-                      <p className="text-silver-600 font-bold text-xs mt-1 block max-w-sm truncate opacity-60 decoration-white/20 underline underline-offset-4" title={repoInput}>{repoInput}</p>
+                    <div className="max-w-full overflow-hidden">
+                      <h2 className="text-2xl sm:text-3xl font-black text-white metallic-text tracking-tighter">Analysis Complete</h2>
+                      <p className="text-silver-600 font-bold text-[10px] sm:text-xs mt-1 block max-w-full truncate opacity-60 decoration-white/20 underline underline-offset-4" title={repoInput}>{repoInput}</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center gap-10 lg:gap-14 shrink-0">
+                <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-14 shrink-0 w-full lg:w-auto">
                   {/* Health Score */}
-                  <div className="text-center group flex gap-10">
+                  <div className="text-center group flex flex-col sm:flex-row items-center gap-6 sm:gap-10 w-full sm:w-auto justify-center">
                     <div className="flex flex-col items-center">
                       <p className="text-[10px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-3">Integrity Score</p>
-                      <div className={`text-6xl font-black tracking-tighter tabular-nums drop-shadow-2xl transition-all duration-700 ${
+                      <div className={`text-5xl sm:text-6xl font-black tracking-tighter tabular-nums drop-shadow-2xl transition-all duration-700 ${
                         mvpData.health_score > 70 ? 'text-white' : 
                         mvpData.health_score > 40 ? 'text-silver-400' : 
                         'text-red-500'
@@ -605,11 +605,11 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                       </div>
                     </div>
 
-                    <div className="w-px h-16 bg-white/5 self-center" />
+                    <div className="hidden sm:block w-px h-16 bg-white/5 self-center" />
 
                     <div className="flex flex-col items-center">
                       <p className="text-[10px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-3">Maturity Level</p>
-                      <div className="text-3xl font-black text-white metallic-text tracking-tighter mb-1 uppercase">
+                      <div className="text-2xl sm:text-3xl font-black text-white metallic-text tracking-tighter mb-1 uppercase">
                          {mvpData.maturity_level || 'Unknown'}
                       </div>
                       <div className="text-[10px] font-bold text-silver-600 uppercase tracking-widest mt-2">
@@ -620,18 +620,18 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
                   <div className="hidden lg:block w-px h-24 bg-white/5"></div>
                   
-                  <div className="flex flex-col gap-3 min-w-[200px]">
+                  <div className="flex flex-col gap-3 w-full sm:w-auto min-w-[200px]">
                     <button 
                       onClick={() => setShowRunModal(true)}
-                      className="btn-pill btn-pill-active py-4 px-8 text-xs flex items-center justify-center gap-3 group bg-white text-black border-transparent shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                      className="btn-pill btn-pill-active py-4 px-8 text-[10px] sm:text-xs flex items-center justify-center gap-3 group bg-white text-black border-transparent shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                     >
-                      <Play className="w-5 h-5 fill-black group-hover:scale-110 transition-transform" /> START RUNTIME
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-black group-hover:scale-110 transition-transform" /> START RUNTIME
                     </button>
                     <button 
                       onClick={handleRetry}
-                      className="btn-pill py-4 px-8 text-xs flex items-center justify-center gap-3 border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400"
+                      className="btn-pill py-4 px-8 text-[10px] sm:text-xs flex items-center justify-center gap-3 border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400"
                     >
-                      <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700 font-black" /> RE-SCAN
+                      <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform duration-700 font-black" /> RE-SCAN
                     </button>
                   </div>
                 </div>
@@ -667,22 +667,22 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                       const tag = isEnv ? 'AUTH' : isDep ? 'DEPS' : isNet ? 'NET' : 'RISK';
                       
                       return (
-                        <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-5 hover:bg-white/[0.02] transition-colors group">
+                        <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 sm:px-8 py-4 sm:py-5 hover:bg-white/[0.02] transition-colors group">
                           <div className="flex items-center gap-4 min-w-0">
-                            <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all opacity-80">{iconSymbol}</span>
+                            <span className="text-lg sm:text-xl filter grayscale group-hover:grayscale-0 transition-all opacity-80">{iconSymbol}</span>
                             <div className="flex flex-col">
                               <span className="text-[10px] font-black uppercase tracking-widest text-silver-700 group-hover:text-silver-500 transition-colors mb-0.5">{tag}</span>
-                              <span className="text-silver-400 text-sm font-medium tracking-tight truncate max-w-xl group-hover:text-white transition-colors">{err}</span>
+                              <span className="text-silver-400 text-xs sm:text-sm font-medium tracking-tight truncate max-w-full sm:max-w-xl group-hover:text-white transition-colors">{err}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
                              <button 
                               onClick={() => copyToClipboard(err, 'Telemetry copied!')}
-                              className="btn-pill py-2 px-4 text-[9px] font-black uppercase tracking-widest border-white/5 text-silver-600 hover:text-white hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-all"
+                              className="btn-pill py-2 px-3 sm:px-4 text-[9px] font-black uppercase tracking-widest border-white/5 text-silver-600 hover:text-white hover:bg-white/5 sm:opacity-0 group-hover:opacity-100 transition-all flex-1 sm:flex-none justify-center"
                             >
                               Telecopy
                             </button>
-                            <button className="btn-pill btn-pill-active py-2 px-5 text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 shadow-lg">
+                            <button className="btn-pill btn-pill-active py-2 px-4 sm:px-5 text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 shadow-lg flex-1 sm:flex-none justify-center">
                               Patch Risk
                             </button>
                           </div>
@@ -693,25 +693,25 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                 </div>
               )}
 
-              <div className="grid lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* 1. Codebase Explanation — structured What / How / Why */}
                 <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-white">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner group">
-                        <Lightbulb className="w-6 h-6 text-yellow-400 group-hover:animate-pulse" />
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 text-white">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner group">
+                          <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 group-hover:animate-pulse" />
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-black tracking-tight metallic-text">Structural Logic</h3>
                       </div>
-                      <h3 className="text-2xl font-black tracking-tight metallic-text">Structural Logic</h3>
+                      <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-[1.5rem] border border-white/10 cursor-pointer hover:bg-white/10 transition-all" onClick={() => setEli5Mode(!eli5Mode)}>
+                        <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${!eli5Mode ? 'text-white' : 'text-silver-700'}`}>Engineering</span>
+                        {eli5Mode ? <ToggleRight className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <ToggleLeft className="w-5 h-5 sm:w-6 sm:h-6 text-silver-400" />}
+                        <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${eli5Mode ? 'text-white' : 'text-silver-700'}`}>ELI5</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-[1.5rem] border border-white/10 cursor-pointer hover:bg-white/10 transition-all" onClick={() => setEli5Mode(!eli5Mode)}>
-                      <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${!eli5Mode ? 'text-white' : 'text-silver-700'}`}>Engineering</span>
-                      {eli5Mode ? <ToggleRight className="w-6 h-6 text-white" /> : <ToggleLeft className="w-6 h-6 text-silver-400" />}
-                      <span className={`text-[9px] uppercase font-black tracking-[0.2em] ${eli5Mode ? 'text-white' : 'text-silver-700'}`}>ELI5</span>
-                    </div>
-                  </div>
 
                   {eli5Mode ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-inner relative overflow-hidden">
@@ -792,12 +792,12 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
                 <div className="flex flex-col gap-6">
                   {/* 2. Important Files — refined hierarchy with clear badges */}
-                    <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                    <div className="liquid-glass p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
                       <div className="flex items-center gap-4 text-white">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
-                        <FolderTree className="w-6 h-6 text-white" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                        <FolderTree className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <h3 className="text-2xl font-black tracking-tight metallic-text">Principal Components</h3>
+                      <h3 className="text-xl sm:text-2xl font-black tracking-tight metallic-text">Principal Components</h3>
                     </div>
                     <div className="space-y-4">
                       {mvpData.important_files?.map((file: any, i: number) => (

@@ -19,6 +19,12 @@
   body {
     @apply bg-bg-dark text-silver-300 font-sans selection:bg-white/20 selection:text-white overflow-x-hidden;
     background-color: #000;
+    font-size: 14px;
+  }
+  @screen sm {
+    body {
+      font-size: 16px;
+    }
   }
 
   h1, h2, h3, h4 {
@@ -46,7 +52,7 @@
 }
 
 .liquid-glass {
-  @apply backdrop-blur-[40px] border border-white/10 transition-all duration-700;
+  @apply backdrop-blur-[20px] sm:backdrop-blur-[40px] border border-white/10 transition-all duration-700;
   background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
   box-shadow: 
     inset 0 1px 1px rgba(255,255,255,0.1),

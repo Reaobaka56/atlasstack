@@ -81,17 +81,17 @@ const StatCard = ({
   icon: React.ReactNode;
   accent: string;
 }) => (
-  <div className="liquid-glass border-white/5 rounded-[2.5rem] p-10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.02] group shadow-2xl">
+  <div className="liquid-glass border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.02] group shadow-2xl">
     <div className="flex items-start justify-between mb-4">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${accent}`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center border shadow-inner ${accent}`}>
         {icon}
       </div>
       <div className="text-right">
-        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-silver-500 mb-1">{label}</p>
-        <p className="text-3xl font-black text-white tabular-nums metallic-text">{value}</p>
+        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-silver-500 mb-1">{label}</p>
+        <p className="text-2xl sm:text-3xl font-black text-white tabular-nums metallic-text">{value}</p>
       </div>
     </div>
-    <p className="text-xs text-silver-600 font-medium group-hover:text-silver-400 transition-colors">{sub}</p>
+    <p className="text-[10px] sm:text-xs text-silver-600 font-medium group-hover:text-silver-400 transition-colors">{sub}</p>
   </div>
 );
 
@@ -240,9 +240,9 @@ export const DashboardPage = ({
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 mb-10">
-        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
-          <Zap className="w-5 h-5 text-yellow-400" />
+      <div className="flex items-center gap-3 px-4 mb-10 cursor-pointer" onClick={onBack}>
+        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden p-1.5">
+          <img src="/logo.png" alt="AtlasStack Logo" className="w-full h-full object-contain" />
         </div>
         <span className="text-white font-black tracking-tighter text-xl">AtlasStack</span>
       </div>
@@ -309,8 +309,10 @@ export const DashboardPage = ({
       {/* ── Mobile Header ─────────────────────────────────────────────────── */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between liquid-glass border-t-0 border-x-0 rounded-none shadow-xl">
         <div className="flex items-center gap-3">
-          <Zap className="w-6 h-6 text-yellow-400" />
-          <span className="text-white font-black tracking-tighter text-lg underline decoration-yellow-400/30 decoration-2 underline-offset-4">AtlasStack</span>
+          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center p-1">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-white font-black tracking-tighter text-lg underline decoration-white/10 decoration-2 underline-offset-4">AtlasStack</span>
         </div>
         <button 
           onClick={() => setIsSidebarOpen(true)}
@@ -357,18 +359,18 @@ export const DashboardPage = ({
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto pt-24 lg:pt-0">
-        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-12 space-y-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-10 lg:px-16 py-8 sm:py-12 space-y-8 sm:space-y-12">
 
           {/* Greeting header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="relative">
             <div className="absolute -top-4 -left-4 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-              <div>
+              <div className="text-center sm:text-left">
                 <p className="text-[10px] text-silver-600 uppercase tracking-[0.4em] font-black mb-3 ml-1">{dayLabel}</p>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-3 tracking-tight">
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-3 tracking-tight">
                   {greeting}, <span className="metallic-text">User</span>
                 </h1>
-                <p className="text-silver-400 text-sm font-medium opacity-80 pl-1 max-w-md leading-relaxed">
+                <p className="text-silver-400 text-sm font-medium opacity-80 pl-1 max-w-md leading-relaxed mx-auto sm:mx-0">
                   {analyses.length > 0
                     ? `You've deployed ${analyses.length} systems. Global infrastructure stability is currently at ${avgHealth}%.`
                     : "No systems detected. Initialize your first node to begin scanning."}
@@ -376,7 +378,7 @@ export const DashboardPage = ({
               </div>
               <button
                 onClick={onBack}
-                className="btn-pill btn-pill-active py-4 px-8 text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group"
+                className="btn-pill btn-pill-active py-3 sm:py-4 px-6 sm:px-8 text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> New Analysis
               </button>
@@ -428,7 +430,7 @@ export const DashboardPage = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="lg:col-span-8 liquid-glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl relative"
+              className="lg:col-span-8 liquid-glass border-white/5 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 blur-[100px] -z-10" />
               
@@ -712,7 +714,7 @@ export const DashboardPage = ({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+              className="mb-6 w-[calc(100vw-32px)] sm:w-[400px] h-[500px] sm:h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
             >
               <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">

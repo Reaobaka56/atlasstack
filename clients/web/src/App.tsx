@@ -25,11 +25,20 @@ import {
   Cpu,
   CheckCircle2,
   X,
+  Menu,
   ArrowLeft,
   GitBranch,
   Play,
   KeyRound
 } from 'lucide-react';
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useAuth,
+  useUser
+} from "@clerk/react";
 
 // --- Constants & API Config ---
 const API_URL_STORAGE_KEY = "atlasstack_api_url";
@@ -85,16 +94,16 @@ type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset' | 'eye';
 
 // --- Components ---
 
-const Navbar = ({ onNavigate, currentPage, token, onLogout, scrolled }: { 
+const Navbar = ({ onNavigate, currentPage, scrolled }: { 
   onNavigate: (page: Page) => void, 
   currentPage: Page,
-  token: string | null,
-  onLogout: () => void,
   scrolled: boolean
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isSignedIn } = useAuth();
+
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
-    // 1. Trigger download
     const link = document.createElement('a');
     link.href = '/atlasstack.vsix';
     link.download = 'atlasstack.vsix';
@@ -102,61 +111,83 @@ const Navbar = ({ onNavigate, currentPage, token, onLogout, scrolled }: {
     link.click();
     document.body.removeChild(link);
     
-    // 2. Open VS Code
     setTimeout(() => {
       window.location.href = 'vscode://';
     }, 500);
   };
 
+  const navItems = (
+    <>
+      {currentPage === 'landing' && (
+        <a href="#try" onClick={() => setIsMobileMenuOpen(false)} className="nav-link">Try it now</a>
+      )}
+      <Show when="signed-in">
+        <button onClick={() => { onNavigate('dashboard'); setIsMobileMenuOpen(false); }} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
+        <button onClick={() => { onNavigate('eye'); setIsMobileMenuOpen(false); }} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">AgentEye</button>
+      </Show>
+      <Show when="signed-out">
+        <SignInButton mode="modal">
+          <button className="btn-primary py-2.5 text-sm w-full md:w-auto">Sign In / Register</button>
+        </SignInButton>
+      </Show>
+      <Show when="signed-in">
+        <UserButton afterSignOutUrl="/" />
+      </Show>
+    </>
+  );
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 px-8 py-5 transition-all duration-500 ${
-      scrolled ? 'backdrop-blur-xl bg-black/40 border-b border-white/5 py-3' : 'bg-transparent'
+    <nav className={`fixed top-0 left-0 right-0 z-[60] px-6 sm:px-8 py-5 transition-all duration-500 ${
+      scrolled || isMobileMenuOpen ? 'backdrop-blur-xl bg-black/60 border-b border-white/5 py-3' : 'bg-transparent'
     }`}>
-    <div className="max-w-7xl mx-auto flex items-center justify-between">
-      <div 
-        className="flex items-center gap-4 group cursor-pointer"
-        onClick={() => onNavigate('landing')}
-      >
-        <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            className="w-full h-full object-contain"
-            referrerPolicy="no-referrer"
-          />
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div 
+          className="flex items-center gap-3 sm:gap-4 group cursor-pointer"
+          onClick={() => { onNavigate('landing'); setIsMobileMenuOpen(false); }}
+        >
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          <span className="text-xl sm:text-2xl font-display font-bold text-white tracking-tighter">AtlasStack</span>
         </div>
-        <span className="text-2xl font-display font-bold text-white tracking-tighter">AtlasStack</span>
+        
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-10">
+          <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-[10px] font-black uppercase tracking-[0.2em] text-silver-500 hover:text-white transition-colors mr-2">VS Code Extension</a>
+          {navItems}
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="md:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
-      
-      <div className="hidden md:flex items-center gap-10">
-        {currentPage === 'landing' && (
-          <>
-            <a href="#try" className="nav-link">Try it now</a>
-          </>
+
+      {/* Mobile Menu Content */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden overflow-hidden mt-4 pb-4"
+          >
+            <div className="flex flex-col gap-6 p-4 liquid-glass rounded-3xl border-white/10">
+              <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-[10px] font-black uppercase tracking-[0.2em] text-silver-500 hover:text-white transition-colors">Install VS Code Extension</a>
+              {navItems}
+            </div>
+          </motion.div>
         )}
-        <div className="flex items-center gap-4">
-          {token ? (
-            <>
-              <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
-              <button onClick={() => onNavigate('dashboard')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Dashboard</button>
-              <button onClick={() => onNavigate('eye')} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">AgentEye</button>
-              <button onClick={onLogout} className="btn-primary py-2.5 text-sm">Logout</button>
-            </>
-          ) : (
-            <>
-              <a href="/atlasstack.vsix" onClick={handleDownloadExtension} className="text-xs font-black uppercase tracking-[0.2em] text-silver-400 hover:text-white transition-colors mr-4">Install VS Code Extension</a>
-              <button 
-                onClick={() => onNavigate('login')}
-                className="btn-primary py-2.5 text-sm"
-              >
-                Sign In / Register
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  </nav>
+      </AnimatePresence>
+    </nav>
   );
 };
 
@@ -669,10 +700,10 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                Autonomous Engineering Standard
             </div>
           </div>
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl metallic-text font-display-bold mb-8 max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-7xl lg:text-8xl metallic-text font-display-bold mb-6 sm:mb-8 max-w-4xl mx-auto leading-[1.1] sm:leading-[0.95]">
             Architect <br/> the future.
           </h1>
-          <p className="text-lg sm:text-xl text-silver-400 font-medium max-w-2xl mx-auto opacity-70 leading-relaxed mb-12">
+          <p className="text-base sm:text-xl text-silver-400 font-medium max-w-2xl mx-auto opacity-70 leading-relaxed mb-8 sm:mb-12 px-4 sm:px-0">
             AtlasStack deeply scans your repository topology to identify architectural risks, performance bottlenecks, and security gaps.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1051,18 +1082,22 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [currentRepo, setCurrentRepo] = useState<string>('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState<string | null>(null);
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
   const [isPro, setIsPro] = useState<boolean>(localStorage.getItem('atlas_pro') === '1');
   const [apiUrl, setApiUrl] = useState<string>(detectDefaultApiUrl());
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem(TOKEN_KEY, token);
+    if (isSignedIn) {
+      getToken().then(t => {
+        if (t) setToken(t);
+      });
     } else {
-      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
     }
-  }, [token]);
+  }, [isSignedIn, getToken]);
 
 
   useEffect(() => {
