@@ -135,7 +135,10 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
         </div>
       </Show>
       <Show when="signed-in">
-        <UserButton afterSignOutUrl="/" />
+        <div className="flex items-center gap-3 pt-4 border-t border-white/5 md:border-0 md:pt-0">
+          <UserButton afterSignOutUrl="/" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-silver-500 md:hidden">My Account</span>
+        </div>
       </Show>
     </>
   );
@@ -349,12 +352,16 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              </button>
           </div>
           <Show when="signed-out">
-            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
               <SignInButton mode="modal">
-                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Log in</button>
+                <button className="btn-pill px-8 py-3 text-sm font-bold uppercase tracking-[0.2em] border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10 transition-all">
+                  Sign In to Your Node
+                </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Create account</button>
+                <button className="btn-pill px-8 py-3 text-sm font-bold uppercase tracking-[0.2em] bg-white text-black border-white hover:bg-silver-100 transition-all">
+                  Join the Network
+                </button>
               </SignUpButton>
             </div>
           </Show>
