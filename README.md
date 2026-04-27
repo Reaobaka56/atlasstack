@@ -19,7 +19,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 - **Lite Mode Backend:** Runs entirely on Python + SQLite — no Docker needed.
 - **Premium CLI Tool:** Analyze repositories and view history directly from your terminal.
 - **Autonomous Training Data Collection:** Captures scan inputs and LLM outputs to build a high-quality fine-tuning dataset automatically.
-- **Real Auth:** User registration, bcrypt password hashing, JWT tokens, analysis history saved per user.
+- **Enterprise Authentication:** Secured by Clerk, providing out-of-the-box SSO, OAuth, and user management.
 
 ---
 
@@ -89,7 +89,9 @@ For more details, see the [Architecture Deep Dive](docs/architecture.md).
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum set HF_TOKEN and JWT_SECRET
+cp clients/web/.env.example clients/web/.env.local
+# Edit .env — at minimum set HF_TOKEN
+# Edit clients/web/.env.local — set VITE_CLERK_PUBLISHABLE_KEY
 ```
 
 ### 2) Install Python dependencies
@@ -177,9 +179,6 @@ The AtlasStack CLI is a powerful tool for developers who live in the terminal.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/v1/auth/register` | No | Create account |
-| POST | `/api/v1/auth/login` | No | Login, get JWT |
-| POST | `/api/v1/auth/refresh` | No | Refresh token pair |
 | POST | `/api/v1/analysis/mvp` | No | Full repo analysis |
 | GET | `/api/v1/analyses` | Yes | List your past analyses |
 | GET | `/api/v1/analyses/{id}` | Yes | Get analysis detail |
@@ -258,7 +257,7 @@ Every collected entry includes the system **instruction**, the repository **cont
 |----------|---------|-------------|
 | `HF_TOKEN` | - | HuggingFace Token (required for real AI) |
 | `LITE_MODE` | `true` | Toggle between SQLite and full Postgres stack |
-| `JWT_SECRET` | - | Secret key for auth tokens |
+| `VITE_CLERK_PUBLISHABLE_KEY` | - | Clerk Public Key for Frontend Auth |
 | `DEFAULT_MODEL` | `Qwen2.5-Coder` | The LLM used for analysis |
 | `COLLECT_TRAINING_DATA` | `true` | Toggle scan data harvesting |
 | `TRAINING_DATA_PATH` | `training/datasets/collected_scans.jsonl` | Path to store collected training pairs |
@@ -282,10 +281,9 @@ See `Makefile` for all available commands (`make help`).
 
 ## Security Notes
 
-- Passwords are hashed with **bcrypt** — never stored in plaintext
-- JWT tokens expire after 24 hours (configurable via `JWT_EXPIRATION_HOURS`)
-- **Always change `JWT_SECRET`** before any real deployment
-- Repository analysis runs in a temp directory that is deleted after completion
+- **Authentication:** All user authentication, session management, and SSO is handled securely off-main-thread via **Clerk**.
+- **Execution Sandboxing:** Repository analysis runs in a temporary directory that is securely isolated and deleted immediately after completion.
+- **LLM Data Privacy:** Local LLM inference via Lite Mode ensures your codebase never leaves your infrastructure (unless using external HuggingFace Inference APIs).
 
 ---
 
