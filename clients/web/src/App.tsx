@@ -32,6 +32,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import {
+  Show,
   SignInButton,
   SignUpButton,
   UserButton,
@@ -93,20 +94,12 @@ type Page = 'landing' | 'login' | 'ide' | 'dashboard' | 'reset' | 'eye';
 
 // --- Components ---
 
-export const Show = ({ when, children }: { when: 'signed-in' | 'signed-out', children: React.ReactNode }) => {
-  const { isSignedIn } = useAuth();
-  if (when === 'signed-in' && isSignedIn) return <>{children}</>;
-  if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
-  return null;
-};
-
 const Navbar = ({ onNavigate, currentPage, scrolled }: { 
   onNavigate: (page: Page) => void, 
   currentPage: Page,
   scrolled: boolean
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isSignedIn } = useAuth();
 
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,9 +125,14 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
         <button onClick={() => { onNavigate('eye'); setIsMobileMenuOpen(false); }} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">AgentEye</button>
       </Show>
       <Show when="signed-out">
-        <SignInButton mode="modal">
-          <button className="btn-primary py-2.5 text-sm w-full md:w-auto">Sign In / Register</button>
-        </SignInButton>
+        <div className="flex flex-col w-full gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
+          <SignInButton mode="modal">
+            <button className="btn-primary py-2.5 text-sm w-full md:w-auto">Sign In</button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button className="btn-pill py-2.5 text-sm w-full md:w-auto">Sign Up</button>
+          </SignUpButton>
+        </div>
       </Show>
       <Show when="signed-in">
         <UserButton afterSignOutUrl="/" />
@@ -332,6 +330,11 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
                Start Analysis Now
              </button>
+             <Show when="signed-out">
+               <SignInButton mode="modal">
+                 <button className="btn-primary px-10 py-5 rounded-full text-base">Sign In / Login</button>
+               </SignInButton>
+             </Show>
              <button 
                onClick={handleDownloadExtension}
                className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3"
@@ -345,6 +348,16 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                <Terminal className="w-5 h-5" /> Atlas CLI
              </button>
           </div>
+          <Show when="signed-out">
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <SignInButton mode="modal">
+                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Log in</button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Create account</button>
+              </SignUpButton>
+            </div>
+          </Show>
         </motion.div>
 
         {/* Hero Visual â€” The Tool Preview */}
