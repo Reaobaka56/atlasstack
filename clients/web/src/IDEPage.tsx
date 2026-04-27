@@ -7,8 +7,8 @@ import {
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
   FileCode2, MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
-import { Show } from './App';
 import {
+  Show,
   SignInButton,
   useAuth
 } from "@clerk/react";
@@ -1002,6 +1002,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
                 </div>
               )}
             </motion.div>
+            </Show>
           )}
         </AnimatePresence>
       </div>

@@ -343,6 +343,16 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                <Terminal className="w-5 h-5" /> Atlas CLI
              </button>
           </div>
+          <Show when="signed-out">
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <SignInButton mode="modal">
+                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Log in</button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="btn-secondary px-8 py-3 rounded-full text-sm">Create account</button>
+              </SignUpButton>
+            </div>
+          </Show>
         </motion.div>
 
         {/* Hero Visual â€” The Tool Preview */}
