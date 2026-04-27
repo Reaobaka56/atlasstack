@@ -253,7 +253,7 @@ const LandingPage = ({ onNavigateToIDE, apiUrl, onApiUrlChange, isPro, setIsPro 
   const [branch, setBranch] = useState('main');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
 
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -521,7 +521,7 @@ const LandingPage = ({ onNavigateToIDE, apiUrl, onApiUrlChange, isPro, setIsPro 
       </section>
 
       {/* Pricing Banner for Free users */}
-      {!isPro && token && (
+      {!isPro && isSignedIn && (
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
