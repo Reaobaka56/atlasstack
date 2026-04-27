@@ -1057,94 +1057,96 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
       </AnimatePresence>
 
       {/* Floating AI Chat Widget */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <AnimatePresence>
-          {isChatOpen && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
-            >
-              <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
-                    <MessagesSquare className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Architect</h3>
-                    <div className="flex items-center gap-1.5 text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Node Connection
+      <Show when="signed-in">
+        <div className="fixed bottom-8 right-8 z-50">
+          <AnimatePresence>
+            {isChatOpen && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
+                      <MessagesSquare className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Architect</h3>
+                      <div className="flex items-center gap-1.5 text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
+                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Node Connection
+                      </div>
                     </div>
                   </div>
-                </div>
-                <button onClick={() => setIsChatOpen(false)} className="text-silver-700 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                {chatMessages.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                    <Zap className="w-12 h-12 mb-4 text-silver-600" />
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Node Sync Complete.<br/>Ready for architectural queries.</p>
-                  </div>
-                )}
-                {chatMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-white text-black rounded-tr-none' 
-                        : 'bg-white/5 text-silver-300 border border-white/10 rounded-tl-none'
-                    }`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                {isAiTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-white/5 text-silver-300 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <form onSubmit={handleSendChat} className="p-6 bg-black/40 border-t border-white/5">
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask AtlasStack AI..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-14 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
-                  />
-                  <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
-                    <Send className="w-4 h-4" />
+                  <button onClick={() => setIsChatOpen(false)} className="text-silver-700 hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        <button 
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${
-            isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'
-          }`}
-        >
-          {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
-          {!isChatOpen && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-black rounded-full flex items-center justify-center">
-               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            </div>
-          )}
-        </button>
-      </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                  {chatMessages.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                      <Zap className="w-12 h-12 mb-4 text-silver-600" />
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Node Sync Complete.<br/>Ready for architectural queries.</p>
+                    </div>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed ${
+                        msg.role === 'user' 
+                          ? 'bg-white text-black rounded-tr-none' 
+                          : 'bg-white/5 text-silver-300 border border-white/10 rounded-tl-none'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                  {isAiTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/5 text-silver-300 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.2s]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.4s]" />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <form onSubmit={handleSendChat} className="p-6 bg-black/40 border-t border-white/5">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask AtlasStack AI..."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-14 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
+                    />
+                    <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button 
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${
+              isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'
+            }`}
+          >
+            {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
+            {!isChatOpen && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-black rounded-full flex items-center justify-center">
+                 <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              </div>
+            )}
+          </button>
+        </div>
+      </Show>
     </div>
   );
 };
