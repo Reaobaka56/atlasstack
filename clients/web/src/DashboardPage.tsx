@@ -9,6 +9,7 @@ import {
   MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
 import ArchitectureMap from './ArchitectureMap';
+import { useAuth } from '@clerk/react';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
@@ -97,17 +98,17 @@ const StatCard = ({
 
 // ── main component ──────────────────────────────────────────────────────────
 export const DashboardPage = ({
-  token,
   apiUrl,
   onBack,
   onViewAnalysis,
 }: {
-  token: string;
+  token?: string;
   apiUrl: string;
   onBack: () => void;
   onViewAnalysis: (id: string, repoUrl: string) => void;
   key?: React.Key;
 }) => {
+  const { getToken } = useAuth();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,27 +138,29 @@ export const DashboardPage = ({
 
   // WebSocket for Chat
   useEffect(() => {
-    if (!token) return;
-    const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(token);
-    const socket = new WebSocket(wsUrl);
-    webSocket.current = socket;
-
-    socket.onopen = () => console.log('Dashboard Chat Socket Connected');
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'chat_response') {
-          setIsAiTyping(false);
-          setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+    let socket: WebSocket;
+    (async () => {
+      const clerkToken = await getToken();
+      if (!clerkToken) return;
+      const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(clerkToken);
+      socket = new WebSocket(wsUrl);
+      webSocket.current = socket;
+      socket.onopen = () => console.log('Dashboard Chat Socket Connected');
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'chat_response') {
+            setIsAiTyping(false);
+            setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+          }
+        } catch (e) {
+          console.error('WS Error:', e);
         }
-      } catch (e) {
-        console.error('WS Error:', e);
-      }
-    };
-    socket.onclose = () => console.log('Dashboard Chat Socket Disconnected');
-
-    return () => socket.close();
-  }, [apiUrl]);
+      };
+      socket.onclose = () => console.log('Dashboard Chat Socket Disconnected');
+    })();
+    return () => socket?.close();
+  }, [apiUrl, getToken]);
 
   const handleSendChat = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -181,10 +184,19 @@ export const DashboardPage = ({
   const fetchAnalyses = async () => {
     try {
       setLoading(true);
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setAnalyses([]);
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`${apiUrl}/api/v1/analyses`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${clerkToken}` },
       });
-      if (!res.ok) throw new Error(res.status === 401 ? 'Session expired.' : 'Failed to load history.');
+      if (!res.ok) {
+        if (res.status === 401) { setAnalyses([]); return; }
+        throw new Error('Failed to load history.');
+      }
       const data = await res.json();
       setAnalyses(Array.isArray(data) ? data : data.analyses || []);
     } catch (e: any) {
@@ -199,9 +211,10 @@ export const DashboardPage = ({
     if (analyses.length > 0 && !selectedArchGraph) {
         const fetchRecentGraph = async () => {
             try {
+                const clerkToken = await getToken();
                 const recent = analyses[0];
                 const res = await fetch(`${apiUrl}/api/v1/analyses/${recent.id}/graph`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -213,7 +226,7 @@ export const DashboardPage = ({
         };
         fetchRecentGraph();
     }
-  }, [analyses, token]);
+  }, [analyses, getToken]);
 
   const filtered = analyses.filter((a) =>
     a.repo_url.toLowerCase().includes(search.toLowerCase())

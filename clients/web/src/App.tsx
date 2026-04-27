@@ -32,17 +32,22 @@ import {
   KeyRound
 } from 'lucide-react';
 import {
-  Show,
   SignInButton,
   SignUpButton,
   UserButton,
-  useAuth,
-  useUser
+  useAuth
 } from "@clerk/react";
+
+// Local Show helper — Clerk does not export this; we use useAuth to gate content
+const Show = ({ when, children }: { when: 'signed-in' | 'signed-out'; children: React.ReactNode }) => {
+  const { isSignedIn } = useAuth();
+  if (when === 'signed-in' && isSignedIn) return <>{children}</>;
+  if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
+  return null;
+};
 
 // --- Constants & API Config ---
 const API_URL_STORAGE_KEY = "atlasstack_api_url";
-const TOKEN_KEY = "atlasstack_access_token";
 
 const normalizeApiUrl = (value?: string | null) => (value || '').trim().replace(/\/$/, '');
 
@@ -243,11 +248,12 @@ const CookieBanner = () => {
 };
 
 
-const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiUrl, onApiUrlChange, isPro, setIsPro }: { onNavigateToLogin: () => void, onNavigateToIDE: (repo: string) => void, token: string | null, onLogout: () => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, setIsPro: (val: boolean) => void, key?: React.Key }) => {
+const LandingPage = ({ onNavigateToIDE, apiUrl, onApiUrlChange, isPro, setIsPro }: { onNavigateToIDE: (repo: string) => void, apiUrl: string, onApiUrlChange: (url: string) => void, isPro: boolean, setIsPro: (val: boolean) => void, key?: React.Key }) => {
   const [repoUrl, setRepoUrl] = useState('');
   const [branch, setBranch] = useState('main');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const handleDownloadExtension = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -275,10 +281,11 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
     setStatusMessage("Initializing analysis engine...");
 
     try {
-      if (token) {
+      const clerkToken = await getToken();
+      if (clerkToken) {
         const authHeaders = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${clerkToken}`,
         };
 
         const createRepoRes = await fetch(`${apiUrl}/api/v1/repositories`, {
@@ -290,7 +297,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
         const createRepoPayload = await createRepoRes.json();
         if (!createRepoRes.ok) {
           if (createRepoRes.status === 401) {
-            onLogout();
             setStatusMessage("Session expired. Please log in again.");
             setIsAnalyzing(false);
             return;
@@ -333,11 +339,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
              <button onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary px-10 py-5 rounded-full text-base">
                Start Analysis Now
              </button>
-             <Show when="signed-out">
-               <SignInButton mode="modal">
-                 <button className="btn-primary px-10 py-5 rounded-full text-base">Sign In / Login</button>
-               </SignInButton>
-             </Show>
              <button 
                onClick={handleDownloadExtension}
                className="btn-secondary px-10 py-5 rounded-full text-base flex items-center gap-3"
@@ -351,20 +352,6 @@ const LandingPage = ({ onNavigateToLogin, onNavigateToIDE, token, onLogout, apiU
                <Terminal className="w-5 h-5" /> Atlas CLI
              </button>
           </div>
-          <Show when="signed-out">
-            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <SignInButton mode="modal">
-                <button className="btn-pill px-8 py-3 text-sm font-bold uppercase tracking-[0.2em] border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10 transition-all">
-                  Sign In to Your Node
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="btn-pill px-8 py-3 text-sm font-bold uppercase tracking-[0.2em] bg-white text-black border-white hover:bg-silver-100 transition-all">
-                  Join the Network
-                </button>
-              </SignUpButton>
-            </div>
-          </Show>
         </motion.div>
 
         {/* Hero Visual â€” The Tool Preview */}
@@ -724,85 +711,22 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [currentRepo, setCurrentRepo] = useState<string>('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const { isSignedIn, getToken } = useAuth();
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const [isPro, setIsPro] = useState<boolean>(localStorage.getItem('atlas_pro') === '1');
   const [apiUrl, setApiUrl] = useState<string>(detectDefaultApiUrl());
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (isSignedIn) {
-      getToken().then(t => {
-        if (t) setToken(t);
-      });
-    } else {
-      setToken(null);
-    }
-  }, [isSignedIn, getToken]);
-
-
-  useEffect(() => {
     const normalized = normalizeApiUrl(apiUrl);
-    if (!normalized) {
-      return;
-    }
+    if (!normalized) return;
     localStorage.setItem(API_URL_STORAGE_KEY, normalized);
   }, [apiUrl]);
 
-  // Check for reset_token in URL params
-  const [resetToken, setResetToken] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('reset_token');
-  });
-
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    // Handle GitHub Auth Callback â€” GitHub redirects back to the frontend with ?code=...
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const resetTk = params.get("reset_token");
-
-    if (resetTk) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setResetToken(resetTk);
-      setCurrentPage('reset');
-      return;
-    }
-
-    if (code) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      fetch(`${apiUrl}/api/v1/auth/github/callback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.access_token) {
-          localStorage.setItem(TOKEN_KEY, data.access_token);
-          setToken(data.access_token);
-          setCurrentPage('dashboard'); // redirect to dashboard after login
-        } else {
-          console.error("GitHub OAuth failed:", data);
-          alert(`GitHub login failed: ${data.detail || 'Unknown error'}`);
-        }
-      })
-      .catch(err => {
-        console.error("GitHub auth error:", err);
-        alert('GitHub login failed: Cannot reach backend API');
-      });
-    }
-  }, [apiUrl]);
-
 
 
   return (
@@ -827,12 +751,10 @@ export default function App() {
               setAnalysisId(null);
             }}
             apiUrl={apiUrl}
-            token={token}
           />
         ) : currentPage === 'dashboard' ? (
           <DashboardPage 
             key="dashboard"
-            token={token!}
             apiUrl={apiUrl}
             onBack={() => setCurrentPage('landing')}
             onViewAnalysis={(id: string, repo: string) => { 
@@ -848,14 +770,11 @@ export default function App() {
         ) : currentPage === 'landing' ? (
           <LandingPage 
             key="landing"
-            onNavigateToLogin={() => {}}
             onNavigateToIDE={(repo: string) => { 
                setAnalysisId(null);
                setCurrentRepo(repo); 
                setCurrentPage('ide'); 
             }}
-            token={token}
-            onLogout={() => {}}
             apiUrl={apiUrl}
             onApiUrlChange={setApiUrl}
             isPro={isPro}

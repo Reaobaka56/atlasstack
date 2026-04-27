@@ -8,10 +8,17 @@ import {
   FileCode2, MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
 import {
-  Show,
   SignInButton,
   useAuth
 } from "@clerk/react";
+
+// Local Show helper — mirrors the one in App.tsx
+const Show = ({ when, children }: { when: 'signed-in' | 'signed-out'; children: React.ReactNode }) => {
+  const { isSignedIn } = useAuth();
+  if (when === 'signed-in' && isSignedIn) return <>{children}</>;
+  if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
+  return null;
+};
 import mermaid from 'mermaid';
 import ArchitectureMap from './ArchitectureMap';
 
@@ -105,12 +112,13 @@ export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; on
   );
 };
 
-const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
+const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
   const defaultApiHost = window.location.hostname;
   const defaultApiUrl = (defaultApiHost === 'localhost' || defaultApiHost === '127.0.0.1' || defaultApiHost === '0.0.0.0')
     ? 'http://localhost:8005'
     : `${window.location.protocol}//${defaultApiHost}:8005`;
   const API_URL = apiUrlProp || (process as any).env?.REACT_APP_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
+  const { getToken, isSignedIn } = useAuth();
   const [step, setStep] = useState<'connect' | 'input' | 'analyzing' | 'dashboard'>(analysisId ? 'analyzing' : 'connect');
   const [repoInput, setRepoInput] = useState(repoUrl || '');
   const [mvpData, setMvpData] = useState<any>(null);
@@ -138,29 +146,31 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
     scrollToBottom();
   }, [chatMessages, isAiTyping]);
 
-  // WebSocket for Chat
+  // WebSocket for Chat — uses live Clerk token
   useEffect(() => {
-    if (!token) return;
-    const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(token);
-    const socket = new WebSocket(wsUrl);
-    webSocket.current = socket;
-
-    socket.onopen = () => console.log('Web Chat Socket Connected');
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'chat_response') {
-          setIsAiTyping(false);
-          setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+    let socket: WebSocket;
+    (async () => {
+      const clerkToken = await getToken();
+      if (!clerkToken) return;
+      const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(clerkToken);
+      socket = new WebSocket(wsUrl);
+      webSocket.current = socket;
+      socket.onopen = () => console.log('Web Chat Socket Connected');
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'chat_response') {
+            setIsAiTyping(false);
+            setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+          }
+        } catch (e) {
+          console.error('WS Error:', e);
         }
-      } catch (e) {
-        console.error('WS Error:', e);
-      }
-    };
-    socket.onclose = () => console.log('Web Chat Socket Disconnected');
-
-    return () => socket.close();
-  }, [API_URL]);
+      };
+      socket.onclose = () => console.log('Web Chat Socket Disconnected');
+    })();
+    return () => socket?.close();
+  }, [API_URL, getToken]);
 
   const handleSendChat = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -194,17 +204,17 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
     return () => clearInterval(interval);
   }, [step]);
 
-  const fetchMvpData = () => {
+  const fetchMvpData = async () => {
     const targetRepo = repoInput;
+    const clerkToken = await getToken();
 
-    // Trigger the real backend API
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
 
     fetch(`${API_URL}/api/v1/analysis/mvp`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ repo_url: targetRepo, save_result: !!token })
+      body: JSON.stringify({ repo_url: targetRepo, save_result: !!isSignedIn })
     })
     .then(async res => {
       const data = await res.json();

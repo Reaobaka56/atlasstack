@@ -471,10 +471,10 @@ async def get_my_analyses(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100)
 ):
-    # Check if user is logged in
-    user_context = getattr(req.state, "user", None)
+    # Return empty list if not authenticated (frontend handles gating via Clerk)
+    user_context = getattr(req.state, "user", None) if req else None
     if not user_context:
-        raise HTTPException(status_code=401, detail="Log in to view analyses")
+        return {"analyses": [], "total": 0, "skip": skip, "limit": limit, "has_more": False}
         
     user_id = user_context.get("id")
     from sqlalchemy import select
