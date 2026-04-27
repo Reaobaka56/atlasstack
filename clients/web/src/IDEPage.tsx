@@ -7,6 +7,11 @@ import {
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
   FileCode2, MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
+import { Show } from './App';
+import {
+  SignInButton,
+  useAuth
+} from "@clerk/react";
 import mermaid from 'mermaid';
 import ArchitectureMap from './ArchitectureMap';
 
@@ -556,7 +561,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp, token
 
           {/* STEP 4: Dashboard */}
           {step === 'dashboard' && mvpData && (
-            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <Show when="signed-in">
+              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               
               {/* Header section */}
               <div className="liquid-glass p-10 rounded-[2.5rem] border-white/10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
