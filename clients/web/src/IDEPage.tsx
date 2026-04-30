@@ -465,7 +465,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
   };
 
   return (
-    <div className="min-h-screen pt-20 sm:pt-24 pb-8 sm:pb-12 px-4 sm:px-8 flex flex-col items-center custom-scrollbar">
+    <div className="min-h-screen pt-32 pb-8 sm:pb-12 px-4 sm:px-8 flex flex-col items-center custom-scrollbar">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMsg && (
@@ -474,23 +474,6 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Top Navigation */}
-      <div className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/60 backdrop-blur-xl z-[70] px-4 sm:px-6 flex items-center justify-between">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-[10px] sm:text-sm font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back to Home</span><span className="sm:hidden">Back</span>
-        </button>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/50">
-            <Zap className="w-3 h-3 text-blue-400" />
-          </div>
-          <span className="font-display font-bold text-white tracking-tight text-xs sm:text-base">AtlasStack Dashboard</span>
-        </div>
-        <div className="w-10 sm:w-24" />
-      </div>
 
       <div className="w-full max-w-6xl mt-6">
         <AnimatePresence mode="wait">

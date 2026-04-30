@@ -10,13 +10,14 @@ import { DashboardPage } from './DashboardPage';
 import { AgentEyeDashboard } from './AgentEyeDashboard';
 import {
   Shield, Github, ChevronRight, Terminal, CheckCircle2,
-  X, Menu, ChevronDown, Zap, BarChart3, Network, GitBranch
+  X, Menu, ChevronDown, Zap, BarChart3, Network, GitBranch, ArrowLeft
 } from 'lucide-react';
 import {
   SignInButton,
   SignUpButton,
   UserButton,
-  useAuth
+  useAuth,
+  useUser
 } from "@clerk/react";
 import './index.css';
 
@@ -63,9 +64,17 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
 
         {/* Desktop */}
         <div className="nav-links">
-          <span className="nav-link" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How it works</span>
-          <span className="nav-link" onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}>Stats</span>
-          <a className="nav-link" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+          {currentPage === 'landing' ? (
+            <>
+              <span className="nav-link" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How it works</span>
+              <span className="nav-link" onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}>Stats</span>
+            </>
+          ) : (
+            <button className="nav-link flex items-center gap-2" onClick={() => onNavigate('landing')}>
+              <ArrowLeft size={14} /> Back
+            </button>
+          )}
+          <a className="nav-link" href="https://github.com/Reaobaka56/atlasstack" target="_blank" rel="noreferrer">GitHub</a>
           <Show when="signed-in">
             <button className="nav-link" onClick={() => onNavigate('dashboard')}>Dashboard</button>
             <button className="nav-link" onClick={() => onNavigate('eye')}>AgentEye</button>
@@ -73,19 +82,19 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
           </Show>
           <Show when="signed-out">
             <SignInButton mode="modal">
-              <button className="btn-clay-primary" style={{ padding: '8px 18px', fontSize: '14px' }}>Sign in</button>
+              <span className="nav-link" style={{ padding: '8px 12px' }}>Sign in</span>
             </SignInButton>
             <SignUpButton mode="modal">
-              <button className="btn-clay-primary">Get for Free</button>
+              <button className="btn-clay-primary" style={{ padding: '8px 20px', fontSize: '13px' }}>Get for Free</button>
             </SignUpButton>
           </Show>
         </div>
 
         {/* Mobile toggle */}
         <button
-          style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer' }}
           className="mobile-toggle"
           onClick={() => setOpen(!open)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff' }}
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -100,9 +109,9 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
             exit={{ opacity: 0, y: -10 }}
             style={{
               position: 'fixed', top: 60, left: 0, right: 0, zIndex: 99,
-              background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)',
-              borderBottom: '1px solid rgba(0,0,0,0.08)',
-              padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16
+              background: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(32px)',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              padding: '24px', display: 'flex', flexDirection: 'column', gap: 16
             }}
           >
             <Show when="signed-out">
@@ -136,9 +145,23 @@ const FAQItem = ({ q, a }: { q: string; a: string }) => {
     <div className={`faq-item${open ? ' open' : ''}`} onClick={() => setOpen(!open)}>
       <div className="faq-question">
         {q}
-        <ChevronDown className="faq-chevron" />
+        <motion.div animate={{ rotate: open ? 180 : 0 }}>
+          <ChevronDown className="faq-chevron" />
+        </motion.div>
       </div>
-      <div className="faq-answer">{a}</div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="faq-answer">{a}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -177,10 +200,23 @@ const LandingPage = ({ onNavigateToDashboard, isPro }: {
     },
   ];
 
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
-      {/* Island aerial background */}
-      <div className="island-bg" />
+      {/* ── Background ── */}
+      <div className="island-bg">
+        <div className="aurora-blob blob-1" />
+        <div className="aurora-blob blob-2" />
+        <div className="aurora-blob blob-3" />
+      </div>
       <div className="island-overlay" />
 
       {/* ── Hero ── */}
@@ -196,30 +232,40 @@ const LandingPage = ({ onNavigateToDashboard, isPro }: {
             AtlasStack deeply analyses your repository topology to find architectural risks, security gaps, and performance bottlenecks — then generates the fix.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             {isSignedIn ? (
-              <button className="btn-clay-primary" style={{ padding: '14px 28px', fontSize: '16px' }} onClick={onNavigateToDashboard}>
+              <button className="btn-clay-primary" style={{ padding: '16px 36px', fontSize: '16px' }} onClick={onNavigateToDashboard}>
                 <BarChart3 size={18} /> Go to Dashboard
               </button>
             ) : (
               <SignInButton mode="modal">
-                <button className="btn-clay-primary" style={{ padding: '14px 28px', fontSize: '16px' }}>
+                <button className="btn-clay-primary" style={{ padding: '16px 36px', fontSize: '16px' }}>
                   <Terminal size={18} /> Login to Scan
                 </button>
               </SignInButton>
             )}
             <button
               className="btn-clay-ghost"
-              style={{ padding: '14px 28px', fontSize: '16px' }}
+              style={{ padding: '16px 36px', fontSize: '16px' }}
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = 'https://pypi.org/project/atlasstack/';
+                link.href = 'https://github.com/Reaobaka56/atlasstack'; 
                 link.target = '_blank';
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
               }}
             >
-              <Terminal size={16} /> AtlasStack CLI <ChevronRight size={16} />
+              <Github size={18} /> View on GitHub
             </button>
+          </div>
+
+          <div style={{ marginTop: 80, opacity: 0.5 }}>
+            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 800, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Trusted by engineering teams at</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 48, flexWrap: 'wrap', filter: 'grayscale(1) brightness(0.8)' }}>
+              <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.02em', color: '#fff' }}>STELLAR</span>
+              <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.02em', color: '#fff' }}>VORTEX</span>
+              <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.02em', color: '#fff' }}>NEXUS</span>
+              <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.02em', color: '#fff' }}>ORBIT</span>
+            </div>
           </div>
         </motion.div>
 
@@ -279,22 +325,26 @@ const LandingPage = ({ onNavigateToDashboard, isPro }: {
 
         <div className="feature-grid">
           {/* Card 1 — Assist */}
-          <div className="feature-card">
-            <p className="section-eyebrow" style={{ marginBottom: 12 }}>Instant Assist</p>
-            <h3 className="feature-card-title">When you need help, AtlasStack assists instantly.</h3>
-            <p className="feature-card-text">
-              Hit <kbd style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: 4, padding: '1px 6px', fontSize: 12, border: '1px solid rgba(255,255,255,0.15)' }}>Ctrl+Enter</kbd> and AtlasStack surfaces risk summaries, fix suggestions, and export options right in your terminal or browser.
-            </p>
-            <div className="feature-card-visual">
-              <div className="assist-card">
-                <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>ASSIST</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  <span className="assist-chip"><Shield size={12} /> View Risks</span>
-                  <span className="assist-chip"><Zap size={12} /> Generate Fix</span>
-                  <span className="assist-chip"><GitBranch size={12} /> Open PR</span>
-                  <span className="assist-chip"><BarChart3 size={12} /> Full Report</span>
+          <div className="feature-card" style={{ gridColumn: '1 / -1' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
+              <div>
+                <p className="section-eyebrow" style={{ marginBottom: 12 }}>Instant Assist</p>
+                <h3 className="feature-card-title">When you need help, AtlasStack assists instantly.</h3>
+                <p className="feature-card-text">
+                  Hit <kbd style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: 4, padding: '1px 6px', fontSize: 12, border: '1px solid rgba(255,255,255,0.15)' }}>Ctrl+Enter</kbd> and AtlasStack surfaces risk summaries, fix suggestions, and export options right in your terminal or browser.
+                </p>
+              </div>
+              <div className="feature-card-visual">
+                <div className="assist-card">
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>ASSIST</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <span className="assist-chip"><Shield size={12} /> View Risks</span>
+                    <span className="assist-chip"><Zap size={12} /> Generate Fix</span>
+                    <span className="assist-chip"><GitBranch size={12} /> Open PR</span>
+                    <span className="assist-chip"><BarChart3 size={12} /> Full Report</span>
+                  </div>
+                  <p style={{ marginTop: 14, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Ctrl+Enter to assist</p>
                 </div>
-                <p style={{ marginTop: 14, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Ctrl+Enter to assist</p>
               </div>
             </div>
           </div>
@@ -366,40 +416,72 @@ const LandingPage = ({ onNavigateToDashboard, isPro }: {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="final-cta">
-        <h2 className="final-cta-title">
-          Code intelligence that works during the review, not after.
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: 32, fontSize: 17 }}>
-          Try AtlasStack on your next repository today.
-        </p>
-        {isSignedIn ? (
-          <button className="btn-clay-primary" style={{ padding: '16px 36px', fontSize: '16px' }} onClick={onNavigateToDashboard}>
-            <BarChart3 size={18} /> Open Dashboard
-          </button>
-        ) : (
-          <SignInButton mode="modal">
-            <button className="btn-clay-primary" style={{ padding: '16px 36px', fontSize: '16px' }}>
-              <Terminal size={18} /> Login to Scan
-            </button>
-          </SignInButton>
-        )}
+      <section className="section">
+        <div className="feature-card" style={{ 
+          textAlign: 'center', 
+          padding: '80px 40px',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <h2 className="section-title" style={{ fontSize: 40, marginBottom: 16 }}>
+            Ready to secure your code?
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 40, fontSize: 18, maxWidth: 500, margin: '0 auto 40px' }}>
+            Join hundreds of developers using AtlasStack to ship faster and safer.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <SignInButton mode="modal">
+              <button className="btn-clay-primary" style={{ padding: '16px 40px', fontSize: '16px' }}>
+                Get Started Now
+              </button>
+            </SignInButton>
+          </div>
+        </div>
       </section>
 
       {/* ── Footer ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="footer">
-          <div className="nav-logo" style={{ cursor: 'default' }}>
-            <img src="/logo.png" alt="AtlasStack" style={{ height: 24, width: 'auto', objectFit: 'contain' }} />
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(3,3,3,0.8)', padding: '80px 0 40px' }}>
+        <div className="section" style={{ padding: '0 40px', maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 60 }}>
+            <div>
+              <div className="nav-logo" style={{ marginBottom: 24 }}>
+                <img src="/logo.png" alt="AtlasStack" style={{ height: 28 }} />
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, lineHeight: 1.6 }}>
+                AI-native code intelligence for the modern engineering team.
+              </p>
+            </div>
+            <div>
+              <h4 style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Product</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <a href="#how" className="footer-link">How it works</a>
+                <a href="#stats" className="footer-link">Stats</a>
+                <a href="https://github.com/Reaobaka56/atlasstack" className="footer-link">CLI Tool</a>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resources</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <a href="https://github.com/Reaobaka56/atlasstack" className="footer-link">GitHub</a>
+                <a href="mailto:reaobaka@atlasstack.ai" className="footer-link">Support</a>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Legal</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <a href="#" className="footer-link">Privacy</a>
+                <a href="#" className="footer-link">Terms</a>
+              </div>
+            </div>
           </div>
-          <div className="footer-links">
-            <a className="footer-link" href="https://github.com/Reaobaka56/atlasstack" target="_blank" rel="noreferrer">Resources</a>
-            <a className="footer-link" href="mailto:reaobaka@atlasstack.ai">Support</a>
-            <a className="footer-link" href="#">Legal</a>
+          <div style={{ marginTop: 80, paddingTop: 40, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+            <span>© 2026 AtlasStack. All rights reserved.</span>
+            <div style={{ display: 'flex', gap: 24 }}>
+              <a href="https://github.com/Reaobaka56/atlasstack" className="footer-link"><Github size={16} /></a>
+            </div>
           </div>
-          <span style={{ fontSize: 13, color: '#d1d5db' }}>© 2026 AtlasStack AI</span>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };
@@ -415,26 +497,26 @@ const CookieBanner = () => {
       style={{
         position: 'fixed', bottom: 24, left: 24, right: 24, maxWidth: 420,
         marginLeft: 'auto', zIndex: 200,
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(0,0,0,0.08)', borderRadius: 20,
-        padding: '24px 28px', boxShadow: '0 8px 40px rgba(0,0,0,0.12)'
+        background: 'rgba(20,20,20,0.8)', backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24,
+        padding: '28px', boxShadow: '0 12px 48px rgba(0,0,0,0.4)'
       }}
     >
-      <h4 style={{ fontWeight: 700, color: '#111827', marginBottom: 8, fontSize: 16 }}>Cookies</h4>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, lineHeight: 1.6 }}>
-        We use cookies to analyse usage and improve your experience.
+      <h4 style={{ fontWeight: 700, color: '#fff', marginBottom: 8, fontSize: 16 }}>Privacy First</h4>
+      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20, lineHeight: 1.6 }}>
+        We use essential cookies to maintain security and analyse node cluster health.
       </p>
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
         <button
-          className="btn-gradient"
-          style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
+          className="btn-clay-primary"
+          style={{ flex: 1, justifyContent: 'center', padding: '12px', fontSize: 13 }}
           onClick={() => { localStorage.setItem('atlas_cookies', '1'); setShow(false); }}
         >Accept</button>
         <button
           className="btn-ghost"
-          style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
+          style={{ flex: 1, justifyContent: 'center', padding: '12px', fontSize: 13 }}
           onClick={() => setShow(false)}
-        >Dismiss</button>
+        >Decline</button>
       </div>
     </motion.div>
   );
@@ -442,6 +524,7 @@ const CookieBanner = () => {
 
 // ─── Root App ─────────────────────────────────────────────────────
 export default function App() {
+  const { isSignedIn, isLoaded } = useUser();
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [currentRepo, setCurrentRepo] = useState('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
@@ -459,8 +542,10 @@ export default function App() {
     return () => window.removeEventListener('scroll', h);
   }, []);
 
+
   return (
     <>
+      <div className="noise-overlay" />
       <Navbar onNavigate={setCurrentPage} currentPage={currentPage} scrolled={scrolled} />
 
       <AnimatePresence mode="wait">

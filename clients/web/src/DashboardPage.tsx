@@ -9,7 +9,7 @@ import {
   MessageSquare, Send, X, MessagesSquare, Network
 } from 'lucide-react';
 import ArchitectureMap from './ArchitectureMap';
-import { useAuth } from '@clerk/react';
+import { useAuth, useClerk } from '@clerk/react';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
@@ -82,17 +82,17 @@ const StatCard = ({
   icon: React.ReactNode;
   accent: string;
 }) => (
-  <div className="liquid-glass border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.02] group shadow-2xl">
+  <div className="feature-card" style={{ padding: '24px', borderRadius: '32px' }}>
     <div className="flex items-start justify-between mb-4">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center border shadow-inner ${accent}`}>
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 ${accent} shadow-xl`}>
         {icon}
       </div>
       <div className="text-right">
-        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-silver-500 mb-1">{label}</p>
-        <p className="text-2xl sm:text-3xl font-black text-white tabular-nums metallic-text">{value}</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-silver-600 mb-1">{label}</p>
+        <p className="text-3xl font-black text-white tabular-nums metallic-text tracking-tighter">{value}</p>
       </div>
     </div>
-    <p className="text-[10px] sm:text-xs text-silver-600 font-medium group-hover:text-silver-400 transition-colors">{sub}</p>
+    <p className="text-[11px] text-silver-500 font-medium">{sub}</p>
   </div>
 );
 
@@ -109,6 +109,7 @@ export const DashboardPage = ({
   key?: React.Key;
 }) => {
   const { getToken } = useAuth();
+  const { signOut } = useClerk();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -308,7 +309,7 @@ export const DashboardPage = ({
 
       {/* Logout */}
       <button
-        onClick={onBack}
+        onClick={() => signOut()}
         className="flex items-center gap-3 px-4 py-4 rounded-2xl text-xs font-bold text-silver-600 hover:text-white hover:bg-red-500/10 transition-all group border border-transparent hover:border-red-500/20"
       >
         <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Sign Out
@@ -316,27 +317,86 @@ export const DashboardPage = ({
     </>
   );
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      
-      {/* ── Mobile Header ─────────────────────────────────────────────────── */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between liquid-glass border-t-0 border-x-0 rounded-none shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center p-1">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-white font-black tracking-tighter text-lg underline decoration-white/10 decoration-2 underline-offset-4">AtlasStack</span>
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10"
-        >
-          <Menu className="w-5 h-5 text-white" />
-        </button>
-      </header>
+  const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = useState(false);
+  const [newRepoUrl, setNewRepoUrl] = useState('');
 
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const uniqueRepos = Array.from(new Set(analyses.map(a => a.repo_url)));
+
+  return (
+    <div className="flex h-screen overflow-hidden relative">
+      <div className="island-bg">
+        <div className="aurora-blob blob-1" />
+        <div className="aurora-blob blob-2" />
+        <div className="aurora-blob blob-3" />
+      </div>
+      <div className="island-overlay" />
+      
+      {/* ── New Analysis Modal ── */}
+      <AnimatePresence>
+        {isNewAnalysisModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsNewAnalysisModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl liquid-glass rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-cyan-500" />
+              <h3 className="text-2xl font-black text-white mb-2">Initialize New Node</h3>
+              <p className="text-silver-500 text-sm mb-8">Enter a GitHub repository URL to begin deep topology analysis.</p>
+              
+              <div className="relative mb-6">
+                <Github className="absolute left-5 top-1/2 -translate-y-1/2 text-silver-600 w-5 h-5" />
+                <input 
+                  type="text" 
+                  placeholder="https://github.com/org/repo"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-white placeholder-silver-700 focus:outline-none focus:border-violet-500/50 transition-all"
+                  value={newRepoUrl}
+                  onChange={(e) => setNewRepoUrl(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  className="flex-1 btn-clay-primary py-4 rounded-2xl font-bold"
+                  onClick={() => {
+                    if (newRepoUrl) {
+                      onViewAnalysis('new', newRepoUrl);
+                      setIsNewAnalysisModalOpen(false);
+                      setNewRepoUrl('');
+                    }
+                  }}
+                >
+                  Start Analysis
+                </button>
+                <button 
+                  className="px-6 bg-white/5 text-silver-400 font-bold rounded-2xl hover:bg-white/10 transition-all"
+                  onClick={() => setIsNewAnalysisModalOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
       {/* ── Sidebar (Desktop) ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-white/5 liquid-glass rounded-none py-10 px-4 gap-1 overflow-y-auto">
+      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-white/5 liquid-glass rounded-none py-10 px-4 gap-1 overflow-y-auto pt-28">
         <SidebarContent />
       </aside>
 
@@ -371,33 +431,39 @@ export const DashboardPage = ({
       </AnimatePresence>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto pt-24 lg:pt-0">
+      <main className="flex-1 overflow-y-auto pt-24 lg:pt-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-10 lg:px-16 py-8 sm:py-12 space-y-8 sm:space-y-12">
 
-          {/* Greeting header */}
+          {/* Greeting header (Visible in all views but context changes) */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="relative">
             <div className="absolute -top-4 -left-4 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
               <div className="text-center sm:text-left">
                 <p className="text-[10px] text-silver-600 uppercase tracking-[0.4em] font-black mb-3 ml-1">{dayLabel}</p>
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-3 tracking-tight">
-                  {greeting}, <span className="metallic-text">User</span>
+                <h1 className="text-4xl sm:text-6xl font-black text-white mb-3 tracking-tighter">
+                  {activeNav === 'home' ? greeting : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}, <span className="text-gradient">User</span>
                 </h1>
                 <p className="text-silver-400 text-sm font-medium opacity-80 pl-1 max-w-md leading-relaxed mx-auto sm:mx-0">
-                  {analyses.length > 0
+                  {activeNav === 'home' && (analyses.length > 0
                     ? `You've deployed ${analyses.length} systems. Global infrastructure stability is currently at ${avgHealth}%.`
-                    : "No systems detected. Initialize your first node to begin scanning."}
+                    : "No systems detected. Initialize your first node to begin scanning.")}
+                  {activeNav === 'analyses' && "Manage and inspect your historical repository scans."}
+                  {activeNav === 'repos' && "Inventory of all unique nodes connected to the AtlasStack cluster."}
                 </p>
               </div>
               <button
-                onClick={onBack}
-                className="btn-pill btn-pill-active py-3 sm:py-4 px-6 sm:px-8 text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group w-full sm:w-auto"
+                onClick={() => setIsNewAnalysisModalOpen(true)}
+                className="btn-clay-primary py-3 sm:py-4 px-6 sm:px-8 text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> New Analysis
               </button>
             </div>
           </motion.div>
 
+          {/* Content Switching Logic */}
+          <div className="dashboard-views-container">
+            {activeNav === 'home' && (
+              <>
           {/* Stats row */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -436,7 +502,7 @@ export const DashboardPage = ({
           </motion.div>
 
           {/* Main grid: recent analyses + activity */}
-          <div className="grid lg:grid-cols-12 gap-8">
+          <div className="grid lg:grid-cols-12 gap-8 mt-12">
 
             {/* Recent Analyses (8/12) */}
             <motion.div
@@ -464,9 +530,26 @@ export const DashboardPage = ({
               {/* Body */}
               <div className="p-4 sm:p-6 space-y-3">
                 {loading ? (
-                  <div className="py-24 flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin" />
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600">Syncing Node History...</p>
+                  <div className="py-32 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent animate-pulse" />
+                    <div className="relative w-16 h-16 mb-6">
+                      <div className="absolute inset-0 bg-white/10 blur-xl rounded-full animate-pulse" />
+                      <div className="absolute inset-0 border-2 border-white/5 rounded-full" />
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-t-2 border-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"
+                      />
+                      <div className="absolute inset-2 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center">
+                        <RefreshCw className="w-4 h-4 text-white animate-spin [animation-duration:3s]" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.4em] font-black text-silver-600 animate-pulse">Syncing Node History</p>
+                    <div className="mt-4 flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce [animation-delay:0.4s]" />
+                    </div>
                   </div>
                 ) : error ? (
                   <div className="py-16 text-center px-6">
@@ -715,7 +798,107 @@ export const DashboardPage = ({
               </div>
             </motion.div>
           )}
+        </>
+      )}
 
+      {activeNav === 'analyses' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="liquid-glass border-white/5 rounded-[2.5rem] p-10"
+        >
+          <div className="flex items-center justify-between mb-10">
+            <h3 className="text-2xl font-black text-white tracking-tighter">Scan History</h3>
+            <div className="flex gap-3">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-silver-700" />
+                <input 
+                  type="text" 
+                  placeholder="Filter scans..." 
+                  className="bg-white/5 border border-white/10 rounded-xl py-2 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/20" 
+                />
+              </div>
+            </div>
+          </div>
+              <div className="space-y-4">
+                {analyses.map(a => (
+                  <div 
+                    key={a.id} 
+                    onClick={() => onViewAnalysis(a.id, a.repo_url)}
+                    className="group flex items-center justify-between p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                        <Github className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-white tracking-tight">{a.repo_url.split('/').pop()}</p>
+                        <p className="text-silver-600 text-xs">{a.repo_url}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-12">
+                      <div className="text-right">
+                        <p className="text-[10px] text-silver-700 uppercase tracking-widest mb-1 font-black">Score</p>
+                        <p className="text-xl font-black tabular-nums" style={{ color: scoreColor(a.health_score) }}>{a.health_score}%</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-silver-700 uppercase tracking-widest mb-1 font-black">Synced</p>
+                        <p className="text-xs text-white font-bold">{relativeTime(a.created_at)}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-silver-800 group-hover:text-white transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeNav === 'repos' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {uniqueRepos.map((repo, idx) => (
+                <div key={idx} className="liquid-glass border-white/5 rounded-[2.5rem] p-8 group hover:border-white/20 transition-all relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl -z-10 group-hover:bg-white/10 transition-all" />
+                   <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 mb-6 group-hover:scale-110 transition-transform shadow-xl">
+                      <Github className="w-6 h-6 text-white" />
+                   </div>
+                   <h4 className="text-xl font-black text-white tracking-tight mb-2 truncate">{repo.split('/').pop()}</h4>
+                   <p className="text-silver-700 text-xs mb-8 truncate">{repo}</p>
+                   
+                   <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                      <div className="flex -space-x-2">
+                        {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-white/10 border border-black/50" />)}
+                      </div>
+                      <button 
+                        onClick={() => onViewAnalysis('latest', repo)}
+                        className="text-[10px] uppercase tracking-widest font-black text-silver-600 hover:text-white transition-colors flex items-center gap-2"
+                      >
+                        Open Repo <ExternalLink className="w-3 h-3" />
+                      </button>
+                   </div>
+                </div>
+              ))}
+              <div 
+                onClick={() => setIsNewAnalysisModalOpen(true)}
+                className="border-2 border-dashed border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-white/5 hover:border-white/20 transition-all text-silver-700 hover:text-white"
+              >
+                <Plus className="w-8 h-8" />
+                <span className="font-bold tracking-tight">Add Repository</span>
+              </div>
+            </motion.div>
+          )}
+
+          {activeNav === 'reports' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
+              <div className="w-20 h-20 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/10 mx-auto mb-8 shadow-2xl">
+                 <BarChart3 className="w-10 h-10 text-violet-400" />
+              </div>
+              <h3 className="text-3xl font-black text-white tracking-tighter mb-4">Architecture Insights</h3>
+              <p className="text-silver-500 max-w-md mx-auto leading-relaxed">
+                Aggregated reports and trend analysis for your entire fleet will appear here. This feature is currently in early access.
+              </p>
+            </motion.div>
+          )}
+          </div>
         </div>
       </main>
 
