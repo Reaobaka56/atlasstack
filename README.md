@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
 
-AtlasStack is an autonomous software engineering engine that analyzes GitHub repositories using **Qwen2.5-Coder**, finds bugs, explains architecture, and proposes fixes — including an embedded web IDE experience.
+AtlasStack is an autonomous software engineering engine that analyzes GitHub repositories using **Gemini 1.5 Flash** and **Qwen2.5-Coder**, finds bugs, explains architecture, and proposes fixes — including an embedded web IDE experience.
 
 ---
 
@@ -65,7 +65,7 @@ For more details, see the [Architecture Deep Dive](docs/architecture.md).
 
 ### Core
 - **Frontend:** React, TypeScript, Vite, Monaco Editor, Tailwind CSS, Framer Motion
-- **Backend (Lite Mode):** Python 3.12, FastAPI, SQLite, Qwen2.5-Coder via HuggingFace Inference API
+- **Backend (Lite Mode):** Python 3.12, FastAPI, SQLite, Gemini 1.5 Flash (Google) or Qwen2.5-Coder (HuggingFace)
 
 ### Enterprise Infrastructure (Optional)
 - **Message Broker:** RabbitMQ
@@ -83,7 +83,7 @@ For more details, see the [Architecture Deep Dive](docs/architecture.md).
 ### Prerequisites
 - Python 3.12+
 - Node.js 18+
-- A [HuggingFace token](https://huggingface.co/settings/tokens) with Inference API access
+- A **[Gemini API Key](https://aistudio.google.com/app/apikey)** (Recommended) or a [HuggingFace token](https://huggingface.co/settings/tokens)
 
 ### 1) Configure environment
 
@@ -129,7 +129,7 @@ npm run dev
 3. Enter a public GitHub repo URL and click **Start Analysis**
 4. The AI will clone the repo, analyze it, and return a full report
 
-> **No HF_TOKEN?** The analysis endpoint falls back to a mock response. Set `HF_TOKEN` in `.env` to enable real AI analysis.
+> **No AI Key?** The analysis endpoint falls back to a mock response. Set `GEMINI_API_KEY` or `HF_TOKEN` in `.env` to enable real AI analysis.
 
 ---
 
