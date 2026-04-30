@@ -19,7 +19,7 @@ if (!clerkPubKey) {
 } else {
   createRoot(rootElement).render(
     <StrictMode>
-      <ClerkProvider publishableKey={clerkPubKey} afterSignOutUrl="/">
+      <ClerkProvider afterSignOutUrl="/">
         <App />
       </ClerkProvider>
     </StrictMode>,
