@@ -15,6 +15,7 @@ import structlog
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from huggingface_hub import InferenceClient
+import google.generativeai as genai
 
 from services.analysis.engine.architecture_mapper import get_mapper
 from services.analysis.engine.dependency_analyzer import get_dependency_analyzer
@@ -26,9 +27,17 @@ logger = structlog.get_logger()
 _executor = ThreadPoolExecutor(max_workers=4)
 
 class AnalysisOrchestrator:
-    def __init__(self, hf_token: str = None):
+    def __init__(self, hf_token: str = None, gemini_key: str = None):
         self.hf_token = hf_token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
         self.default_model = os.environ.get("DEFAULT_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct")
+        
+        if self.gemini_key:
+            genai.configure(api_key=self.gemini_key)
+            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        else:
+            self.gemini_model = None
+
         self.mapper = get_mapper()
         self.dep_analyzer = get_dependency_analyzer()
         self.scanner = get_scanner()
@@ -39,8 +48,8 @@ class AnalysisOrchestrator:
         Analyze a repository (remote or local).
         Returns a structured dictionary of results.
         """
-        if not self.hf_token:
-            return self._get_mock_response("Missing Hugging Face token.")
+        if not self.hf_token and not self.gemini_key:
+            return self._get_mock_response("Missing AI tokens (HF or Gemini).")
 
         if is_local:
             return await self._run_analysis(repo_url, repo_url)
@@ -87,16 +96,25 @@ class AnalysisOrchestrator:
         instruction, input_context = self._build_prompt(display_name, file_tree, key_contents)
         prompt = f"{instruction}\n\n{input_context}"
         
-        client = InferenceClient(api_key=self.hf_token, provider="auto")
-        response = await call_llm_with_retry(
-            client=client,
-            model=self.default_model, 
-            messages=[{"role": "user", "content": prompt}], 
-            max_tokens=3000,
-            temperature=0.1
-        )
-        
-        content = response.choices[0].message.content
+        content = ""
+        if self.gemini_model:
+            logger.info("Using Gemini for analysis")
+            response = await asyncio.to_thread(
+                lambda: self.gemini_model.generate_content(prompt)
+            )
+            content = response.text
+        else:
+            logger.info("Using Hugging Face for analysis")
+            client = InferenceClient(api_key=self.hf_token, provider="auto")
+            response = await call_llm_with_retry(
+                client=client,
+                model=self.default_model, 
+                messages=[{"role": "user", "content": prompt}], 
+                max_tokens=3000,
+                temperature=0.1
+            )
+            content = response.choices[0].message.content
+
         result_json = self._parse_json(content)
         
         # Collect for training

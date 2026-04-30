@@ -352,7 +352,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
   useEffect(() => {
     if (step === 'analyzing') {
-      if (analysisId) {
+      if (analysisId && analysisId !== 'new') {
         fetchExistingData();
       } else {
         fetchMvpData();

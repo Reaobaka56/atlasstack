@@ -208,27 +208,42 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                 # Handle AI chat
                 user_text = data.get("text", "")
                 hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+                gemini_key = os.environ.get("GEMINI_API_KEY")
                 
-                if not hf_token:
+                # Check if any key exists
+                if not hf_token and not gemini_key:
+                    logger.warning("No AI tokens found. Falling back to mock MVP response.")
+                
+                if not hf_token and not gemini_key:
                     await websocket.send_json({
                         "type": "chat_response",
-                        "text": "HF_TOKEN is not set in the backend .env. Please configure it to enable AI chat."
+                        "text": "No AI tokens (HF or Gemini) are set in the backend .env. Please configure them to enable AI chat."
                     })
                     continue
 
                 try:
-                    client = InferenceClient(api_key=hf_token)
-                    prompt = f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}"
+                    ai_text = ""
+                    if gemini_key:
+                        import google.generativeai as genai
+                        genai.configure(api_key=gemini_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        response = await asyncio.to_thread(
+                            lambda: model.generate_content(f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}")
+                        )
+                        ai_text = response.text
+                    else:
+                        client = InferenceClient(api_key=hf_token)
+                        prompt = f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}"
+                        
+                        response = await call_llm_with_retry(
+                            client=client,
+                            model="Qwen/Qwen2.5-Coder-32B-Instruct",
+                            messages=[{"role": "user", "content": prompt}],
+                            max_tokens=1000,
+                            temperature=0.7
+                        )
+                        ai_text = response.choices[0].message.content
                     
-                    response = await call_llm_with_retry(
-                        client=client,
-                        model="Qwen/Qwen2.5-Coder-32B-Instruct",
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=1000,
-                        temperature=0.7
-                    )
-                    
-                    ai_text = response.choices[0].message.content
                     await websocket.send_json({
                         "type": "chat_response",
                         "text": ai_text

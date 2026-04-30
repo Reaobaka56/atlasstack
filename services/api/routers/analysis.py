@@ -24,12 +24,15 @@ router = APIRouter()
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+import re
+import os
 from services.analysis.core.orchestrator import AnalysisOrchestrator
 
 _executor = ThreadPoolExecutor(max_workers=4)
 
 def validate_repo_url(url: str):
     """Validate repository URL to prevent SSRF and illegal paths."""
+    logger.info(f"Validating repo URL: {url}")
     ALLOWED_DOMAINS = ["github.com", "gitlab.com", "bitbucket.org"]
     try:
         if not url:
@@ -45,9 +48,13 @@ def validate_repo_url(url: str):
              else:
                  raise HTTPException(status_code=400, detail="Invalid repository URL")
 
+        if not hostname:
+            raise HTTPException(status_code=400, detail="Could not determine hostname")
+
         # Allow subdomains like www.
         base_hostname = hostname.replace('www.', '')
         if base_hostname not in ALLOWED_DOMAINS:
+            logger.warning(f"Domain {base_hostname} not in allowed list {ALLOWED_DOMAINS}")
             raise HTTPException(status_code=400, detail=f"Only {', '.join(ALLOWED_DOMAINS)} are allowed.")
             
         if not parsed.path or parsed.path == '/':
@@ -57,6 +64,7 @@ def validate_repo_url(url: str):
             raise HTTPException(status_code=400, detail="Invalid repository path format.")
         return url
     except Exception as e:
+        logger.error(f"URL validation failed for {url}: {str(e)}")
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=400, detail=f"Invalid repository URL: {str(e)}")
 
@@ -252,10 +260,11 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
         await db.commit()
     
     hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    # Check if key exists
-    if not hf_token:
-        logger.warning("No Hugging Face token found. Falling back to mock MVP response.")
+    # Check if any key exists
+    if not hf_token and not gemini_key:
+        logger.warning("No AI tokens found. Falling back to mock MVP response.")
         return MVPAnalysisResponse(
             explanation={
                 "summary": "This is a placeholder summary. Set HF_TOKEN to see real results.",
