@@ -31,9 +31,10 @@ async def deep_health_check(db: AsyncSession = Depends(get_db)):
         if not hf_token:
             checks["llm_api"] = "warning: HF_TOKEN missing"
         else:
-            client = InferenceClient(api_key=hf_token)
+            from huggingface_hub import AsyncInferenceClient
+            client = AsyncInferenceClient(api_key=hf_token)
             # Just check if we can reach the model info
-            client.get_model_info("Qwen/Qwen2.5-Coder-32B-Instruct")
+            await client.get_model_info("Qwen/Qwen2.5-Coder-32B-Instruct")
             checks["llm_api"] = "ok"
     except Exception as e:
         checks["llm_api"] = f"failed: {str(e)}"

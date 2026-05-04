@@ -386,11 +386,14 @@ async def get_github_repos(request: Request, db: AsyncSession = Depends(get_db))
     if not user or not user.github_token:
         raise HTTPException(status_code=403, detail="GitHub account not linked. Please sign in with GitHub.")
 
+    # Decrypt token before use
+    token = decrypt_token(user.github_token)
+
     import httpx
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             "https://api.github.com/user/repos?sort=updated&per_page=50&affiliation=owner,collaborator",
-            headers={"Authorization": f"token {user.github_token}", "Accept": "application/vnd.github.v3+json"}
+            headers={"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
         )
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail="Failed to fetch repos from GitHub")

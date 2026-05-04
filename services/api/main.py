@@ -5,7 +5,7 @@ Main FastAPI application entry point
 
 from contextlib import asynccontextmanager
 
-import structlog
+# import structlog  # replaced by core.logging_config
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, WebSocket, Query
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +20,8 @@ import re
 from datetime import datetime
 from huggingface_hub import InferenceClient
 
+from core.config import settings
+from core.logging_config import setup_logging, get_logger
 from middleware.auth import verify_token
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -36,7 +38,7 @@ class AnalyticsMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         
         process_time = time.time() - start_time
-        structlog.get_logger().info(
+        logger.info(
             "request_log",
             path=request.url.path,
             method=request.method,
@@ -78,14 +80,16 @@ except ImportError:
             return _noop()
     trace = _TracerStub()
 
-from core.config import settings
+# from core.config import settings  # redundant import removed
 from core.database import close_db, init_db
 from middleware.auth import AuthMiddleware
 from middleware.logging import LoggingMiddleware
 from middleware.rate_limit import RateLimitMiddleware
 from routers import analysis, auth, health, repository, graph_router
 
-logger = structlog.get_logger()
+# Initialize logging
+setup_logging()
+logger = get_logger("api_gateway")
 tracer = trace.get_tracer(__name__) if HAS_TELEMETRY else None
 
 

@@ -1,6 +1,6 @@
 # Deep Learning
 torch==2.1.2
-torchvision==0.16.2
+torchvision==0.26.0
 torchaudio==2.1.2
 
 # Transformers
@@ -19,18 +19,18 @@ tensorboard==2.15.1
 
 # Optimization
 optimum==1.16.2
-auto-gptq==0.6.0
+auto-gptq==0.7.1
 flash-attn==2.5.0; sys_platform == 'linux'
 
 # Data Processing
-numpy==1.26.3
+numpy==2.4.4
 pandas==2.1.4
 scikit-learn==1.3.2
 pyarrow==14.0.2
 
 # Utilities
 pyyaml==6.0.1
-tqdm==4.66.1
+tqdm==4.67.3
 python-dotenv==1.0.0
 orjson==3.9.10
 
@@ -39,5 +39,5 @@ tree-sitter==0.20.4
 tree-sitter-python==0.20.4
 
 # Monitoring
-prometheus-client==0.19.0
+prometheus-client==0.24.1
 structlog==24.1.0

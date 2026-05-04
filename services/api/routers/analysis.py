@@ -7,7 +7,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from datetime import datetime, timedelta
@@ -34,39 +34,50 @@ def validate_repo_url(url: str):
     """Validate repository URL to prevent SSRF and illegal paths."""
     logger.info(f"Validating repo URL: {url}")
     ALLOWED_DOMAINS = ["github.com", "gitlab.com", "bitbucket.org"]
-    try:
-        if not url:
-             raise HTTPException(status_code=400, detail="Repository URL is required.")
+    
+    if not url:
+        raise HTTPException(status_code=400, detail="Repository URL is required.")
         
+    try:
+        # Check for obvious SSRF attempts
+        if any(x in url.lower() for x in ["localhost", "127.0.0.1", "::1", "metadata.google.internal"]):
+            raise HTTPException(status_code=400, detail="Invalid repository URL (SSRF protected).")
+
         parsed = urlparse(url)
         hostname = parsed.hostname
-        if not hostname:
-             # Try adding https:// if missing
-             if not url.startswith(('http://', 'https://')):
-                 parsed = urlparse('https://' + url)
-                 hostname = parsed.hostname
-             else:
-                 raise HTTPException(status_code=400, detail="Invalid repository URL")
+        
+        # Auto-fix missing scheme
+        if not hostname and not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+            parsed = urlparse(url)
+            hostname = parsed.hostname
 
         if not hostname:
             raise HTTPException(status_code=400, detail="Could not determine hostname")
 
-        # Allow subdomains like www.
-        base_hostname = hostname.replace('www.', '')
+        # Strict domain check
+        base_hostname = hostname.lower().replace('www.', '')
         if base_hostname not in ALLOWED_DOMAINS:
-            logger.warning(f"Domain {base_hostname} not in allowed list {ALLOWED_DOMAINS}")
             raise HTTPException(status_code=400, detail=f"Only {', '.join(ALLOWED_DOMAINS)} are allowed.")
             
         if not parsed.path or parsed.path == '/':
             raise HTTPException(status_code=400, detail="Repository path is required (e.g. /user/repo).")
             
-        if not re.match(r'^/[\w\-./]+$', parsed.path):
-            raise HTTPException(status_code=400, detail="Invalid repository path format.")
+        # Prevent path traversal
+        if ".." in parsed.path:
+            raise HTTPException(status_code=400, detail="Invalid path format (path traversal detected).")
+
+        # Validate path format (at least /owner/repo)
+        path_parts = [p for p in parsed.path.split('/') if p]
+        if len(path_parts) < 2:
+            raise HTTPException(status_code=400, detail="Invalid repository path format. Expected /owner/repo")
+
         return url
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"URL validation failed for {url}: {str(e)}")
-        if isinstance(e, HTTPException): raise e
-        raise HTTPException(status_code=400, detail=f"Invalid repository URL: {str(e)}")
+        logger.error(f"URL validation failed: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid repository URL format.")
 
 
 async def get_repo_size_mb(path: str) -> float:
@@ -101,8 +112,15 @@ class AnalysisRequest(BaseModel):
 
 
 class MVPAnalysisRequest(BaseModel):
-    repo_url: str
+    repo_url: HttpUrl
     save_result: bool = True  # persist to DB
+
+    @field_validator('repo_url', mode='after')
+    @classmethod
+    def validate_github(cls, v: HttpUrl) -> HttpUrl:
+        if 'github.com' not in v.host and 'gitlab.com' not in v.host and 'bitbucket.org' not in v.host:
+            raise ValueError('Must be a valid GitHub, GitLab, or Bitbucket URL')
+        return v
 
 class MVPAnalysisResponse(BaseModel):
     explanation: dict
@@ -201,7 +219,7 @@ mock_findings = [
 @router.post("/analysis/mvp", response_model=MVPAnalysisResponse)
 async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: AsyncSession = Depends(get_db)):
     """MVP Endpoint for full repository analysis - with DB persistence and security guards."""
-    validate_repo_url(request.repo_url)
+    validate_repo_url(str(request.repo_url))
     """MVP Endpoint for full repository analysis - with DB persistence"""
     import os
     import tempfile
@@ -253,7 +271,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             id=analysis_id,
             repo_id=analysis_id,
             user_id=user_id,
-            repo_url=request.repo_url,
+            repo_url=str(request.repo_url),
             status="running",
         )
         db.add(record)
@@ -284,7 +302,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
         
     try:
         orchestrator = AnalysisOrchestrator(hf_token=hf_token)
-        result_json = await orchestrator.analyze_repository(request.repo_url)
+        result_json = await orchestrator.analyze_repository(str(request.repo_url))
         
         parsed = MVPAnalysisResponse(**result_json)
 

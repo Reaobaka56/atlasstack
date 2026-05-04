@@ -24,6 +24,10 @@ class Base(DeclarativeBase):
 
 
 class UserRecord(Base):
+    """
+    Persistent record for an authenticated user.
+    Stores identity, hashed credentials, and system roles.
+    """
     __tablename__ = "users"
     id = Column(String, primary_key=True)
     email = Column(String, unique=True, nullable=False, index=True)
@@ -35,6 +39,10 @@ class UserRecord(Base):
 
 
 class RepositoryRecord(Base):
+    """
+    Metadata for a tracked GitHub/GitLab repository.
+    Linked to a specific user and maintains the analysis lifecycle status.
+    """
     __tablename__ = "repositories"
     id = Column(String, primary_key=True)
     user_id = Column(String, nullable=False, index=True)
@@ -48,6 +56,10 @@ class RepositoryRecord(Base):
 
 
 class AnalysisRecord(Base):
+    """
+    The result of a deep repository scan.
+    Contains architecture maps, security reports, and AI-generated fixes.
+    """
     __tablename__ = "analyses"
     id = Column(String, primary_key=True)
     repo_id = Column(String, nullable=False, index=True)
@@ -72,6 +84,10 @@ class AnalysisRecord(Base):
 
 
 class OTPRecord(Base):
+    """
+    One-Time Password record for password reset flows.
+    Short-lived verification codes linked to a user email.
+    """
     __tablename__ = "otps"
     email = Column(String, primary_key=True)
     otp = Column(String, nullable=False)

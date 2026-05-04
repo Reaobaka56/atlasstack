@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,3 +19,18 @@ def pytest_configure(config):
     import pytest
     # Use session-scoped event loop for all async tests
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture
+def test_client():
+    """Get a FastAPI test client"""
+    from fastapi.testclient import TestClient
+    from services.api.main import app
+    return TestClient(app)
+
+
+@pytest.fixture
+async def async_db_session():
+    """Get a mock async DB session"""
+    from unittest.mock import AsyncMock
+    return AsyncMock()

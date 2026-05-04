@@ -22,13 +22,27 @@ class TestAnalysisHardening:
         with pytest.raises(HTTPException) as exc:
             validate_repo_url(url)
         assert exc.value.status_code == 400
-        assert "Only GitHub, GitLab, and Bitbucket" in exc.value.detail
+        assert "Only github.com, gitlab.com, bitbucket.org are allowed" in exc.value.detail
+
+    def test_validate_ssrf_fails(self):
+        url = "http://127.0.0.1/admin"
+        with pytest.raises(HTTPException) as exc:
+            validate_repo_url(url)
+        assert exc.value.status_code == 400
+        assert "SSRF protected" in exc.value.detail
 
     def test_validate_path_traversal_fails(self):
         url = "https://github.com/../../etc/passwd"
         with pytest.raises(HTTPException) as exc:
             validate_repo_url(url)
         assert exc.value.status_code == 400
+
+    def test_validate_incomplete_path_fails(self):
+        url = "https://github.com/owner"
+        with pytest.raises(HTTPException) as exc:
+            validate_repo_url(url)
+        assert exc.value.status_code == 400
+        assert "Expected /owner/repo" in exc.value.detail
 
     def test_validate_empty_path_fails(self):
         url = "https://github.com/"

@@ -27,6 +27,16 @@ logger = structlog.get_logger()
 _executor = ThreadPoolExecutor(max_workers=4)
 
 class AnalysisOrchestrator:
+    """
+    The central coordinator for repository analysis.
+    
+    This class orchestrates the lifecycle of an analysis task:
+    1. Cloning remote repositories (with security guardrails).
+    2. Extracting file trees and key file contents.
+    3. Calling LLM providers (Gemini or HuggingFace) with structured prompts.
+    4. Running local analysis engines (AST mapping, dependency scanning).
+    5. Aggregating results and calculating metrics like tech debt.
+    """
     def __init__(self, hf_token: str = None, gemini_key: str = None):
         self.hf_token = hf_token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
         self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
@@ -46,7 +56,18 @@ class AnalysisOrchestrator:
     async def analyze_repository(self, repo_url: str, is_local: bool = False) -> dict:
         """
         Analyze a repository (remote or local).
-        Returns a structured dictionary of results.
+        
+        Args:
+            repo_url: The URL or local path to the repository.
+            is_local: If True, treats repo_url as a local path.
+            
+        Returns:
+            A structured dictionary containing:
+                - explanation: Summary and ELI5 explanation.
+                - architecture: System architecture map.
+                - security_report: Dependency risk analysis.
+                - tech_debt_score: Calculated maintainability score.
+                - fixes: Suggested code improvements.
         """
         if not self.hf_token and not self.gemini_key:
             return self._get_mock_response("Missing AI tokens (HF or Gemini).")
@@ -59,11 +80,28 @@ class AnalysisOrchestrator:
         try:
             logger.info(f"Cloning {repo_url} into {temp_dir}")
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                _executor,
-                lambda: git.Repo.clone_from(repo_url, temp_dir, depth=1)
+            # Enforce 30 second timeout for cloning
+            await asyncio.wait_for(
+                loop.run_in_executor(
+                    _executor,
+                    lambda: git.Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
+                ),
+                timeout=30.0
             )
+            
+            # Basic size check (prevent zip bombs or massive repos)
+            total_size = 0
+            for root, dirs, files in os.walk(temp_dir):
+                for f in files:
+                    fp = os.path.join(root, f)
+                    total_size += os.path.getsize(fp)
+                    if total_size > 100 * 1024 * 1024: # 100MB limit
+                        raise ValueError("Repository too large for analysis (>100MB)")
+
             return await self._run_analysis(temp_dir, repo_url)
+        except asyncio.TimeoutError:
+            logger.error(f"Clone timed out for {repo_url}")
+            return self._get_error_response("Repository clone timed out (max 30s)")
         except Exception as e:
             logger.error(f"Analysis failed: {e}")
             return self._get_error_response(str(e))

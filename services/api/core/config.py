@@ -126,12 +126,6 @@ class Settings(BaseSettings):
 # Global settings instance
 settings = Settings()
 
-
-def get_settings() -> Settings:
-    """Get application settings"""
-    return settings
-
-
 import secrets as _secrets
 import logging as _logging
 import os as _os
@@ -148,3 +142,15 @@ def _validate_settings(s: "Settings"):
     
     if not s.ENCRYPTION_KEY and s.ENVIRONMENT == "production":
          _logging.warning("WARNING: No ENCRYPTION_KEY set. Sensitive tokens will be stored in plaintext.")
+    
+    # Check for GITHUB_TOKEN in production
+    if s.ENVIRONMENT == "production" and not s.GITHUB_TOKEN:
+        _logging.warning("WARNING: GITHUB_TOKEN not set. API calls to GitHub will be rate-limited.")
+
+# Run validation
+_validate_settings(settings)
+
+
+def get_settings() -> Settings:
+    """Get application settings"""
+    return settings

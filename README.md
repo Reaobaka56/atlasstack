@@ -251,39 +251,70 @@ Every collected entry includes the system **instruction**, the repository **cont
 
 ---
 
+## 🚀 Deployment Guide
+
+### Docker Compose (Production-ready)
+For a full enterprise-grade deployment with PostgreSQL, Redis, and RabbitMQ:
+
+1.  **Prepare Environment:**
+    ```bash
+    cp .env.example .env
+    # Fill in required secrets (HF_TOKEN, DATABASE_URL, etc.)
+    ```
+2.  **Launch Stack:**
+    ```bash
+    docker-compose up -d
+    ```
+3.  **Run Migrations:**
+    ```bash
+    docker-compose exec api alembic upgrade head
+    ```
+
+### Kubernetes (K8s)
+Deployment manifests are located in `/k8s`.
+```bash
+kubectl apply -f k8s/
+```
+
+---
+
+## 🔧 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **White Screen in IDE** | Ensure `Cross-Origin-Opener-Policy` headers are set. Check browser console for Clerk errors. |
+| **Analysis Timed Out** | Increase `MAX_ANALYSIS_TIME` in `.env`. Default is 300s. |
+| **"git clone" fails** | Verify the repository is public or your `GITHUB_TOKEN` has proper scopes. |
+| **Database connection error** | If using `LITE_MODE=false`, ensure PostgreSQL is running and `DATABASE_URL` is correct. |
+| **Alembic migration failed** | Run `ENVIRONMENT=development alembic upgrade head` to see detailed logs. |
+
+---
+
 ##  Configuration Reference
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HF_TOKEN` | - | HuggingFace Token (required for real AI) |
+| `GEMINI_API_KEY` | - | Google Gemini API Key (Recommended) |
+| `ENVIRONMENT` | `production` | Set to `development` for verbose logging and bypass strict security checks |
+| `JWT_SECRET` | - | Secret for JWT signing (Required in production) |
 | `LITE_MODE` | `true` | Toggle between SQLite and full Postgres stack |
 | `VITE_CLERK_PUBLISHABLE_KEY` | - | Clerk Public Key for Frontend Auth |
 | `DEFAULT_MODEL` | `Qwen2.5-Coder` | The LLM used for analysis |
 | `COLLECT_TRAINING_DATA` | `true` | Toggle scan data harvesting |
-| `TRAINING_DATA_PATH` | `training/datasets/collected_scans.jsonl` | Path to store collected training pairs |
-| `NEO4J_PASSWORD` | - | Password for graph database |
+| `RATE_LIMIT_REQUESTS` | `100` | Max requests per window |
+| `RATE_LIMIT_WINDOW` | `60` | Window size in seconds |
 
 See `.env.example` for the full list of configuration options.
 
 ---
 
-## Enterprise Deployment (Docker)
-
-```bash
-cp .env.example .env
-# Fill in all values in .env
-make up
-```
-
-See `Makefile` for all available commands (`make help`).
-
----
-
 ## Security Notes
 
-- **Authentication:** All user authentication, session management, and SSO is handled securely off-main-thread via **Clerk**.
-- **Execution Sandboxing:** Repository analysis runs in a temporary directory that is securely isolated and deleted immediately after completion.
-- **LLM Data Privacy:** Local LLM inference via Lite Mode ensures your codebase never leaves your infrastructure (unless using external HuggingFace Inference APIs).
+- **Authentication:** All user authentication, session management, and SSO is handled securely via **Clerk** (frontend) and **JWT** (backend).
+- **Vulnerability Scanning:** CI/CD includes automated scans via `bandit`, `safety`, and `semgrep`.
+- **Execution Sandboxing:** Repository analysis runs in isolated temporary directories with strict timeouts and size limits.
+- **LLM Data Privacy:** Local LLM inference via Lite Mode ensures your codebase never leaves your infrastructure (unless using external HuggingFace/Google Inference APIs).
 
 ---
 
