@@ -60,19 +60,29 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: List[str] = [
+        # Local Development
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:5173",
+        "http://localhost:8000",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
         "http://0.0.0.0:3000",
         "http://0.0.0.0:5173",
+        # ✅ Docker Container Origins
+        "http://web:80",
+        "http://web",
+        "http://web:5173",
+        "http://localhost:80",
+        # Production
         "https://atlasstack.ai",
     ]
     # Supports preview deployments (Vercel/Render) and local development ports.
     CORS_ORIGIN_REGEX: str = (
         r"^https://([a-zA-Z0-9-]+\.)*(atlasstack\.ai|vercel\.app|onrender\.com)$|"
-        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?$"
+        r"^http://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+|web|api)(:\d+)?$"
     )
 
     # Feature Flags

@@ -28,13 +28,40 @@ type Page = 'landing' | 'ide' | 'dashboard' | 'eye';
 const API_URL_STORAGE_KEY = "atlasstack_api_url";
 const normalizeApiUrl = (v?: string | null) => (v || '').trim().replace(/\/$/, '');
 const detectDefaultApiUrl = () => {
+  // 1. Check environment variable first
   const env = normalizeApiUrl((import.meta as any).env?.VITE_API_URL);
-  if (env) return env;
+  if (env) {
+    console.log('Using API URL from VITE_API_URL env:', env);
+    return env;
+  }
+  
   const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:8005';
-  if (window.location.hostname.includes('onrender.com'))
-    return `${window.location.protocol}//${window.location.hostname.replace('-web.', '-api.')}`;
-  return window.location.origin;
+  
+  // 2. For Docker container environments
+  if (host === 'api' || host === 'web') {
+    const apiUrl = 'http://api:8000'; // ✅ Docker service name
+    console.log('Using Docker service API URL:', apiUrl);
+    return apiUrl;
+  }
+  
+  // 3. For localhost development
+  if (host === 'localhost' || host === '127.0.0.1') {
+    const apiUrl = 'http://localhost:8000'; // ✅ Changed from 8005 to 8000
+    console.log('Using localhost API URL:', apiUrl);
+    return apiUrl;
+  }
+  
+  // 4. For Render.com deployments
+  if (host.includes('onrender.com')) {
+    const apiUrl = `${window.location.protocol}//${host.replace('-web.', '-api.')}`;
+    console.log('Using Render.com API URL:', apiUrl);
+    return apiUrl;
+  }
+  
+  // 5. For same-origin deployments
+  const apiUrl = window.location.origin;
+  console.log('Using same-origin API URL:', apiUrl);
+  return apiUrl;
 };
 
 // ─── Show ─────────────────────────────────────────────────────────
@@ -554,7 +581,7 @@ export default function App() {
             key="ide"
             repoUrl={currentRepo}
             analysisId={analysisId}
-            onBack={() => { setCurrentPage('landing'); setAnalysisId(null); }}
+            onBack={() => { setCurrentPage('dashboard'); setAnalysisId(null); }}
             apiUrl={apiUrl}
           />
         ) : currentPage === 'dashboard' ? (

@@ -5,11 +5,12 @@ import {
   ArrowLeft, Search, ShieldCheck, Zap, Layers, FolderTree, Lightbulb, 
   Wrench, Play, Code2, Copy, ToggleLeft, ToggleRight, ListChecks, FileWarning, Star, AlertTriangle,
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
-  FileCode2, MessageSquare, Send, X, MessagesSquare, Network
+  FileCode2, MessageSquare, Send, X, MessagesSquare, Network, LogOut, Home, GitBranch, Clock, BarChart3, Settings, Menu, Cpu, Sparkles
 } from 'lucide-react';
 import {
   SignInButton,
-  useAuth
+  useAuth,
+  useClerk
 } from "@clerk/react";
 
 // Local Show helper — mirrors the one in App.tsx
@@ -83,42 +84,18 @@ const Mermaid = ({ chart }: { chart: string }) => {
 
 
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-10 text-red-500 font-mono text-sm bg-black min-h-screen">
-          <h1 className="text-2xl mb-4 text-white">React Crash!</h1>
-          <pre className="whitespace-pre-wrap">{this.state.error?.toString()}</pre>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null; key?: React.Key }) => {
-  return (
-    <ErrorBoundary>
-      <IDEPageContent {...props} />
-    </ErrorBoundary>
-  );
+  return <IDEPageContent {...props} />;
 };
 
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
   const defaultApiHost = window.location.hostname;
   const defaultApiUrl = (defaultApiHost === 'localhost' || defaultApiHost === '127.0.0.1' || defaultApiHost === '0.0.0.0')
-    ? 'http://localhost:8005'
-    : `${window.location.protocol}//${defaultApiHost}:8005`;
-  const API_URL = apiUrlProp || (process as any).env?.REACT_APP_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
+    ? 'http://localhost:8000'
+    : `${window.location.protocol}//${defaultApiHost}:8000`;
+  const API_URL = apiUrlProp || (import.meta as any).env?.VITE_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
   const { getToken, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
   const [step, setStep] = useState<'connect' | 'input' | 'analyzing' | 'dashboard'>(analysisId ? 'analyzing' : 'connect');
   const [repoInput, setRepoInput] = useState(repoUrl || '');
   const [mvpData, setMvpData] = useState<any>(null);
@@ -129,6 +106,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
   const [expandedDiff, setExpandedDiff] = useState<number | null>(null);
   const [analyzingStep, setAnalyzingStep] = useState(0);
   const [archGraph, setArchGraph] = useState<any>(null);
+  const [activeNav] = useState<'analyses' | 'home' | 'repos' | 'reports'>('analyses');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -460,12 +439,119 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
   };
 
   const handleRetry = () => {
+    setMvpData(null);
+    setArchGraph(null);
     setStep('analyzing');
-    // It will automatically trigger fetchMvpData from useEffect
+    // Force call fetchMvpData directly to bypass the 'analysisId' check in useEffect
+    fetchMvpData();
   };
 
+
+  const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) => (
+    <div 
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all group ${
+        active 
+          ? 'bg-white/10 text-white border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]' 
+          : 'text-silver-600 hover:text-white hover:bg-white/5 border border-transparent'
+      }`}
+    >
+      <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {icon}
+      </div>
+      <span className="text-xs font-bold tracking-tight">{label}</span>
+      {active && <div className="ml-auto w-1 h-4 rounded-full bg-white shadow-[0_0_10px_#fff]" />}
+    </div>
+  );
+
+  const SidebarContent = () => (
+    <>
+      <div className="px-4 mb-10">
+        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onBack()}>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Zap className="w-5 h-5 text-white fill-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-white tracking-tighter">ATLAS<span className="text-silver-500">STACK</span></h1>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-widest">Node Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-2 px-2">
+        <NavItem icon={<Home size={18} />} label="Dashboard" onClick={() => onBack()} />
+        <NavItem icon={<Clock size={18} />} label="Analysis History" active={activeNav === 'analyses'} />
+        <NavItem icon={<GitBranch size={18} />} label="Repositories" />
+        <NavItem icon={<BarChart3 size={18} />} label="Risk Reports" />
+        <div className="pt-4 pb-2 px-4">
+          <div className="h-px bg-white/5 w-full" />
+        </div>
+        <NavItem icon={<Settings size={18} />} label="Settings" />
+      </div>
+
+      <div className="mx-2 p-5 rounded-3xl bg-white/5 border border-white/10 mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-lg bg-yellow-400/10 flex items-center justify-center">
+            <Cpu className="w-3.5 h-3.5 text-yellow-500" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-silver-400">Analysis Intel</span>
+        </div>
+        <p className="text-[11px] text-silver-500 leading-relaxed font-medium">Re-scanning ensures you catch the latest topology drifts and security risks.</p>
+      </div>
+
+      <button onClick={() => signOut()} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-xs font-bold text-silver-600 hover:text-white hover:bg-red-500/10 transition-all group border border-transparent hover:border-red-500/20">
+        <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Sign Out
+      </button>
+    </>
+  );
+
   return (
-    <div className="min-h-screen pt-32 pb-8 sm:pb-12 px-4 sm:px-8 flex flex-col items-center custom-scrollbar">
+    <div className="flex h-screen overflow-hidden relative">
+      <div className="island-bg">
+        <div className="aurora-blob blob-1" />
+        <div className="aurora-blob blob-2" />
+        <div className="aurora-blob blob-3" />
+      </div>
+      <div className="island-overlay" />
+
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-[60] p-4 flex items-center justify-between backdrop-blur-md bg-black/20 border-b border-white/5">
+         <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
+              <Zap className="w-4 h-4 text-white fill-white" />
+            </div>
+            <h1 className="text-lg font-black text-white tracking-tighter">ATLAS<span className="text-silver-500">STACK</span></h1>
+         </div>
+         <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10">
+            <Menu className="w-6 h-6 text-white" />
+         </button>
+      </div>
+
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-white/5 liquid-glass rounded-none py-10 px-4 gap-1 overflow-y-auto pt-28">
+        <SidebarContent />
+      </aside>
+
+      {/* Sidebar (Mobile) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="lg:hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm" />
+            <motion.aside initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="lg:hidden fixed inset-y-0 left-0 w-80 z-[101] flex flex-col liquid-glass rounded-none py-10 px-6 shadow-2xl border-y-0 border-l-0">
+              <button onClick={() => setIsSidebarOpen(false)} className="absolute top-8 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                <X className="w-5 h-5 text-white" />
+              </button>
+              <SidebarContent />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <main className="flex-1 overflow-y-auto pt-24 lg:pt-24 custom-scrollbar">
+        <div className="max-w-6xl mx-auto px-4 sm:px-10 lg:px-12 py-8 sm:py-12">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMsg && (
@@ -630,9 +716,9 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                     </button>
                     <button 
                       onClick={handleRetry}
-                      className="btn-pill py-4 px-8 text-[10px] sm:text-xs flex items-center justify-center gap-3 border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400"
+                      className="btn-pill py-4 px-8 text-[10px] sm:text-xs flex items-center justify-center gap-3 group border border-white/10 hover:border-white/30 hover:bg-white/10 text-white transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform duration-700 font-black" /> RE-SCAN
+                      <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform duration-700 text-yellow-400" /> RE-SCAN
                     </button>
                   </div>
                 </div>
@@ -650,9 +736,9 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                     </div>
                     <button 
                       onClick={handleRetry}
-                      className="text-[10px] font-black uppercase tracking-widest text-silver-600 hover:text-white flex items-center gap-1.5 transition-colors"
+                      className="text-[10px] font-black uppercase tracking-widest text-red-400/60 hover:text-red-400 flex items-center gap-2 transition-all bg-red-500/5 hover:bg-red-500/10 px-4 py-1.5 rounded-full border border-red-500/10 hover:border-red-500/30"
                     >
-                      <RefreshCw className="w-3 h-3" /> Reset Node
+                      <RefreshCw className="w-3 h-3 group-hover:rotate-90 transition-transform" /> Re-Scan
                     </button>
                   </div>
                   <div className="divide-y divide-red-500/5">
@@ -818,7 +904,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                       <div className="grid grid-cols-2 gap-4 mb-8">
                          <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="text-[8px] font-black text-silver-600 uppercase tracking-widest mb-1">Risk Score</div>
-                            <div className="text-2xl font-black text-white">{Math.round(mvpData.security_report.overall_risk)}<span className="text-[10px] opacity-30">/100</span></div>
+                            <div className="text-2xl font-black text-white">{Math.round(mvpData.security_report?.overall_risk || 0)}<span className="text-[10px] opacity-30">/100</span></div>
                          </div>
                          <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="text-[8px] font-black text-silver-600 uppercase tracking-widest mb-1">Threat Level</div>
@@ -985,15 +1071,15 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                 </div>
               ) : mvpData.architecture?.mermaid && (
                 <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
-                   <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
-                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
-                       <Network className="w-6 h-6 text-indigo-400" />
-                     </div>
-                     System Topology
-                   </h3>
-                   <div className="rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 p-6 backdrop-blur-xl">
-                     <Mermaid chart={mvpData.architecture.mermaid} />
-                   </div>
+                  <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
+                      <Network className="w-6 h-6 text-indigo-400" />
+                    </div>
+                    System Topology
+                  </h3>
+                  <div className="rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 p-6 backdrop-blur-xl">
+                    <Mermaid chart={mvpData.architecture?.mermaid || ""} />
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -1154,21 +1240,13 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
             )}
           </AnimatePresence>
 
-          <button 
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${
-              isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'
-            }`}
-          >
+          <button onClick={() => setIsChatOpen(!isChatOpen)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'}`}>
             {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
-            {!isChatOpen && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-black rounded-full flex items-center justify-center">
-                 <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              </div>
-            )}
           </button>
         </div>
       </Show>
+        </div>
+      </main>
     </div>
   );
 };

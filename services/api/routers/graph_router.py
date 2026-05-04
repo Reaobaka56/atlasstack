@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -39,13 +39,10 @@ class GraphNode(BaseModel):
     y: Optional[float] = None
 
 class GraphEdge(BaseModel):
-    from_: str          # "from" is a Python keyword — serialised as "from"
+    model_config = ConfigDict(populate_by_name=True)
+    from_: str = Field(alias="from")
     to: str
     flow: bool          # True = live data path (animated), False = structural
-
-    class Config:
-        populate_by_name = True
-        fields = {"from_": "from"}
 
 class ArchGraph(BaseModel):
     nodes: list[GraphNode]

@@ -217,7 +217,11 @@ services:
     build:
       context: ./clients/web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://api:8000}  # ✅ Pass API URL
     container_name: atlasstack-web
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://api:8000}  # ✅ Runtime override
     ports:
       - "5173:80"
     depends_on:

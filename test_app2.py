@@ -5,8 +5,8 @@ Runs the FastAPI backend locally without Docker.
 Usage:
     python test_app2.py
 
-The server starts on http://0.0.0.0:8005
-API docs available at http://localhost:8005/docs
+The server starts on http://0.0.0.0:8000
+API docs available at http://localhost:8000/docs
 """
 
 import os
@@ -51,7 +51,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
 if __name__ == "__main__":
     import uvicorn
     import os
-    port = int(os.environ.get("PORT", 8005))
+    port = int(os.environ.get("PORT", 8000))
     print(f"Starting AtlasStack on port {port}...")
     uvicorn.run(
         "main:app",

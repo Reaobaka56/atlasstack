@@ -34,7 +34,7 @@ class AnalysisOrchestrator:
         
         if self.gemini_key:
             genai.configure(api_key=self.gemini_key)
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
         else:
             self.gemini_model = None
 
@@ -220,7 +220,12 @@ class AnalysisOrchestrator:
 
     def _get_error_response(self, error):
         return {
-            "explanation": {"summary": f"Error: {error}"},
-            "errors": [error],
-            "health_score": 0
+            "explanation": {"summary": f"Error during analysis: {error}", "eli5_summary": "Something went wrong while scanning the codebase."},
+            "important_files": [],
+            "fixes": [],
+            "errors": [str(error)],
+            "run_steps": [],
+            "health_score": 0,
+            "dependencies": [],
+            "tech_stack": {"frameworks": [], "databases": []}
         }

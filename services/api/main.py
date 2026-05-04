@@ -15,6 +15,7 @@ import time
 import logging
 import os
 import json
+import asyncio
 import re
 from datetime import datetime
 from huggingface_hub import InferenceClient
@@ -226,7 +227,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                     if gemini_key:
                         import google.generativeai as genai
                         genai.configure(api_key=gemini_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
                         response = await asyncio.to_thread(
                             lambda: model.generate_content(f"You are AtlasStack AI, a premium code architect. Answer the user's question concisely: {user_text}")
                         )

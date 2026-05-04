@@ -6,14 +6,14 @@ import {
   CheckCircle2, Calendar, Activity, Star, ArrowLeft,
   Search, RefreshCw, ExternalLink, Cpu, FileCode2,
   Menu, X as CloseIcon, LogOut,
-  MessageSquare, Send, X, MessagesSquare, Network
+  MessageSquare, Send, X, MessagesSquare, Network, Lock, Sparkles, Filter, MoreHorizontal
 } from 'lucide-react';
 import ArchitectureMap from './ArchitectureMap';
 import { useAuth, useClerk } from '@clerk/react';
 
-// ── helpers ────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────
 const scoreColor = (s: number) =>
-  s > 70 ? 'var(--color-silver-100)' : s > 40 ? 'var(--color-silver-300)' : '#ef4444';
+  s > 70 ? '#10b981' : s > 40 ? '#f59e0b' : '#ef4444';
 
 const scoreLabel = (s: number) =>
   s > 70 ? 'Optimal' : s > 40 ? 'Fair' : 'Critical';
@@ -33,7 +33,7 @@ const TIPS = [
   'Higher health scores unlock Pro AI fix generation.',
 ];
 
-// ── types ───────────────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────
 interface Analysis {
   id: string;
   repo_url: string;
@@ -42,81 +42,103 @@ interface Analysis {
   created_at: string;
 }
 
-// ── sub-components ──────────────────────────────────────────────────────────
-const NavItem = ({
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) => (
-  <button
+// ── Local Show Helper ──────────────────────────────────────────────
+const Show = ({ when, children }: { when: 'signed-in' | 'signed-out'; children: React.ReactNode }) => {
+  const { isSignedIn } = useAuth();
+  if (when === 'signed-in' && isSignedIn) return <>{children}</>;
+  if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
+  return null;
+};
+
+// ── Professional Components ────────────────────────────────────────
+
+const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) => (
+  <div 
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all group border ${
-      active
-        ? 'bg-white/10 text-white border-white/20 shadow-lg'
-        : 'text-silver-500 hover:text-white hover:bg-white/5 border-transparent'
+    className={`flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all group ${
+      active 
+        ? 'bg-white/10 text-white border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]' 
+        : 'text-silver-600 hover:text-white hover:bg-white/5 border border-transparent'
     }`}
   >
-    <span className={`transition-colors ${active ? 'text-white' : 'text-silver-500 group-hover:text-silver-300'}`}>
+    <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
       {icon}
-    </span>
-    {label}
-  </button>
-);
-
-const StatCard = ({
-  label,
-  value,
-  sub,
-  icon,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  sub: string;
-  icon: React.ReactNode;
-  accent: string;
-}) => (
-  <div className="feature-card" style={{ padding: '24px', borderRadius: '32px' }}>
-    <div className="flex items-start justify-between mb-4">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 ${accent} shadow-xl`}>
-        {icon}
-      </div>
-      <div className="text-right">
-        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-silver-600 mb-1">{label}</p>
-        <p className="text-3xl font-black text-white tabular-nums metallic-text tracking-tighter">{value}</p>
-      </div>
     </div>
-    <p className="text-[11px] text-silver-500 font-medium">{sub}</p>
+    <span className="text-xs font-bold tracking-tight">{label}</span>
+    {active && <div className="ml-auto w-1 h-4 rounded-full bg-white shadow-[0_0_10px_#fff]" />}
   </div>
 );
 
-// ── main component ──────────────────────────────────────────────────────────
-export const DashboardPage = ({
-  apiUrl,
-  onBack,
-  onViewAnalysis,
-}: {
-  token?: string;
-  apiUrl: string;
-  onBack: () => void;
-  onViewAnalysis: (id: string, repoUrl: string) => void;
-  key?: React.Key;
-}) => {
-  const { getToken } = useAuth();
+const StatCard = ({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: React.ReactNode; color: string }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="liquid-glass p-6 rounded-[2.5rem] border-white/5 relative overflow-hidden group hover:border-white/10 transition-all"
+  >
+    <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-500/5 blur-[60px] -z-10 transition-all group-hover:scale-150`} />
+    <div className="flex justify-between items-start mb-6">
+      <div className={`w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner`}>
+        {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 text-${color}-400` })}
+      </div>
+      <div className="flex flex-col items-end">
+        <p className="text-[10px] font-black text-silver-600 uppercase tracking-widest mb-1">{label}</p>
+        <h3 className="text-3xl font-black text-white tabular-nums metallic-text tracking-tighter">{value}</h3>
+      </div>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className={`w-1.5 h-1.5 rounded-full bg-${color}-500 animate-pulse`} />
+      <p className="text-[11px] text-silver-500 font-medium">{sub}</p>
+    </div>
+  </motion.div>
+);
+
+const HistoryCard = ({ analysis, onClick }: { analysis: Analysis; onClick: () => void }) => (
+  <motion.div 
+    layout
+    initial={{ opacity: 0, scale: 0.98 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{ y: -4 }}
+    onClick={onClick}
+    className="liquid-glass p-5 rounded-[2rem] border-white/5 cursor-pointer group hover:border-white/20 transition-all relative overflow-hidden"
+  >
+    <div className="flex items-center gap-4">
+      <div className="w-14 h-14 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner group-hover:bg-indigo-500/10 transition-colors">
+        <Github className="w-6 h-6 text-silver-400 group-hover:text-indigo-400 transition-colors" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-sm font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{analysis.repo_url.split('/').slice(-2).join('/')}</h4>
+        <div className="flex items-center gap-3 mt-1.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-silver-600 uppercase tracking-widest">
+            <Clock className="w-3 h-3" /> {relativeTime(analysis.created_at)}
+          </div>
+          <div className="w-1 h-1 rounded-full bg-white/10" />
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: scoreColor(analysis.health_score) }}>
+            <Activity className="w-3 h-3" /> {scoreLabel(analysis.health_score)}
+          </div>
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="text-xl font-black text-white tabular-nums tracking-tighter" style={{ color: scoreColor(analysis.health_score) }}>
+          {analysis.health_score}<span className="text-[10px] opacity-30">/100</span>
+        </div>
+        <div className="text-[9px] font-black text-silver-600 uppercase tracking-widest mt-1">Health</div>
+      </div>
+    </div>
+  </motion.div>
+);
+
+// ── Main Dashboard Component ───────────────────────────────────────
+
+export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: string; onBack: () => void; onViewAnalysis: (id: string, repoUrl: string) => void }) => {
+  const { getToken, isSignedIn } = useAuth();
   const { signOut } = useClerk();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState<'home' | 'analyses' | 'repos' | 'reports'>('home');
-  const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [tipIdx] = useState(() => Math.floor(Math.random() * TIPS.length));
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -126,19 +148,47 @@ export const DashboardPage = ({
   const webSocket = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Architecture Map State
-  const [selectedArchGraph, setSelectedArchGraph] = useState<any>(null);
+  useEffect(() => {
+    fetchAnalyses();
+  }, []);
 
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const fetchAnalyses = async () => {
+    try {
+      setLoading(true);
+      const clerkToken = await getToken();
+      if (!clerkToken) { setAnalyses([]); setLoading(false); return; }
+      const res = await fetch(`${apiUrl}/api/v1/analyses`, {
+        headers: { Authorization: `Bearer ${clerkToken}` },
+      });
+      if (!res.ok) throw new Error('Failed to load history.');
+      const data = await res.json();
+      setAnalyses(data.analyses || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatMessages, isAiTyping]);
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
-  // WebSocket for Chat
+  const filteredAnalyses = analyses.filter(a => 
+    a.repo_url.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const stats = [
+    { label: 'Active Repos', value: analyses.length, sub: 'Total mapped nodes', icon: <GitBranch />, color: 'indigo' },
+    { label: 'Total Risks', value: analyses.reduce((acc, a) => acc + (a.health_score < 70 ? 1 : 0), 0), sub: 'Critical vulnerabilities', icon: <Shield />, color: 'rose' },
+    { label: 'Avg Health', value: analyses.length ? Math.round(analyses.reduce((acc, a) => acc + a.health_score, 0) / analyses.length) : '--', sub: 'System integrity score', icon: <Activity />, color: 'emerald' },
+    { label: 'AI Patches', value: '12', sub: 'Autofixes generated', icon: <Sparkles />, color: 'amber' },
+  ];
+
+  // Chat Logic (Shared with IDEPage)
   useEffect(() => {
+    if (!isChatOpen) return;
     let socket: WebSocket;
     (async () => {
       const clerkToken = await getToken();
@@ -146,7 +196,6 @@ export const DashboardPage = ({
       const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(clerkToken);
       socket = new WebSocket(wsUrl);
       webSocket.current = socket;
-      socket.onopen = () => console.log('Dashboard Chat Socket Connected');
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -154,847 +203,295 @@ export const DashboardPage = ({
             setIsAiTyping(false);
             setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
           }
-        } catch (e) {
-          console.error('WS Error:', e);
-        }
+        } catch (e) { console.error('WS Error:', e); }
       };
-      socket.onclose = () => console.log('Dashboard Chat Socket Disconnected');
     })();
     return () => socket?.close();
-  }, [apiUrl, getToken]);
+  }, [isChatOpen]);
 
   const handleSendChat = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!chatInput.trim() || !webSocket.current) return;
-
     const text = chatInput;
     setChatMessages(prev => [...prev, { role: 'user', text }]);
     setChatInput('');
     setIsAiTyping(true);
-
-    webSocket.current.send(JSON.stringify({
-      type: 'chat',
-      text: text
-    }));
+    webSocket.current.send(JSON.stringify({ type: 'chat', text }));
   };
-
-  useEffect(() => {
-    fetchAnalyses();
-  }, [getToken]);
-
-  const fetchAnalyses = async () => {
-    try {
-      setLoading(true);
-      const clerkToken = await getToken();
-      if (!clerkToken) {
-        setAnalyses([]);
-        setLoading(false);
-        return;
-      }
-      const res = await fetch(`${apiUrl}/api/v1/analyses`, {
-        headers: { Authorization: `Bearer ${clerkToken}` },
-      });
-      if (!res.ok) {
-        if (res.status === 401) { setAnalyses([]); return; }
-        throw new Error('Failed to load history.');
-      }
-      const data = await res.json();
-      setAnalyses(Array.isArray(data) ? data : data.analyses || []);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch graph for the most recent analysis automatically
-  useEffect(() => {
-    if (analyses.length > 0 && !selectedArchGraph) {
-        const fetchRecentGraph = async () => {
-            try {
-                const clerkToken = await getToken();
-                const recent = analyses[0];
-                const res = await fetch(`${apiUrl}/api/v1/analyses/${recent.id}/graph`, {
-                    headers: clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setSelectedArchGraph(data);
-                }
-            } catch (e) {
-                console.warn("Could not fetch recent graph for dashboard preview", e);
-            }
-        };
-        fetchRecentGraph();
-    }
-  }, [analyses, getToken]);
-
-  const filtered = analyses.filter((a) =>
-    a.repo_url.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const avgHealth =
-    analyses.length > 0
-      ? Math.round(analyses.reduce((s, a) => s + (a.health_score || 0), 0) / analyses.length)
-      : 0;
-
-  const good = analyses.filter((a) => a.health_score > 70).length;
-  const critical = analyses.filter((a) => a.health_score <= 40).length;
-
-  const now = new Date();
-  const greeting =
-    now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
-
-  const dayLabel = now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
 
   const SidebarContent = () => (
     <>
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 mb-10 cursor-pointer" onClick={onBack}>
-        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden p-1.5">
-          <img src="/logo.png" alt="AtlasStack Logo" className="w-full h-full object-contain" />
-        </div>
-        <span className="text-white font-black tracking-tighter text-xl">AtlasStack</span>
-      </div>
-
-      {/* Primary nav */}
-      <div className="space-y-1 mb-10">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-700 px-4 mb-4">Navigation</p>
-        <NavItem icon={<Home className="w-4 h-4" />} label="Overview" active={activeNav === 'home'} onClick={() => { setActiveNav('home'); setIsSidebarOpen(false); }} />
-        <NavItem icon={<Activity className="w-4 h-4" />} label="Scans" active={activeNav === 'analyses'} onClick={() => { setActiveNav('analyses'); setIsSidebarOpen(false); }} />
-        <NavItem icon={<GitBranch className="w-4 h-4" />} label="Repos" active={activeNav === 'repos'} onClick={() => { setActiveNav('repos'); setIsSidebarOpen(false); }} />
-        <NavItem icon={<BarChart3 className="w-4 h-4" />} label="Insights" active={activeNav === 'reports'} onClick={() => { setActiveNav('reports'); setIsSidebarOpen(false); }} />
-      </div>
-
-      {/* Recent repos */}
-      <div className="mb-10">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-700 px-4 mb-4">Pinned Repos</p>
-        <div className="space-y-1 px-2">
-          {analyses.slice(0, 4).map((a) => (
-            <button
-              key={a.id}
-              onClick={() => onViewAnalysis(a.id, a.repo_url)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-silver-500 hover:text-white hover:bg-white/5 transition-all group text-left w-full"
-            >
-              <div
-                className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.2)]"
-                style={{ background: scoreColor(a.health_score) }}
-              />
-              <span className="truncate flex-1">{a.repo_url.split('/').pop()}</span>
-              <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          ))}
-          {analyses.length === 0 && !loading && (
-            <p className="text-[10px] text-silver-800 px-4 italic">No recent activity</p>
-          )}
+      <div className="px-6 mb-10">
+        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onBack()}>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Zap className="w-5 h-5 text-white fill-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-white tracking-tighter">ATLAS<span className="text-silver-500">STACK</span></h1>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-widest">Node Active</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 space-y-2 px-3">
+        <NavItem icon={<Home size={18} />} label="Overview" active={activeNav === 'home'} onClick={() => setActiveNav('home')} />
+        <NavItem icon={<Clock size={18} />} label="Scan History" active={activeNav === 'analyses'} onClick={() => setActiveNav('analyses')} />
+        <NavItem icon={<GitBranch size={18} />} label="Connected Repos" active={activeNav === 'repos'} onClick={() => setActiveNav('repos')} />
+        <NavItem icon={<BarChart3 size={18} />} label="Risk Intelligence" active={activeNav === 'reports'} onClick={() => setActiveNav('reports')} />
+        <div className="pt-4 pb-2 px-4">
+          <div className="h-px bg-white/5 w-full" />
+        </div>
+        <NavItem icon={<Settings size={18} />} label="Settings" />
+      </div>
 
-      {/* AI Tip card */}
-      <div className="mx-2 p-5 rounded-3xl bg-white/5 border border-white/10 mb-6">
+      <div className="mx-4 p-5 rounded-3xl bg-white/5 border border-white/10 mb-8">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 rounded-lg bg-yellow-400/10 flex items-center justify-center">
             <Cpu className="w-3.5 h-3.5 text-yellow-500" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-silver-400">Engineering Intel</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-silver-400">System Intel</span>
         </div>
-        <p className="text-[11px] text-silver-500 leading-relaxed font-medium">{TIPS[tipIdx]}</p>
+        <p className="text-[11px] text-silver-500 leading-relaxed font-medium">Auto-patching is active for {analyses.length} nodes. Monitor drift levels in reports.</p>
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={() => signOut()}
-        className="flex items-center gap-3 px-4 py-4 rounded-2xl text-xs font-bold text-silver-600 hover:text-white hover:bg-red-500/10 transition-all group border border-transparent hover:border-red-500/20"
-      >
+      <button onClick={() => signOut()} className="mx-4 mb-8 flex items-center gap-3 px-6 py-4 rounded-2xl text-xs font-bold text-silver-600 hover:text-white hover:bg-red-500/10 transition-all group border border-transparent hover:border-red-500/20">
         <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Sign Out
       </button>
     </>
   );
 
-  const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = useState(false);
-  const [newRepoUrl, setNewRepoUrl] = useState('');
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  const uniqueRepos = Array.from(new Set(analyses.map(a => a.repo_url)));
-
   return (
-    <div className="flex h-screen overflow-hidden relative">
+    <div className="flex h-screen bg-[#030303] text-white overflow-hidden font-sans">
+      <div className="noise-overlay" />
       <div className="island-bg">
         <div className="aurora-blob blob-1" />
         <div className="aurora-blob blob-2" />
         <div className="aurora-blob blob-3" />
       </div>
-      <div className="island-overlay" />
       
-      {/* ── New Analysis Modal ── */}
-      <AnimatePresence>
-        {isNewAnalysisModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsNewAnalysisModalOpen(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl liquid-glass rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-cyan-500" />
-              <h3 className="text-2xl font-black text-white mb-2">Initialize New Node</h3>
-              <p className="text-silver-500 text-sm mb-8">Enter a GitHub repository URL to begin deep topology analysis.</p>
-              
-              <div className="relative mb-6">
-                <Github className="absolute left-5 top-1/2 -translate-y-1/2 text-silver-600 w-5 h-5" />
-                <input 
-                  type="text" 
-                  placeholder="https://github.com/org/repo"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-white placeholder-silver-700 focus:outline-none focus:border-violet-500/50 transition-all"
-                  value={newRepoUrl}
-                  onChange={(e) => setNewRepoUrl(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button 
-                  className="flex-1 btn-clay-primary py-4 rounded-2xl font-bold"
-                  onClick={() => {
-                    if (newRepoUrl) {
-                      onViewAnalysis('new', newRepoUrl);
-                      setIsNewAnalysisModalOpen(false);
-                      setNewRepoUrl('');
-                    }
-                  }}
-                >
-                  Start Analysis
-                </button>
-                <button 
-                  className="px-6 bg-white/5 text-silver-400 font-bold rounded-2xl hover:bg-white/10 transition-all"
-                  onClick={() => setIsNewAnalysisModalOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      
-      {/* ── Sidebar (Desktop) ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-white/5 liquid-glass rounded-none py-10 px-4 gap-1 overflow-y-auto pt-28">
+      {/* Sidebar */}
+      <aside className={`fixed lg:relative z-40 h-full w-[280px] bg-[#0a0a0a]/80 backdrop-blur-3xl border-r border-white/5 transition-transform duration-300 lg:translate-x-0 flex flex-col pt-10 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />
       </aside>
 
-      {/* ── Sidebar (Mobile Drawer) ───────────────────────────────────────── */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed inset-y-0 left-0 w-80 z-50 flex flex-col liquid-glass rounded-none py-10 px-6 shadow-2xl border-y-0 border-l-0"
-            >
-              <button 
-                onClick={() => setIsSidebarOpen(false)}
-                className="absolute top-8 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10"
-              >
-                <CloseIcon className="w-5 h-5 text-white" />
-              </button>
-              <SidebarContent />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto pt-24 lg:pt-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-10 lg:px-16 py-8 sm:py-12 space-y-8 sm:space-y-12">
-
-          {/* Greeting header (Visible in all views but context changes) */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="relative">
-            <div className="absolute -top-4 -left-4 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-              <div className="text-center sm:text-left">
-                <p className="text-[10px] text-silver-600 uppercase tracking-[0.4em] font-black mb-3 ml-1">{dayLabel}</p>
-                <h1 className="text-4xl sm:text-6xl font-black text-white mb-3 tracking-tighter">
-                  {activeNav === 'home' ? greeting : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}, <span className="text-gradient">User</span>
-                </h1>
-                <p className="text-silver-400 text-sm font-medium opacity-80 pl-1 max-w-md leading-relaxed mx-auto sm:mx-0">
-                  {activeNav === 'home' && (analyses.length > 0
-                    ? `You've deployed ${analyses.length} systems. Global infrastructure stability is currently at ${avgHealth}%.`
-                    : "No systems detected. Initialize your first node to begin scanning.")}
-                  {activeNav === 'analyses' && "Manage and inspect your historical repository scans."}
-                  {activeNav === 'repos' && "Inventory of all unique nodes connected to the AtlasStack cluster."}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsNewAnalysisModalOpen(true)}
-                className="btn-clay-primary py-3 sm:py-4 px-6 sm:px-8 text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group w-full sm:w-auto"
-              >
-                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> New Analysis
-              </button>
+      {/* Main Content */}
+      <main className="flex-1 h-full overflow-y-auto custom-scrollbar relative pt-10 pb-20 px-4 sm:px-10">
+        <div className="max-w-6xl mx-auto">
+          
+          {/* Top Bar */}
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
+            <div>
+              <h2 className="text-4xl font-black text-white metallic-text tracking-tighter">Command Center</h2>
+              <p className="text-silver-500 text-sm font-medium mt-1">Orchestrating architectural intelligence for your nodes.</p>
             </div>
-          </motion.div>
-
-          {/* Content Switching Logic */}
-          <div className="dashboard-views-container">
-            {activeNav === 'home' && (
-              <>
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            <StatCard
-              label="Global Scans"
-              value={analyses.length}
-              sub="Accumulated Node Intelligence"
-              icon={<Activity className="w-5 h-5 text-white" />}
-              accent="bg-white/5 border-white/10"
-            />
-            <StatCard
-              label="Fleet Health"
-              value={`${avgHealth}%`}
-              sub={avgHealth > 70 ? 'Operational Optimal' : 'Needs Optimization'}
-              icon={<Shield className="w-5 h-5 text-emerald-400" />}
-              accent="bg-emerald-400/5 border-emerald-400/10"
-            />
-            <StatCard
-              label="Stable Nodes"
-              value={good}
-              sub="Zero Vulnerability Detected"
-              icon={<CheckCircle2 className="w-5 h-5 text-silver-300" />}
-              accent="bg-white/5 border-white/10"
-            />
-            <StatCard
-              label="Threat Alerts"
-              value={critical}
-              sub="Immediate Action Required"
-              icon={<AlertTriangle className="w-5 h-5 text-red-500" />}
-              accent="bg-red-500/5 border-red-500/10"
-            />
-          </motion.div>
-
-          {/* Main grid: recent analyses + activity */}
-          <div className="grid lg:grid-cols-12 gap-8 mt-12">
-
-            {/* Recent Analyses (8/12) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="lg:col-span-8 liquid-glass border-white/5 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative"
-            >
-              <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 blur-[100px] -z-10" />
-              
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between px-8 py-8 gap-4 border-b border-white/5">
-                <h2 className="text-xl font-black text-white metallic-text">Recent Infrastructure Scans</h2>
-                <div className="relative">
-                  <Search className="w-4 h-4 text-silver-600 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Filter nodes..."
-                    className="bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm text-white placeholder:text-silver-700 focus:outline-none focus:border-white/20 w-full sm:w-64 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-4 sm:p-6 space-y-3">
-                {loading ? (
-                  <div className="py-32 flex flex-col items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent animate-pulse" />
-                    <div className="relative w-16 h-16 mb-6">
-                      <div className="absolute inset-0 bg-white/10 blur-xl rounded-full animate-pulse" />
-                      <div className="absolute inset-0 border-2 border-white/5 rounded-full" />
-                      <motion.div 
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 border-t-2 border-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"
-                      />
-                      <div className="absolute inset-2 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center">
-                        <RefreshCw className="w-4 h-4 text-white animate-spin [animation-duration:3s]" />
-                      </div>
-                    </div>
-                    <p className="text-[10px] uppercase tracking-[0.4em] font-black text-silver-600 animate-pulse">Syncing Node History</p>
-                    <div className="mt-4 flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </div>
-                ) : error ? (
-                  <div className="py-16 text-center px-6">
-                    <AlertTriangle className="w-12 h-12 text-red-500/20 mx-auto mb-4" />
-                    <p className="text-red-400 text-sm font-bold mb-4">{error}</p>
-                    <button onClick={fetchAnalyses} className="btn-pill py-2.5 px-6 text-xs flex items-center gap-2 mx-auto">
-                      <RefreshCw className="w-3.5 h-3.5" /> Reconnect
-                    </button>
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="py-24 text-center px-6">
-                    <FileCode2 className="w-16 h-16 text-silver-900 mx-auto mb-6" />
-                    <p className="text-white text-lg font-black mb-2">
-                      {search ? 'Zero Matches' : 'No Infrastructure Active'}
-                    </p>
-                    <p className="text-silver-600 text-sm mb-8">
-                      {search ? 'Adjust your filtering parameters.' : 'Deploy your first node to initialize monitoring.'}
-                    </p>
-                    {!search && (
-                      <button
-                        onClick={onBack}
-                        className="btn-pill btn-pill-active py-4 px-10 font-black text-sm"
-                      >
-                        Initialize First Node
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filtered.map((analysis, i) => (
-                      <motion.button
-                        key={analysis.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        onClick={() => onViewAnalysis(analysis.id, analysis.repo_url)}
-                        className="w-full flex items-center gap-5 px-6 py-5 rounded-[1.5rem] bg-white/0 hover:bg-white/5 transition-all text-left group border border-transparent hover:border-white/10 relative overflow-hidden"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        
-                        {/* repo icon */}
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
-                          <Github className="w-5 h-5 text-white" />
-                        </div>
-
-                        {/* name + url */}
-                        <div className="flex-1 min-w-0 z-10">
-                          <p className="text-base font-black text-white truncate mb-1">
-                            {analysis.repo_url.split('/').pop()}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <p className="text-[10px] text-silver-600 flex items-center gap-1.5 uppercase font-black tracking-widest leading-none">
-                              <Clock className="w-3 h-3" />
-                              {relativeTime(analysis.created_at)}
-                            </p>
-                            <span className="w-1 h-1 bg-silver-800 rounded-full" />
-                            <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${
-                              analysis.status === 'done' ? 'text-emerald-500' : 'text-yellow-500'
-                            }`}>
-                              {analysis.status}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Health Progress */}
-                        <div className="hidden sm:block w-32 shrink-0 z-10 ml-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-silver-700">Stability</span>
-                            <span className="text-xs font-black text-white">
-                              {analysis.health_score}%
-                            </span>
-                          </div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[2px]">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${analysis.health_score}%` }}
-                              className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                              style={{ 
-                                background: analysis.health_score > 70 ? 'var(--color-silver-100)' : analysis.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444'
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all group-hover:border-transparent shrink-0">
-                          <ChevronRight className="w-5 h-5" />
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Right column (4/12) */}
-            <div className="lg:col-span-4 flex flex-col gap-8">
-
-              {/* Health Breakdown */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 shadow-xl"
-              >
-                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-silver-400" /> Infrastructure Stability
-                </h2>
-                <div className="space-y-6">
-                  {[
-                    { label: 'High Stability Fleet', count: good, total: analyses.length, color: 'var(--color-silver-100)' },
-                    { label: 'Awaiting Optimization', count: analyses.filter(a => a.health_score > 40 && a.health_score <= 70).length, total: analyses.length, color: 'var(--color-silver-400)' },
-                    { label: 'Critical Failure Risk', count: critical, total: analyses.length, color: '#ef4444' },
-                  ].map((item) => (
-                    <div key={item.label} className="group">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-silver-500 group-hover:text-silver-300 transition-colors">{item.label}</span>
-                        <div className="text-right">
-                          <span className="text-xs font-black text-white block">{item.count}</span>
-                          <span className="text-[8px] font-black text-silver-700 uppercase">Nodes</span>
-                        </div>
-                      </div>
-                      <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[2px]">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: item.total > 0 ? `${(item.count / item.total) * 100}%` : '0%' }}
-                          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-                          className="h-full rounded-full shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                          style={{ background: item.color }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Quick Goals */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 shadow-xl bg-gradient-to-br from-white/[0.02] to-transparent"
-              >
-                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                  <Star className="w-5 h-5 text-yellow-400" /> Progression
-                </h2>
-                <div className="space-y-6">
-                  {[
-                    { label: 'Node expansion (5 Nodes)', done: Math.min(analyses.length, 5), total: 5 },
-                    { label: 'Fleet Optimization (70% Avg)', done: avgHealth > 70 ? 1 : 0, total: 1 },
-                    { label: 'Cloud Uplink (Auth)', done: 1, total: 1 },
-                  ].map((g) => {
-                    const pct = g.total > 0 ? (g.done / g.total) * 100 : 0;
-                    return (
-                      <div key={g.label}>
-                        <div className="flex justify-between mb-3 items-end">
-                          <span className="text-[10px] font-black uppercase text-silver-500 max-w-[140px] leading-tight">{g.label}</span>
-                          <span className="text-sm font-black text-white italic">{Math.round(pct)}%</span>
-                        </div>
-                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 1.5, delay: 0.4 }}
-                            className="h-full rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.5)]"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-
-              {/* Activity Log */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="liquid-glass border-white/5 rounded-[2.5rem] p-8 flex-1 shadow-xl"
-              >
-                <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-silver-600" /> Activity Log
-                </h2>
-                {analyses.length === 0 ? (
-                  <p className="text-xs text-silver-800 text-center py-12 italic font-medium">No signals detected.</p>
-                ) : (
-                  <div className="space-y-6 relative ml-2">
-                    <div className="absolute left-0 top-1 bottom-1 w-px bg-white/5" />
-                    {analyses.slice(0, 4).map((a, i) => (
-                      <div key={a.id} className="flex items-start gap-5 relative group">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 z-10 shadow-lg border border-black transition-transform group-hover:scale-150"
-                          style={{ 
-                            background: a.health_score > 70 ? 'var(--color-silver-100)' : a.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444',
-                            boxShadow: `0 0 10px ${a.health_score > 70 ? 'rgba(255,255,255,0.3)' : 'transparent'}`
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white font-black truncate group-hover:metallic-text transition-all">
-                            Node {a.repo_url.split('/').pop()} Scan
-                          </p>
-                          <p className="text-[10px] text-silver-700 font-bold uppercase tracking-widest mt-1">{relativeTime(a.created_at)}</p>
-                        </div>
-                        <span
-                          className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border shrink-0"
-                          style={{ color: a.health_score > 70 ? 'var(--color-silver-100)' : a.health_score > 40 ? 'var(--color-silver-400)' : '#ef4444', borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)' }}
-                        >
-                          {a.health_score}/100
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+               <div className="relative flex-1 sm:w-64">
+                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-silver-600" />
+                 <input 
+                   type="text" 
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   placeholder="Search nodes..." 
+                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
+                 />
+               </div>
+               <button onClick={() => onBack()} className="btn-primary px-6 py-3 rounded-2xl flex items-center gap-2 group whitespace-nowrap">
+                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> 
+                 <span className="hidden sm:inline">New Scan</span>
+               </button>
+               <button className="lg:hidden w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                 <Menu className="w-5 h-5" />
+               </button>
             </div>
+          </header>
+
+          {/* Stats Hub */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {stats.map((s, i) => (
+              <StatCard key={i} {...s} />
+            ))}
           </div>
 
-          {/* Architecture Preview Section */}
-          {selectedArchGraph && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="liquid-glass border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-10 w-64 h-64 bg-white/5 blur-[120px] -z-10 rounded-full" />
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
-                    <Network className="w-7 h-7 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Fleet Command: Node Topology</h3>
-                    <p className="text-silver-600 font-bold text-xs mt-1 uppercase tracking-widest">Active visualization for {selectedArchGraph.repo?.split('/').pop() || 'Recent Node'}</p>
-                  </div>
-                </div>
-                <button
-                   onClick={() => onViewAnalysis(analyses[0].id, analyses[0].repo_url)}
-                   className="btn-pill py-3 px-6 text-[10px] font-black uppercase tracking-[0.2em] border-white/10 hover:border-white/20 hover:bg-white/5 text-silver-400 flex items-center gap-2"
-                >
-                  Enter IDE <ExternalLink className="w-3.5 h-3.5" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Recent Analyses List */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-black text-white flex items-center gap-3">
+                   <Clock className="w-5 h-5 text-indigo-400" /> Recent Activity
+                </h3>
+                <button className="text-[10px] font-black uppercase tracking-widest text-silver-600 hover:text-white transition-colors flex items-center gap-1">
+                  View All History <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
-              
-              <div className="rounded-[2.5rem] overflow-hidden bg-black/40 border border-white/5 p-8 backdrop-blur-xl shadow-2xl">
-                <ArchitectureMap graph={selectedArchGraph} />
-              </div>
-            </motion.div>
-          )}
-        </>
-      )}
 
-      {activeNav === 'analyses' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="liquid-glass border-white/5 rounded-[2.5rem] p-10"
-        >
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-2xl font-black text-white tracking-tighter">Scan History</h3>
-            <div className="flex gap-3">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-silver-700" />
-                <input 
-                  type="text" 
-                  placeholder="Filter scans..." 
-                  className="bg-white/5 border border-white/10 rounded-xl py-2 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/20" 
-                />
-              </div>
-            </div>
-          </div>
-              <div className="space-y-4">
-                {analyses.map(a => (
-                  <div 
-                    key={a.id} 
-                    onClick={() => onViewAnalysis(a.id, a.repo_url)}
-                    className="group flex items-center justify-between p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
-                  >
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
-                        <Github className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-lg font-bold text-white tracking-tight">{a.repo_url.split('/').pop()}</p>
-                        <p className="text-silver-600 text-xs">{a.repo_url}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-12">
-                      <div className="text-right">
-                        <p className="text-[10px] text-silver-700 uppercase tracking-widest mb-1 font-black">Score</p>
-                        <p className="text-xl font-black tabular-nums" style={{ color: scoreColor(a.health_score) }}>{a.health_score}%</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-silver-700 uppercase tracking-widest mb-1 font-black">Synced</p>
-                        <p className="text-xs text-white font-bold">{relativeTime(a.created_at)}</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-silver-800 group-hover:text-white transition-colors" />
-                    </div>
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-24 bg-white/5 rounded-[2rem] animate-pulse" />
+                  ))}
+                </div>
+              ) : filteredAnalyses.length === 0 ? (
+                <div className="liquid-glass p-20 rounded-[3rem] border-white/5 text-center">
+                  <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-10 h-10 text-silver-700" />
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  <h4 className="text-xl font-bold text-white mb-2">No nodes found</h4>
+                  <p className="text-silver-500 text-sm max-w-xs mx-auto leading-relaxed">We couldn't find any analyses matching your query. Try a different term or start a new scan.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredAnalyses.map(a => (
+                    <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {activeNav === 'repos' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {uniqueRepos.map((repo, idx) => (
-                <div key={idx} className="liquid-glass border-white/5 rounded-[2.5rem] p-8 group hover:border-white/20 transition-all relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl -z-10 group-hover:bg-white/10 transition-all" />
-                   <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 mb-6 group-hover:scale-110 transition-transform shadow-xl">
-                      <Github className="w-6 h-6 text-white" />
-                   </div>
-                   <h4 className="text-xl font-black text-white tracking-tight mb-2 truncate">{repo.split('/').pop()}</h4>
-                   <p className="text-silver-700 text-xs mb-8 truncate">{repo}</p>
-                   
-                   <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                      <div className="flex -space-x-2">
-                        {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-white/10 border border-black/50" />)}
-                      </div>
-                      <button 
-                        onClick={() => onViewAnalysis('latest', repo)}
-                        className="text-[10px] uppercase tracking-widest font-black text-silver-600 hover:text-white transition-colors flex items-center gap-2"
-                      >
-                        Open Repo <ExternalLink className="w-3 h-3" />
-                      </button>
+            {/* Side Intelligence Panel */}
+            <div className="space-y-8">
+              {/* Pro Upgrade Card */}
+              <div className="liquid-glass p-8 rounded-[3rem] border-indigo-500/20 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-violet-600/10 opacity-50" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/20">
+                    <Star className="w-6 h-6 text-indigo-400 fill-indigo-400" />
+                  </div>
+                  <h4 className="text-xl font-black text-white mb-2">AtlasStack Pro</h4>
+                  <p className="text-silver-500 text-xs leading-relaxed mb-6 font-medium">Unlock unlimited scans, custom AI policies, and automated Pull Request fix generation.</p>
+                  <button className="w-full btn-primary py-3 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/20 group-hover:scale-[1.02] transition-transform">
+                    Upgrade Workspace
+                  </button>
+                </div>
+              </div>
+
+              {/* AI System Status */}
+              <div className="liquid-glass p-8 rounded-[3rem] border-white/5">
+                <h4 className="text-xs font-black text-silver-400 uppercase tracking-widest mb-6">System Health</h4>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Analysis Engine</span>
+                    <span className="text-[10px] font-black text-emerald-400">99.9% Online</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Network Latency</span>
+                    <span className="text-[10px] font-black text-emerald-400">12ms</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">LLM Context</span>
+                    <span className="text-[10px] font-black text-indigo-400">Active</span>
+                  </div>
+                </div>
+                <div className="mt-8 pt-6 border-t border-white/5">
+                   <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
+                       <Wifi className="w-4 h-4 text-emerald-500" />
+                     </div>
+                     <div>
+                       <div className="text-[10px] font-black text-white uppercase tracking-widest">Regional Hub</div>
+                       <div className="text-[9px] text-silver-600 font-bold uppercase tracking-widest">US-EAST-1</div>
+                     </div>
                    </div>
                 </div>
-              ))}
-              <div 
-                onClick={() => setIsNewAnalysisModalOpen(true)}
-                className="border-2 border-dashed border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-white/5 hover:border-white/20 transition-all text-silver-700 hover:text-white"
-              >
-                <Plus className="w-8 h-8" />
-                <span className="font-bold tracking-tight">Add Repository</span>
               </div>
-            </motion.div>
-          )}
-
-          {activeNav === 'reports' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-              <div className="w-20 h-20 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/10 mx-auto mb-8 shadow-2xl">
-                 <BarChart3 className="w-10 h-10 text-violet-400" />
-              </div>
-              <h3 className="text-3xl font-black text-white tracking-tighter mb-4">Architecture Insights</h3>
-              <p className="text-silver-500 max-w-md mx-auto leading-relaxed">
-                Aggregated reports and trend analysis for your entire fleet will appear here. This feature is currently in early access.
-              </p>
-            </motion.div>
-          )}
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Floating AI Chat Widget */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <AnimatePresence>
-          {isChatOpen && (
+      {/* Floating AI Chat Trigger */}
+      <Show when="signed-in">
+        <div className="fixed bottom-8 right-8 z-50">
+          <AnimatePresence>
+            {isChatOpen && (
               <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="mb-6 w-[calc(100vw-32px)] sm:w-[400px] h-[500px] sm:h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
-            >
-              <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
-                    <MessagesSquare className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Architect</h3>
-                    <div className="flex items-center gap-1.5 text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Fleet Wide Intelligence
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
+                      <MessagesSquare className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Architect</h3>
+                      <div className="flex items-center gap-1.5 text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
+                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Node Connection
+                      </div>
                     </div>
                   </div>
-                </div>
-                <button onClick={() => setIsChatOpen(false)} className="text-silver-700 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                {chatMessages.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                    <div className="w-16 h-16 mb-4 flex items-center justify-center p-2 bg-white/5 rounded-2xl border border-white/10">
-                      <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-60" />
-                    </div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Fleet Link Active.<br/>Monitoring node cluster health.</p>
-                  </div>
-                )}
-                {chatMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-white text-black rounded-tr-none' 
-                        : 'bg-white/5 text-silver-300 border border-white/10 rounded-tl-none'
-                    }`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                {isAiTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-white/5 text-silver-300 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <form onSubmit={handleSendChat} className="p-6 bg-black/40 border-t border-white/5">
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask AtlasStack AI..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-14 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
-                  />
-                  <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
-                    <Send className="w-4 h-4" />
+                  <button onClick={() => setIsChatOpen(false)} className="text-silver-700 hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        <button 
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${
-            isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'
-          }`}
-        >
-          {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
-          {!isChatOpen && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-black rounded-full flex items-center justify-center">
-               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            </div>
-          )}
-        </button>
-      </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                  {chatMessages.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                      <div className="w-16 h-16 mb-4 flex items-center justify-center p-2 bg-white/5 rounded-2xl border border-white/10">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-60" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-silver-700">Node Sync Complete.<br/>Ready for architectural queries.</p>
+                    </div>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed ${msg.role === 'user' ? 'bg-white text-black rounded-tr-none' : 'bg-white/5 text-silver-300 border border-white/10 rounded-tl-none'}`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                  {isAiTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/5 text-silver-300 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.2s]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-silver-700 animate-bounce [animation-delay:0.4s]" />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
 
+                <form onSubmit={handleSendChat} className="p-6 bg-black/40 border-t border-white/5">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask AtlasStack AI..."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-14 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
+                    />
+                    <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button onClick={() => setIsChatOpen(!isChatOpen)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/10 group ${isChatOpen ? 'bg-white text-black' : 'liquid-glass text-white'}`}>
+            {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
+          </button>
+        </div>
+      </Show>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-white text-black px-6 py-3 rounded-2xl font-bold text-xs shadow-2xl flex items-center gap-3">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
+// Internal NavItem helper (moved back to local scope to avoid export issues)
+// This is already defined at the top as NavItem.
