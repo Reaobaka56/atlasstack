@@ -13,7 +13,7 @@ jobs:
     name: Semgrep Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Semgrep OSS Scan
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" returntocorp/semgrep semgrep scan --config auto --error
@@ -22,7 +22,7 @@ jobs:
     name: Bandit Security Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -36,7 +36,7 @@ jobs:
     name: Dependency Vulnerability Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
