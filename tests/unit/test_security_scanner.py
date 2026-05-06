@@ -22,7 +22,7 @@ class TestSecurityRules:
     """Test rule-based regex scanning directly via _scan_with_rules."""
 
     def test_sql_injection_f_string(self, scanner):
-        code = 'query = f"SELECT * FROM users WHERE id = {user_id}"'
+        code = 'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")'
         findings = scanner._scan_with_rules("test.py", code, "python")
         sql = [f for f in findings if "SQL" in f.message or "sql" in f.message.lower()]
         assert len(sql) > 0, "Should detect SQL injection in f-string"

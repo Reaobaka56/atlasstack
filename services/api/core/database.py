@@ -96,28 +96,48 @@ class OTPRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-# SQLAlchemy async engine
-if settings.LITE_MODE:
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///./atlasstack_lite.db",
-        echo=settings.DEBUG,
-    )
-else:
-    engine = create_async_engine(
-        settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
-        pool_size=settings.DATABASE_POOL_SIZE,
-        max_overflow=settings.DATABASE_MAX_OVERFLOW,
-        pool_pre_ping=True,
-        echo=settings.DEBUG,
+# Global instances (initially None, filled by init_db or first use)
+engine = None
+AsyncSessionLocal = None
+
+def ensure_initialized():
+    global engine, AsyncSessionLocal
+    if engine is not None:
+        return
+        
+    if settings.LITE_MODE:
+        engine = create_async_engine(
+            "sqlite+aiosqlite:///./atlasstack_lite.db",
+            echo=settings.DEBUG,
+        )
+    else:
+        # Fallback to sqlite if asyncpg is not installed and we are in dev/test
+        try:
+            engine = create_async_engine(
+                settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
+                pool_size=settings.DATABASE_POOL_SIZE,
+                max_overflow=settings.DATABASE_MAX_OVERFLOW,
+                pool_pre_ping=True,
+                echo=settings.DEBUG,
+            )
+        except (ImportError, ModuleNotFoundError):
+             logger.warning("asyncpg not found, falling back to SQLite for development")
+             engine = create_async_engine("sqlite+aiosqlite:///./atlasstack_dev.db")
+
+    AsyncSessionLocal = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
     )
 
-AsyncSessionLocal = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
+# Pre-initialize for standard use
+try:
+    if settings.LITE_MODE:
+        ensure_initialized()
+except:
+    pass
 
 redis_pool: Optional[redis.Redis] = None
 
@@ -125,6 +145,7 @@ redis_pool: Optional[redis.Redis] = None
 async def init_db():
     """Initialize database connections and create tables."""
     global redis_pool
+    ensure_initialized()
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -154,6 +175,7 @@ async def close_db():
 
 @asynccontextmanager
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    ensure_initialized()
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -166,6 +188,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    ensure_initialized()
     async with AsyncSessionLocal() as session:
         try:
             yield session

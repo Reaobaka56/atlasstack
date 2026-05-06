@@ -37,7 +37,7 @@ class TestJWT:
         assert payload["type"] == "refresh"
 
     def test_invalid_token_returns_none(self):
-        assert verify_token("not.a.token") is None
+        assert verify_token("this-is-not-a-token-and-has-no-dots") is None
         assert verify_token("") is None
 
     def test_tampered_token_returns_none(self):

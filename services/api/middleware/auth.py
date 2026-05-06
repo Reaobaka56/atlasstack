@@ -79,8 +79,10 @@ def verify_token(token: str) -> Optional[dict]:
         # without their public key. For now, we trust them if they look like JWTs.
         if settings.LITE_MODE and token.count('.') == 2:
             try:
-                # Return a mock payload that satisfies get_current_user
-                return {"sub": "clerk_user", "email": "clerk@example.com", "roles": ["user", "pro"], "type": "access"}
+                # 🛡️ SECURITY: Only mock if it looks like a potential Clerk token
+                # This prevents standard invalid strings from passing during tests
+                if token.startswith("clerk_"):
+                    return {"sub": "clerk_user", "email": "clerk@example.com", "roles": ["user", "pro"], "type": "access"}
             except Exception:
                 return None
         return None

@@ -1,56 +1,47 @@
-"""
-End-to-end tests for full workflow
-"""
-
 import pytest
+import sys
+from pathlib import Path
+from httpx import AsyncClient, ASGITransport
 
+# Add services/api to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "services" / "api"))
+from main import app
 
+@pytest.mark.asyncio
 class TestFullWorkflow:
-    """Test complete analysis workflow"""
+    """Test complete analysis workflow using internal ASGI transport."""
     
-    @pytest.fixture(scope="module")
-    def api_url(self):
-        return "http://localhost:8000"
+    async def test_health_check(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/health")
+            assert response.status_code == 200
+            assert response.json()["status"] == "healthy"
     
-    def test_health_check(self, api_url):
-        import requests
-        response = requests.get(f"{api_url}/health")
-        assert response.status_code == 200
+    async def test_repository_registration_and_analysis(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            # Check metadata endpoints
+            response = await client.get("/api/v1/languages")
+            assert response.status_code == 200
+            
+            # Check rules
+            response = await client.get("/api/v1/rules")
+            assert response.status_code == 200
     
-    def test_repository_registration_and_analysis(self, api_url):
-        import requests
-        
-        # Register repository
-        repo_payload = {
-            "url": "https://github.com/example/test-repo",
-            "branch": "main",
-            "name": "test-repo"
-        }
-        
-        # This would require authentication in production
-        # response = requests.post(f"{api_url}/api/v1/repositories", json=repo_payload)
-        # assert response.status_code == 201
-        
-        # For now, just test the endpoint exists
-        response = requests.get(f"{api_url}/api/v1/languages")
-        assert response.status_code == 200
-    
-    def test_code_analysis(self, api_url):
-        import requests
-        
-        payload = {
-            "snippet": {
-                "code": 'query = f"SELECT * FROM users WHERE id = {user_id}"',
-                "language": "python"
-            },
-            "analysis_types": ["security"]
-        }
-        
-        response = requests.post(f"{api_url}/api/v1/analyze", json=payload)
-        assert response.status_code == 200
-        
-        data = response.json()
-        assert "findings" in data
-        # Should find SQL injection
-        sql_findings = [f for f in data["findings"] if "SQL" in f.get("message", "")]
-        assert len(sql_findings) > 0
+    async def test_code_analysis(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            payload = {
+                "snippet": {
+                    "code": 'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")',
+                    "language": "python"
+                },
+                "analysis_types": ["security"]
+            }
+            
+            response = await client.post("/api/v1/analyze", json=payload)
+            assert response.status_code == 200
+            
+            data = response.json()
+            assert "findings" in data
+            # Should find SQL injection
+            sql_findings = [f for f in data["findings"] if "SQL" in f.get("message", "")]
+            assert len(sql_findings) > 0

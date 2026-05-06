@@ -628,6 +628,22 @@ async def regenerate_analysis(
     }
 
 
+@router.get("/languages")
+async def list_supported_languages():
+    """List supported programming languages for analysis."""
+    return {
+        "languages": [
+            {"id": "python", "name": "Python", "extensions": [".py"]},
+            {"id": "javascript", "name": "JavaScript", "extensions": [".js", ".jsx"]},
+            {"id": "typescript", "name": "TypeScript", "extensions": [".ts", ".tsx"]},
+            {"id": "go", "name": "Go", "extensions": [".go"]},
+            {"id": "rust", "name": "Rust", "extensions": [".rs"]},
+            {"id": "java", "name": "Java", "extensions": [".java"]},
+            {"id": "cpp", "name": "C++", "extensions": [".cpp", ".h", ".hpp"]},
+        ]
+    }
+
+
 @router.get("/rules")
 async def list_analysis_rules(
     category: Optional[str] = None,

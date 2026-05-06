@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
     ENVIRONMENT: str = "production"
-    LITE_MODE: bool = True
+    LITE_MODE: bool = False
 
     # Server
     HOST: str = "0.0.0.0"

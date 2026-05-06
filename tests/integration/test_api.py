@@ -13,7 +13,7 @@ from httpx import AsyncClient, ASGITransport
 
 # Use a fresh in-memory SQLite DB per test session
 import core.config as _cfg
-_cfg.settings.LITE_MODE = True
+_cfg.settings.LITE_MODE = False
 _cfg.settings.DEBUG = False
 
 import core.database as _db
@@ -39,7 +39,12 @@ async def client():
     # Monkeypatch the module-level engine and session factory
     db_mod.engine = test_engine
     db_mod.AsyncSessionLocal = TestSession
-    db_mod.redis_pool = None
+    
+    # Mock Redis to prevent connection errors
+    from unittest.mock import AsyncMock
+    mock_redis = AsyncMock()
+    mock_redis.ping.return_value = True
+    db_mod.redis_pool = mock_redis
 
     from main import app
 

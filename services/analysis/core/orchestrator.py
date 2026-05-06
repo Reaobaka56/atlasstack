@@ -221,7 +221,7 @@ class AnalysisOrchestrator:
         
         return result_json
 
-    def _build_prompt(self, repo_url, file_tree, key_contents):
+    def _build_prompt(self, repo_url: str, file_tree: list, key_contents: dict) -> tuple[str, str]:
         instruction = """
         You are an expert software architect analyzing a codebase.
         Analyze this repository and return a structured JSON with ONLY the following format:
@@ -263,7 +263,7 @@ class AnalysisOrchestrator:
         
         return instruction, input_context
 
-    def _parse_json(self, content):
+    def _parse_json(self, content: str) -> dict:
         match = re.search(r'```(?:json)?\s*(.*?)\s*```', content, re.DOTALL)
         json_str = match.group(1) if match else content
         try:
@@ -271,7 +271,7 @@ class AnalysisOrchestrator:
         except:
             return {"error": "Failed to parse LLM response", "raw": content}
 
-    def _get_mock_response(self, message):
+    def _get_mock_response(self, message: str) -> dict:
         return {
             "explanation": {"summary": message, "eli5_summary": "No AI keys!"},
             "important_files": [],

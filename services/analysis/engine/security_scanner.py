@@ -92,11 +92,11 @@ class SecurityScanner:
             {
                 "id": "CS-S001",
                 "name": "SQL Injection Risk",
-                "pattern": r'(?:execute|query|cursor\.execute)\s*\(\s*["\'].*%s',
+                "pattern": r'(?:execute|query|cursor\.execute)\s*\(\s*(?:f["\']|["\'].*(?:%s|\{[a-zA-Z_][a-zA-Z0-9_]*\}))',
                 "severity": "high",
                 "confidence": "medium",
                 "message": "Potential SQL injection vulnerability detected",
-                "remediation": "Use parameterized queries instead of string formatting",
+                "remediation": "Use parameterized queries instead of string formatting or f-strings",
                 "cwe_id": "CWE-89",
                 "languages": ["python"],
             },

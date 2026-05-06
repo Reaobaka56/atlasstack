@@ -9,9 +9,26 @@ from huggingface_hub import InferenceClient
 router = APIRouter()
 
 @router.get("/health")
+@router.get("/health/live")
+@router.get("/live")
 async def health_check():
     """Basic health check for container liveness."""
-    return {"status": "ok"}
+    from core.config import settings
+    return {
+        "status": "healthy",
+        "mode": "lite" if settings.LITE_MODE else "standard",
+        "version": "1.0.0"
+    }
+
+@router.get("/health/ready")
+@router.get("/ready")
+async def readiness_check(db: AsyncSession = Depends(get_db)):
+    """Check if the service is ready to accept traffic."""
+    try:
+        await db.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database not ready")
 
 @router.get("/health/deep")
 async def deep_health_check(db: AsyncSession = Depends(get_db)):

@@ -27,7 +27,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Analytics Middleware
 class AnalyticsMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: callable) -> Response:
         start_time = time.time()
         
         # Try to identify user
@@ -54,7 +54,7 @@ class AnalyticsMiddleware(BaseHTTPMiddleware):
     wait=wait_exponential(multiplier=1, min=2, max=10),
     reraise=True
 )
-async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
+async def call_llm_with_retry(client: InferenceClient, model: str, messages: list, max_tokens: int, temperature: float):
     return client.chat.completions.create(
         model=model,
         messages=messages,
@@ -165,7 +165,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/")
-async def root():
+async def root() -> dict:
     """Root endpoint"""
     return {
         "name": "AtlasStack API",
