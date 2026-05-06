@@ -5,7 +5,7 @@ redis==5.0.1
 rabbitmq==0.2.0
 
 # Database
-sqlalchemy==2.0.25
+sqlalchemy==2.0.49
 asyncpg==0.29.0
 psycopg2-binary==2.9.9
 
@@ -26,9 +26,9 @@ tree-sitter-rust==0.24.0
 tree-sitter-cpp==0.23.4
 
 # Security Analysis
-bandit==1.7.7
+bandit==1.7.8
 semgrep==1.57.0
-safety==3.7.0
+safety==3.2.0
 
 # Performance Analysis
 radon==6.0.1
