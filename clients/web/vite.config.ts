@@ -17,7 +17,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'monaco': ['@monaco-editor/react'],
-          'vendor': ['react', 'react-dom', 'lucide-react', 'framer-motion'],
+          'vendor': ['react', 'react-dom', 'lucide-react', 'motion'],
           'ui': ['@radix-ui/react-slot', 'class-variance-authority', 'clsx', 'tailwind-merge']
         }
       }

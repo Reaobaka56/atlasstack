@@ -91,8 +91,8 @@ export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; on
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
   const defaultApiHost = window.location.hostname;
   const defaultApiUrl = (defaultApiHost === 'localhost' || defaultApiHost === '127.0.0.1' || defaultApiHost === '0.0.0.0')
-    ? 'http://localhost:8000'
-    : `${window.location.protocol}//${defaultApiHost}:8000`;
+    ? 'http://localhost:8005'
+    : `${window.location.protocol}//${defaultApiHost}:8005`;
   const API_URL = apiUrlProp || (import.meta as any).env?.VITE_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
   const { getToken, isSignedIn } = useAuth();
   const { signOut } = useClerk();
