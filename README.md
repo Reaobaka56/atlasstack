@@ -1,15 +1,4 @@
-<p align="center">
-  <img src="docs/images/logo.png" width="300" alt="AtlasStack Logo">
-</p>
 
-# AtlasStack
-
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
-
-<p align="center">
-  <img src="docs/images/logo.png" width="300" alt="AtlasStack Logo">
-</p>
 
 # AtlasStack
 
@@ -266,7 +255,7 @@ Every collected entry includes the system **instruction**, the repository **cont
 
 ---
 
-## 🚀 Deployment Guide
+##  Deployment Guide
 
 ### Docker Compose (Production-ready)
 For a full enterprise-grade deployment with PostgreSQL, Redis, and RabbitMQ:
