@@ -152,7 +152,7 @@ class AnalysisOrchestrator:
                 content = response.text
             else:
                 logger.info("Using Hugging Face for analysis")
-                client = InferenceClient(api_key=self.hf_token, provider="auto")
+                client = InferenceClient(api_key=self.hf_token)
                 # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
                 response = await asyncio.wait_for(
                     call_llm_with_retry(
