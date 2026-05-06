@@ -5,7 +5,7 @@ import {
   Github, Plus, Zap, Shield, TrendingUp, AlertTriangle,
   CheckCircle2, Calendar, Activity, Star, ArrowLeft,
   Search, RefreshCw, ExternalLink, Cpu, FileCode2,
-  Menu, X as CloseIcon, LogOut,
+  Menu, X as CloseIcon, LogOut, Wifi,
   MessageSquare, Send, X, MessagesSquare, Network, Lock, Sparkles, Filter, MoreHorizontal
 } from 'lucide-react';
 import ArchitectureMap from './ArchitectureMap';
@@ -73,7 +73,7 @@ const StatCard = ({ label, value, sub, icon, color }: { label: string; value: st
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="liquid-glass p-6 rounded-[2.5rem] border-white/5 relative overflow-hidden group hover:border-white/10 transition-all"
+    className="liquid-glass p-6 rounded-[1.25rem] border-white/5 relative overflow-hidden group hover:border-white/10 transition-all"
   >
     <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-500/5 blur-[60px] -z-10 transition-all group-hover:scale-150`} />
     <div className="flex justify-between items-start mb-6">
@@ -99,7 +99,7 @@ const HistoryCard = ({ analysis, onClick }: { analysis: Analysis; onClick: () =>
     animate={{ opacity: 1, scale: 1 }}
     whileHover={{ y: -4 }}
     onClick={onClick}
-    className="liquid-glass p-5 rounded-[2rem] border-white/5 cursor-pointer group hover:border-white/20 transition-all relative overflow-hidden"
+    className="liquid-glass p-5 rounded-[1rem] border-white/5 cursor-pointer group hover:border-white/20 transition-all relative overflow-hidden"
   >
     <div className="flex items-center gap-4">
       <div className="w-14 h-14 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner group-hover:bg-indigo-500/10 transition-colors">
@@ -135,7 +135,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: stri
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeNav, setActiveNav] = useState<'home' | 'analyses' | 'repos' | 'reports'>('home');
+  const [activeNav, setActiveNav] = useState<'home' | 'analyses' | 'repos' | 'reports' | 'settings'>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -244,7 +244,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: stri
         <div className="pt-4 pb-2 px-4">
           <div className="h-px bg-white/5 w-full" />
         </div>
-        <NavItem icon={<Settings size={18} />} label="Settings" />
+        <NavItem icon={<Settings size={18} />} label="Settings" active={activeNav === 'settings'} onClick={() => setActiveNav('settings')} />
       </div>
 
       <div className="mx-4 p-5 rounded-3xl bg-white/5 border border-white/10 mb-8">
@@ -308,96 +308,160 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: stri
             </div>
           </header>
 
-          {/* Stats Hub */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {stats.map((s, i) => (
-              <StatCard key={i} {...s} />
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Recent Analyses List */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-black text-white flex items-center gap-3">
-                   <Clock className="w-5 h-5 text-indigo-400" /> Recent Activity
-                </h3>
-                <button className="text-[10px] font-black uppercase tracking-widest text-silver-600 hover:text-white transition-colors flex items-center gap-1">
-                  View All History <ChevronRight className="w-3 h-3" />
-                </button>
+          {/* View: Overview */}
+          {activeNav === 'home' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {/* Stats Hub */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                {stats.map((s, i) => (
+                  <StatCard key={i} {...s} />
+                ))}
               </div>
 
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-24 bg-white/5 rounded-[2rem] animate-pulse" />
-                  ))}
-                </div>
-              ) : filteredAnalyses.length === 0 ? (
-                <div className="liquid-glass p-20 rounded-[3rem] border-white/5 text-center">
-                  <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-10 h-10 text-silver-700" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* Recent Analyses List */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-black text-white flex items-center gap-3">
+                       <Clock className="w-5 h-5 text-indigo-400" /> Recent Activity
+                    </h3>
+                    <button onClick={() => setActiveNav('analyses')} className="text-[10px] font-black uppercase tracking-widest text-silver-600 hover:text-white transition-colors flex items-center gap-1">
+                      View All History <ChevronRight className="w-3 h-3" />
+                    </button>
                   </div>
-                  <h4 className="text-xl font-bold text-white mb-2">No nodes found</h4>
-                  <p className="text-silver-500 text-sm max-w-xs mx-auto leading-relaxed">We couldn't find any analyses matching your query. Try a different term or start a new scan.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {filteredAnalyses.map(a => (
-                    <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Side Intelligence Panel */}
-            <div className="space-y-8">
-              {/* Pro Upgrade Card */}
-              <div className="liquid-glass p-8 rounded-[3rem] border-indigo-500/20 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-violet-600/10 opacity-50" />
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/20">
-                    <Star className="w-6 h-6 text-indigo-400 fill-indigo-400" />
+                  {loading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="h-24 bg-white/5 rounded-[1rem] animate-pulse" />
+                      ))}
+                    </div>
+                  ) : filteredAnalyses.length === 0 ? (
+                    <div className="liquid-glass p-20 rounded-[1.5rem] border-white/5 text-center">
+                      <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
+                        <Search className="w-10 h-10 text-silver-700" />
+                      </div>
+                      <h4 className="text-xl font-bold text-white mb-2">No nodes found</h4>
+                      <p className="text-silver-500 text-sm max-w-xs mx-auto leading-relaxed">We couldn't find any analyses matching your query. Try a different term or start a new scan.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {filteredAnalyses.slice(0, 5).map(a => (
+                        <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Side Intelligence Panel */}
+                <div className="space-y-8">
+                  {/* Pro Upgrade Card */}
+                  <div className="liquid-glass p-8 rounded-[1.5rem] border-indigo-500/20 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-violet-600/10 opacity-50" />
+                    <div className="relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/20">
+                        <Star className="w-6 h-6 text-indigo-400 fill-indigo-400" />
+                      </div>
+                      <h4 className="text-xl font-black text-white mb-2">AtlasStack Pro</h4>
+                      <p className="text-silver-500 text-xs leading-relaxed mb-6 font-medium">Unlock unlimited scans, custom AI policies, and automated Pull Request fix generation.</p>
+                      <button className="w-full btn-primary py-3 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/20 group-hover:scale-[1.02] transition-transform">
+                        Upgrade Workspace
+                      </button>
+                    </div>
                   </div>
-                  <h4 className="text-xl font-black text-white mb-2">AtlasStack Pro</h4>
-                  <p className="text-silver-500 text-xs leading-relaxed mb-6 font-medium">Unlock unlimited scans, custom AI policies, and automated Pull Request fix generation.</p>
-                  <button className="w-full btn-primary py-3 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/20 group-hover:scale-[1.02] transition-transform">
-                    Upgrade Workspace
-                  </button>
+
+                  {/* AI System Status */}
+                  <div className="liquid-glass p-8 rounded-[1.5rem] border-white/5">
+                    <h4 className="text-xs font-black text-silver-400 uppercase tracking-widest mb-6">System Health</h4>
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Analysis Engine</span>
+                        <span className="text-[10px] font-black text-emerald-400">99.9% Online</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Network Latency</span>
+                        <span className="text-[10px] font-black text-emerald-400">12ms</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">LLM Context</span>
+                        <span className="text-[10px] font-black text-indigo-400">Active</span>
+                      </div>
+                    </div>
+                    <div className="mt-8 pt-6 border-t border-white/5">
+                       <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
+                           <Wifi className="w-4 h-4 text-emerald-500" />
+                         </div>
+                         <div>
+                           <div className="text-[10px] font-black text-white uppercase tracking-widest">Regional Hub</div>
+                           <div className="text-[9px] text-silver-600 font-bold uppercase tracking-widest">US-EAST-1</div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+            </motion.div>
+          )}
 
-              {/* AI System Status */}
-              <div className="liquid-glass p-8 rounded-[3rem] border-white/5">
-                <h4 className="text-xs font-black text-silver-400 uppercase tracking-widest mb-6">System Health</h4>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Analysis Engine</span>
-                    <span className="text-[10px] font-black text-emerald-400">99.9% Online</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">Network Latency</span>
-                    <span className="text-[10px] font-black text-emerald-400">12ms</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-silver-500 uppercase tracking-widest">LLM Context</span>
-                    <span className="text-[10px] font-black text-indigo-400">Active</span>
+          {/* View: All History */}
+          {activeNav === 'analyses' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Full Scan History</h3>
+              <div className="grid grid-cols-1 gap-4">
+                {filteredAnalyses.map(a => (
+                  <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* View: Connected Repos */}
+          {activeNav === 'repos' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="liquid-glass p-20 rounded-[1.5rem] border-white/5 text-center">
+              <GitBranch className="w-16 h-16 text-indigo-400 mx-auto mb-6" />
+              <h3 className="text-xl font-bold text-white mb-2">Connected Repositories</h3>
+              <p className="text-silver-500 text-sm max-w-xs mx-auto leading-relaxed">No GitHub integrations found. Connect your organization to enable automated PR analysis.</p>
+              <button className="btn-primary mt-8 px-8 py-3 rounded-2xl font-bold text-xs">Connect GitHub Organization</button>
+            </motion.div>
+          )}
+
+          {/* View: Risk Intelligence */}
+          {activeNav === 'reports' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Risk Intelligence Hub</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="liquid-glass p-8 rounded-[1.25rem] border-rose-500/20">
+                   <Shield className="w-8 h-8 text-rose-500 mb-4" />
+                   <h4 className="text-white font-bold mb-2">Security Surface</h4>
+                   <p className="text-silver-600 text-xs leading-relaxed">Global analysis of security debt across all scanned nodes.</p>
+                 </div>
+                 <div className="liquid-glass p-8 rounded-[1.25rem] border-amber-500/20">
+                   <Activity className="w-8 h-8 text-amber-500 mb-4" />
+                   <h4 className="text-white font-bold mb-2">Architectural Drift</h4>
+                   <p className="text-silver-600 text-xs leading-relaxed">Real-time monitoring of schema changes and module decoupling.</p>
+                 </div>
+              </div>
+            </motion.div>
+          )}
+          {/* View: Settings */}
+          {activeNav === 'settings' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Workspace Settings</h3>
+              <div className="liquid-glass p-10 rounded-[1.5rem] border-white/5 space-y-8">
+                <div>
+                  <h4 className="text-sm font-bold text-white mb-4">API Configuration</h4>
+                  <div className="bg-black/40 border border-white/10 rounded-2xl p-4 font-mono text-[11px] text-silver-500">
+                    Endpoint: {apiUrl}
                   </div>
                 </div>
-                <div className="mt-8 pt-6 border-t border-white/5">
-                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
-                       <Wifi className="w-4 h-4 text-emerald-500" />
-                     </div>
-                     <div>
-                       <div className="text-[10px] font-black text-white uppercase tracking-widest">Regional Hub</div>
-                       <div className="text-[9px] text-silver-600 font-bold uppercase tracking-widest">US-EAST-1</div>
-                     </div>
-                   </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white mb-4">Identity</h4>
+                  <p className="text-silver-600 text-xs">Connected via Clerk Auth</p>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          )}
         </div>
       </main>
 
@@ -410,7 +474,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: stri
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[1rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
               >
                 <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-3">

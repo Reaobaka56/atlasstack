@@ -1,7 +1,7 @@
 # Deep Learning
-torch==2.1.2
+torch==2.6.0
 torchvision==0.26.0
-torchaudio==2.1.2
+torchaudio==2.6.0
 
 # Transformers
 transformers==5.3.0

@@ -76,7 +76,7 @@ const Mermaid = ({ chart }: { chart: string }) => {
   }, [chart]);
 
   return (
-    <div className="mermaid bg-black/20 p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 flex justify-center overflow-x-auto" ref={ref}>
+    <div className="mermaid bg-black/20 p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[1rem] border border-white/5 flex justify-center overflow-x-auto" ref={ref}>
       {chart}
     </div>
   );
@@ -492,7 +492,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
         <NavItem icon={<Settings size={18} />} label="Settings" />
       </div>
 
-      <div className="mx-2 p-5 rounded-3xl bg-white/5 border border-white/10 mb-6">
+      <div className="mx-2 p-5 rounded-2xl bg-white/5 border border-white/10 mb-6">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 rounded-lg bg-yellow-400/10 flex items-center justify-center">
             <Cpu className="w-3.5 h-3.5 text-yellow-500" />
@@ -566,7 +566,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
           
           {/* STEP 1: Connect */}
           {step === 'connect' && (
-            <motion.div key="connect" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="liquid-glass p-12 rounded-[2rem] text-center max-w-3xl mx-auto border-white/10 shadow-2xl">
+            <motion.div key="connect" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="liquid-glass p-12 rounded-[1rem] text-center max-w-3xl mx-auto border-white/10 shadow-2xl">
               <div className="w-20 h-20 bg-white/5 rounded-full mx-auto flex items-center justify-center mb-8 border border-white/10 shadow-inner">
                 <Github className="w-10 h-10 text-white" />
               </div>
@@ -580,7 +580,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
           {/* STEP 2: Input */}
           {step === 'input' && (
-            <motion.div key="input" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="liquid-glass p-12 rounded-[2rem] border-white/10 max-w-3xl mx-auto shadow-2xl">
+            <motion.div key="input" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="liquid-glass p-12 rounded-[1rem] border-white/10 max-w-3xl mx-auto shadow-2xl">
               <h2 className="text-3xl font-bold text-white mb-4">Analyze a Repository</h2>
               <p className="text-slate-400 mb-8">Paste the GitHub link and let AI explain the codebase and generate fixes.</p>
               <form onSubmit={startAnalysis}>
@@ -646,7 +646,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
               <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               
               {/* Header section */}
-              <div className="liquid-glass p-10 rounded-[2.5rem] border-white/10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
+              <div className="liquid-glass p-10 rounded-[1.25rem] border-white/10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
                 {/* Decorative glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[120px] -z-10 rounded-full" />
                 
@@ -662,7 +662,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
                 <div className="mt-6 lg:mt-0 text-center lg:text-left flex-1 w-full">
                   <div className="flex flex-col lg:flex-row items-center gap-4 mb-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
                       <Github className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
                     <div className="max-w-full overflow-hidden">
@@ -726,7 +726,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
               {/* Actionable Warnings — Temper intensity, but useful icons & buttons */}
               {(mvpData.errors?.length > 0 || mvpData.isError) && (
-                <div className="rounded-[2.5rem] overflow-hidden border border-red-500/10 bg-red-500/[0.03] shadow-inner mb-6 transition-all duration-500 hover:bg-red-500/[0.05]">
+                <div className="rounded-[1.25rem] overflow-hidden border border-red-500/10 bg-red-500/[0.03] shadow-inner mb-6 transition-all duration-500 hover:bg-red-500/[0.05]">
                   <div className="px-8 py-5 border-b border-red-500/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
@@ -783,7 +783,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* 1. Codebase Explanation — structured What / How / Why */}
-                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                <div className="liquid-glass p-10 rounded-[1.5rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 blur-[80px] -z-10 rounded-full" />
                   
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -801,14 +801,14 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                     </div>
 
                   {eli5Mode ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-inner relative overflow-hidden">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 border border-white/10 rounded-[1rem] p-8 shadow-inner relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/5 blur-3xl -z-10" />
                       <p className="text-silver-100 leading-relaxed text-lg font-medium metallic-text-subtle">{mvpData?.explanation?.eli5_summary || "No ELI5 summary available."}</p>
                     </motion.div>
                   ) : (
                     <div className="space-y-6">
                       {/* What */}
-                      <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                      <div className="group bg-white/[0.02] border border-white/5 rounded-[1rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
                         <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
                           <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">01</div>
                           System core concept
@@ -819,7 +819,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                       
                       {/* How */}
                       {mvpData?.explanation?.architecture && (
-                        <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                        <div className="group bg-white/[0.02] border border-white/5 rounded-[1rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
                           <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
                             <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">02</div>
                             Architectural Blueprint
@@ -831,7 +831,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                       
                       {/* Why (Data Flow) */}
                       {mvpData?.explanation?.data_flow && (
-                        <div className="group bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
+                        <div className="group bg-white/[0.02] border border-white/5 rounded-[1rem] p-6 hover:border-white/20 hover:bg-white/5 transition-all shadow-lg">
                           <div className="text-[10px] uppercase tracking-[0.3em] font-black text-silver-600 mb-4 flex items-center gap-3">
                             <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center font-black text-[10px] text-white">03</div>
                             Strategic Advantage
@@ -879,7 +879,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
                 <div className="flex flex-col gap-6">
                   {/* 2. Important Files — refined hierarchy with clear badges */}
-                    <div className="liquid-glass p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
+                    <div className="liquid-glass p-6 sm:p-10 rounded-[1.25rem] sm:rounded-[1.5rem] border-white/5 flex flex-col gap-8 shadow-2xl relative">
                       <div className="flex items-center gap-4 text-white">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
                         <FolderTree className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -896,7 +896,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
                   {/* Security Dashboard (Supply Chain) */}
                   {mvpData.security_report && (
-                    <div className="liquid-glass p-8 rounded-[2.5rem] border-red-500/10 bg-red-500/[0.02] shadow-xl">
+                    <div className="liquid-glass p-8 rounded-[1.25rem] border-red-500/10 bg-red-500/[0.02] shadow-xl">
                       <h3 className="text-xs font-black text-red-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
                         <ShieldCheck className="w-5 h-5" /> Supply Chain Security
                       </h3>
@@ -929,7 +929,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                   )}
 
                   {/* 3. Auto Fix Proposals — with confidence + impact + preview diff */}
-                  <div className="liquid-glass p-6 rounded-[2rem] border-white/5 flex flex-col gap-4 flex-1">
+                  <div className="liquid-glass p-6 rounded-[1rem] border-white/5 flex flex-col gap-4 flex-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 text-white">
                         <div className="w-9 h-9 rounded-xl bg-indigo-400/10 border border-indigo-400/20 flex items-center justify-center">
@@ -1057,7 +1057,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
               {/* 4. Architecture / System Topology (Full Width Card) */}
               {archGraph ? (
-                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
+                <div className="liquid-glass p-10 rounded-[1.5rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
                    <div className="absolute top-0 right-10 w-32 h-32 bg-indigo-500/10 blur-[80px] -z-10 rounded-full" />
                    <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
@@ -1065,19 +1065,19 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                      </div>
                      Interactive System Topology
                    </h3>
-                   <div className="rounded-[2.5rem] mt-2 overflow-hidden bg-black/40 border border-white/5 p-8 backdrop-blur-xl shadow-2xl">
+                   <div className="rounded-[1.25rem] mt-2 overflow-hidden bg-black/40 border border-white/5 p-8 backdrop-blur-xl shadow-2xl">
                      <ArchitectureMap graph={archGraph} />
                    </div>
                 </div>
               ) : mvpData.architecture?.mermaid && (
-                <div className="liquid-glass p-10 rounded-[3rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
+                <div className="liquid-glass p-10 rounded-[1.5rem] border-white/5 flex flex-col gap-8 shadow-2xl relative mt-6">
                   <h3 className="text-2xl font-black tracking-tight metallic-text flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
                       <Network className="w-6 h-6 text-indigo-400" />
                     </div>
                     System Topology
                   </h3>
-                  <div className="rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 p-6 backdrop-blur-xl">
+                  <div className="rounded-[1rem] overflow-hidden bg-black/40 border border-white/5 p-6 backdrop-blur-xl">
                     <Mermaid chart={mvpData.architecture?.mermaid || ""} />
                   </div>
                 </div>
@@ -1116,7 +1116,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
       <AnimatePresence>
         {showRunModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
               <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-1">How to Run</h3>
@@ -1171,7 +1171,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[2rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
+                className="mb-6 w-[400px] h-[550px] liquid-glass rounded-[1rem] border-white/10 shadow-2xl flex flex-col overflow-hidden"
               >
                 <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-3">

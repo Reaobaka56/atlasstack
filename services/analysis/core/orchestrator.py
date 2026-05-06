@@ -76,6 +76,12 @@ class AnalysisOrchestrator:
             return await self._run_analysis(repo_url, repo_url)
         
         # Remote repo handling
+        # 🟢 SECURITY: Strict URL validation to prevent injection attacks
+        repo_regex = r'^(https?:\/\/)?(www\.)?(github\.com|gitlab\.com|bitbucket\.org)\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+(\.git)?\/?$'
+        if not re.match(repo_regex, repo_url):
+            logger.error(f"Insecure or invalid repo URL blocked: {repo_url}")
+            return self._get_error_response("Invalid repository URL format. Only standard GitHub/GitLab/Bitbucket URLs are allowed.")
+
         temp_dir = tempfile.mkdtemp()
         try:
             logger.info(f"Cloning {repo_url} into {temp_dir}")
@@ -135,23 +141,36 @@ class AnalysisOrchestrator:
         prompt = f"{instruction}\n\n{input_context}"
         
         content = ""
-        if self.gemini_model:
-            logger.info("Using Gemini for analysis")
-            response = await asyncio.to_thread(
-                lambda: self.gemini_model.generate_content(prompt)
-            )
-            content = response.text
-        else:
-            logger.info("Using Hugging Face for analysis")
-            client = InferenceClient(api_key=self.hf_token, provider="auto")
-            response = await call_llm_with_retry(
-                client=client,
-                model=self.default_model, 
-                messages=[{"role": "user", "content": prompt}], 
-                max_tokens=3000,
-                temperature=0.1
-            )
-            content = response.choices[0].message.content
+        try:
+            if self.gemini_model:
+                logger.info("Using Gemini for analysis")
+                # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(lambda: self.gemini_model.generate_content(prompt)),
+                    timeout=120.0
+                )
+                content = response.text
+            else:
+                logger.info("Using Hugging Face for analysis")
+                client = InferenceClient(api_key=self.hf_token, provider="auto")
+                # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
+                response = await asyncio.wait_for(
+                    call_llm_with_retry(
+                        client=client,
+                        model=self.default_model, 
+                        messages=[{"role": "user", "content": prompt}], 
+                        max_tokens=3000,
+                        temperature=0.1
+                    ),
+                    timeout=120.0
+                )
+                content = response.choices[0].message.content
+        except asyncio.TimeoutError:
+            logger.error("LLM generation timed out")
+            raise ValueError("AI analysis timed out (max 120s). Try a smaller repository.")
+        except Exception as e:
+            logger.error(f"LLM generation failed: {e}")
+            raise ValueError(f"AI analysis failed: {str(e)}")
 
         result_json = self._parse_json(content)
         
@@ -164,19 +183,27 @@ class AnalysisOrchestrator:
         )
         
         # Enhance with local engine data
-        result_json["architecture"] = self.mapper.map_repository(path)
+        try:
+            result_json["architecture"] = self.mapper.map_repository(path)
+        except Exception as e:
+            logger.error(f"Architecture mapping failed: {e}")
+            result_json["architecture"] = {"error": str(e), "nodes": [], "edges": []}
         
-        deps = self.dep_analyzer.scan_project(path)
-        result_json["security_report"] = {
-            "dependencies": [{
-                "name": d.name, 
-                "version": d.version, 
-                "risk_score": d.risk_score,
-                "risk_factors": d.risk_factors,
-                "vulnerabilities": d.vulnerabilities
-            } for d in deps],
-            "overall_risk": sum(d.risk_score for d in deps) / len(deps) if deps else 0
-        }
+        try:
+            deps = self.dep_analyzer.scan_project(path)
+            result_json["security_report"] = {
+                "dependencies": [{
+                    "name": d.name, 
+                    "version": d.version, 
+                    "risk_score": d.risk_score,
+                    "risk_factors": d.risk_factors,
+                    "vulnerabilities": d.vulnerabilities
+                } for d in deps],
+                "overall_risk": sum(d.risk_score for d in deps) / len(deps) if deps else 0
+            }
+        except Exception as e:
+            logger.error(f"Dependency analysis failed: {e}")
+            result_json["security_report"] = {"error": str(e), "dependencies": [], "overall_risk": 0}
         
         # Calculate tech debt
         vuln_count = len(result_json.get("security_report", {}).get("dependencies", []))

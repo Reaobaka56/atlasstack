@@ -569,6 +569,25 @@ export default function App() {
     return () => window.removeEventListener('scroll', h);
   }, []);
 
+  if (!isLoaded) {
+    return (
+      <div className="h-screen w-screen bg-[#030303] flex items-center justify-center relative overflow-hidden">
+        <div className="island-bg">
+          <div className="aurora-blob blob-1" />
+          <div className="aurora-blob blob-2" />
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <div className="w-20 h-20 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center animate-pulse shadow-2xl">
+             <Zap className="w-10 h-10 text-white fill-white" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-black text-white tracking-tighter metallic-text">SYNCHRONIZING</h2>
+            <p className="text-[10px] font-black text-silver-700 uppercase tracking-[0.4em] mt-2">Connecting to AtlasStack Clusters</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

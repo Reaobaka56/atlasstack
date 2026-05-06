@@ -31,52 +31,35 @@ from services.analysis.core.orchestrator import AnalysisOrchestrator
 _executor = ThreadPoolExecutor(max_workers=4)
 
 def validate_repo_url(url: str):
-    """Validate repository URL to prevent SSRF and illegal paths."""
-    logger.info(f"Validating repo URL: {url}")
+    """Validate repository URL to prevent SSRF, shell injection, and illegal paths."""
+    logger.info(f"Validating repo URL", url=url)
     ALLOWED_DOMAINS = ["github.com", "gitlab.com", "bitbucket.org"]
     
     if not url:
         raise HTTPException(status_code=400, detail="Repository URL is required.")
         
     try:
-        # Check for obvious SSRF attempts
-        if any(x in url.lower() for x in ["localhost", "127.0.0.1", "::1", "metadata.google.internal"]):
+        # 🛡️ SECURITY: Strict regex for allowed repo formats
+        # Prevents flag injection (e.g. starting with -) and complex shell payloads
+        repo_regex = r'^(https?:\/\/)?(www\.)?(github\.com|gitlab\.com|bitbucket\.org)\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+(\.git)?\/?$'
+        if not re.match(repo_regex, url):
+            raise HTTPException(status_code=400, detail="Invalid repository URL format. Use standard GitHub/GitLab/Bitbucket links.")
+
+        # SSRF Protection (redundant but good for defense-in-depth)
+        if any(x in url.lower() for x in ["localhost", "127.0.0.1", "::1", "metadata.google.internal", "169.254.169.254"]):
             raise HTTPException(status_code=400, detail="Invalid repository URL (SSRF protected).")
 
         parsed = urlparse(url)
-        hostname = parsed.hostname
+        hostname = (parsed.hostname or "").lower().replace('www.', '')
         
-        # Auto-fix missing scheme
-        if not hostname and not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
-            parsed = urlparse(url)
-            hostname = parsed.hostname
-
-        if not hostname:
-            raise HTTPException(status_code=400, detail="Could not determine hostname")
-
-        # Strict domain check
-        base_hostname = hostname.lower().replace('www.', '')
-        if base_hostname not in ALLOWED_DOMAINS:
+        if hostname not in ALLOWED_DOMAINS:
             raise HTTPException(status_code=400, detail=f"Only {', '.join(ALLOWED_DOMAINS)} are allowed.")
-            
-        if not parsed.path or parsed.path == '/':
-            raise HTTPException(status_code=400, detail="Repository path is required (e.g. /user/repo).")
-            
-        # Prevent path traversal
-        if ".." in parsed.path:
-            raise HTTPException(status_code=400, detail="Invalid path format (path traversal detected).")
-
-        # Validate path format (at least /owner/repo)
-        path_parts = [p for p in parsed.path.split('/') if p]
-        if len(path_parts) < 2:
-            raise HTTPException(status_code=400, detail="Invalid repository path format. Expected /owner/repo")
 
         return url
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"URL validation failed: {str(e)}")
+        logger.error("URL validation failed", error=str(e))
         raise HTTPException(status_code=400, detail="Invalid repository URL format.")
 
 
