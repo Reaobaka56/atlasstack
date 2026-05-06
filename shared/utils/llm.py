@@ -12,7 +12,7 @@ async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
     """Call LLM with exponential backoff and 404 fallback to raw API."""
     try:
         # 1. Try modern Chat Completions (OpenAI/OpenRouter style)
-        return client.chat.completions.create(
+        return await client.chat.completions.create(
             model=model,
             messages=messages,
             max_tokens=max_tokens,
@@ -26,7 +26,7 @@ async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
                 logger.info(f"Chat API 404'd. Falling back to raw text_generation for {model}")
                 # Combine messages into a single prompt for raw completion
                 prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-                response = client.text_generation(
+                response = await client.text_generation(
                     prompt=prompt,
                     model=model,
                     max_new_tokens=max_tokens,
