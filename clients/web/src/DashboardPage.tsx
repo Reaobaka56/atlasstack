@@ -129,7 +129,7 @@ const HistoryCard = ({ analysis, onClick }: { analysis: Analysis; onClick: () =>
 
 // ── Main Dashboard Component ───────────────────────────────────────
 
-export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: string; onBack: () => void; onViewAnalysis: (id: string, repoUrl: string) => void }) => {
+export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { apiUrl: string; onBack: () => void; onViewAnalysis: (id: string, repoUrl: string) => void; onNewScan: () => void }) => {
   const { getToken, isSignedIn } = useAuth();
   const { signOut } = useClerk();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -298,7 +298,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis }: { apiUrl: stri
                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-medium text-white focus:outline-none focus:border-white/20 transition-all"
                  />
                </div>
-               <button onClick={() => onBack()} className="btn-primary px-6 py-3 rounded-2xl flex items-center gap-2 group whitespace-nowrap">
+               <button onClick={() => onNewScan()} className="btn-primary px-6 py-3 rounded-2xl flex items-center gap-2 group whitespace-nowrap">
                  <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> 
                  <span className="hidden sm:inline">New Scan</span>
                </button>

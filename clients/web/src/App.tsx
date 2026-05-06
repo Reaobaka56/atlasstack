@@ -571,6 +571,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (isLoaded && isSignedIn && currentPage === 'landing') {
+      setCurrentPage('dashboard');
+    }
+  }, [isLoaded, isSignedIn, currentPage]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setShowDebug(true), 5000);
     return () => clearTimeout(timer);
   }, [isLoaded]);
@@ -684,6 +690,7 @@ export default function App() {
             apiUrl={apiUrl}
             onBack={() => setCurrentPage('landing')}
             onViewAnalysis={(id, repo) => { setAnalysisId(id); setCurrentRepo(repo); setCurrentPage('ide'); }}
+            onNewScan={() => { setAnalysisId(null); setCurrentRepo(''); setCurrentPage('ide'); }}
           />
         ) : currentPage === 'eye' ? (
           <div style={{ paddingTop: 80 }}>
