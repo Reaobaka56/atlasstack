@@ -23,6 +23,7 @@ from services.analysis.engine.security_scanner import get_scanner
 from services.analysis.core.collector import TrainingDataCollector
 from shared.utils.llm import call_llm_with_retry
 
+DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-7B-Instruct"
 logger = structlog.get_logger()
 _executor = ThreadPoolExecutor(max_workers=4)
 
@@ -40,7 +41,8 @@ class AnalysisOrchestrator:
     def __init__(self, hf_token: str = None, gemini_key: str = None):
         self.hf_token = hf_token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
         self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
-        self.default_model = os.environ.get("DEFAULT_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct")
+        self.openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+        self.default_model = os.environ.get("DEFAULT_MODEL", DEFAULT_MODEL)
         
         if self.gemini_key:
             genai.configure(api_key=self.gemini_key)
@@ -151,8 +153,11 @@ class AnalysisOrchestrator:
                 )
                 content = response.text
             else:
-                logger.info("Using Hugging Face for analysis")
-                client = InferenceClient(api_key=self.hf_token)
+                logger.info("Using Hugging Face / OpenRouter for analysis")
+                # If OpenRouter is available, we use its base URL
+                base_url = "https://openrouter.ai/api/v1" if self.openrouter_key else None
+                client = InferenceClient(api_key=self.openrouter_key or self.hf_token, base_url=base_url)
+                
                 # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
                 response = await asyncio.wait_for(
                     call_llm_with_retry(
@@ -164,7 +169,11 @@ class AnalysisOrchestrator:
                     ),
                     timeout=120.0
                 )
-                content = response.choices[0].message.content
+                if hasattr(response, 'choices'):
+                    content = response.choices[0].message.content
+                else:
+                    # Fallback for raw HF response if not using chat completions
+                    content = response
         except asyncio.TimeoutError:
             logger.error("LLM generation timed out")
             raise ValueError("AI analysis timed out (max 120s). Try a smaller repository.")
