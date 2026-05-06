@@ -61,3 +61,6 @@ structlog==24.1.0
 # Testing
 pytest==7.4.4
 pytest-asyncio==0.23.3
+
+# AI / LLM
+google-generativeai>=0.3.0
