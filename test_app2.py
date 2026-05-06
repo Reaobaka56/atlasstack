@@ -31,7 +31,14 @@ except ImportError:
 os.chdir(services_api)
 
 from fastapi import Request
-from main import app
+try:
+    from main import app
+    print("Application imported successfully")
+except Exception as e:
+    print(f"CRITICAL: Failed to import application: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
 
 
 @app.middleware("http")

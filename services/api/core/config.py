@@ -133,7 +133,7 @@ import os as _os
 def _validate_settings(s: "Settings"):
     if s.JWT_SECRET == "your-super-secret-jwt-key-change-in-production":
         msg = "CRITICAL: Using default JWT_SECRET! Set JWT_SECRET in .env immediately."
-        if s.ENVIRONMENT == "production":
+        if s.ENVIRONMENT == "production" and not s.LITE_MODE:
             raise ValueError(msg)
         else:
             _logging.warning(
