@@ -558,6 +558,7 @@ export default function App() {
   const [isPro] = useState(() => localStorage.getItem('atlas_pro') === '1');
   const [apiUrl] = useState(detectDefaultApiUrl());
   const [scrolled, setScrolled] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(API_URL_STORAGE_KEY, normalizeApiUrl(apiUrl));
@@ -569,21 +570,61 @@ export default function App() {
     return () => window.removeEventListener('scroll', h);
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setShowDebug(true), 5000);
+    return () => clearTimeout(timer);
+  }, [isLoaded]);
+
   if (!isLoaded) {
     return (
       <div className="h-screen w-screen bg-[#030303] flex items-center justify-center relative overflow-hidden">
+        <div className="noise-overlay opacity-20" />
         <div className="island-bg">
           <div className="aurora-blob blob-1" />
           <div className="aurora-blob blob-2" />
         </div>
         <div className="relative z-10 flex flex-col items-center gap-6">
-          <div className="w-20 h-20 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center animate-pulse shadow-2xl">
-             <Zap className="w-10 h-10 text-white fill-white" />
+          <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] border border-white/10 flex items-center justify-center animate-pulse shadow-2xl relative overflow-hidden group">
+             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+             <Zap className="w-12 h-12 text-white fill-white relative z-10" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-black text-white tracking-tighter metallic-text">SYNCHRONIZING</h2>
-            <p className="text-[10px] font-black text-silver-700 uppercase tracking-[0.4em] mt-2">Connecting to AtlasStack Clusters</p>
+            <h2 className="text-2xl font-black text-white tracking-tighter metallic-text">SYNCHRONIZING</h2>
+            <p className="text-[10px] font-black text-silver-700 uppercase tracking-[0.4em] mt-3 animate-pulse">Connecting to AtlasStack Clusters</p>
           </div>
+
+          {showDebug && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10 max-w-md w-full backdrop-blur-md"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold text-white uppercase tracking-widest">Diagnostic Report</span>
+              </div>
+              <div className="space-y-2 font-mono text-[9px] text-silver-500">
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>API_URL:</span>
+                  <span className="text-white">{apiUrl || 'NOT_DETECTED'}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>AUTH_LOADED:</span>
+                  <span className={isLoaded ? "text-emerald-400" : "text-rose-400"}>{isLoaded ? "TRUE" : "FALSE"}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>ENVIRONMENT:</span>
+                  <span className="text-white">{import.meta.env.MODE}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[9px] font-bold text-white uppercase tracking-widest transition-colors"
+              >
+                Retry Connection
+              </button>
+            </motion.div>
+          )}
         </div>
       </div>
     );
