@@ -624,13 +624,39 @@ export default function App() {
                   <span>ENVIRONMENT:</span>
                   <span className="text-white">{import.meta.env.MODE}</span>
                 </div>
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>CLERK_INIT:</span>
+                  <span className="text-white">{(window as any).Clerk ? "READY" : "WAITING"}</span>
+                </div>
               </div>
-              <button 
-                onClick={() => window.location.reload()}
-                className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[9px] font-bold text-white uppercase tracking-widest transition-colors"
-              >
-                Retry Connection
-              </button>
+              
+              <div className="mt-4 flex gap-2">
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[9px] font-bold text-white uppercase tracking-widest transition-colors"
+                >
+                  Retry
+                </button>
+                <button 
+                  onClick={async () => {
+                    const btn = document.getElementById('test-api-btn');
+                    if (btn) btn.innerText = 'TESTING...';
+                    try {
+                      const res = await fetch(`${apiUrl}/health`);
+                      const data = await res.json();
+                      alert(`Backend Connection: SUCCESS\nStatus: ${data.status}\nMode: ${data.mode}`);
+                    } catch (err) {
+                      alert(`Backend Connection: FAILED\nError: ${err}`);
+                    } finally {
+                      if (btn) btn.innerText = 'TEST API';
+                    }
+                  }}
+                  id="test-api-btn"
+                  className="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400 uppercase tracking-widest transition-colors border border-emerald-500/30"
+                >
+                  Test API
+                </button>
+              </div>
             </motion.div>
           )}
         </div>
