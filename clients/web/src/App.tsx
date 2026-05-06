@@ -551,7 +551,7 @@ const CookieBanner = () => {
 
 // ─── Root App ─────────────────────────────────────────────────────
 export default function App() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [currentRepo, setCurrentRepo] = useState('');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
@@ -611,6 +611,14 @@ export default function App() {
                 <div className="flex justify-between border-b border-white/5 pb-1">
                   <span>AUTH_LOADED:</span>
                   <span className={isLoaded ? "text-emerald-400" : "text-rose-400"}>{isLoaded ? "TRUE" : "FALSE"}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>CLERK_KEY:</span>
+                  <span className="text-white">
+                    {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY 
+                      ? `${import.meta.env.VITE_CLERK_PUBLISHABLE_KEY.substring(0, 8)}...` 
+                      : 'MISSING'}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-1">
                   <span>ENVIRONMENT:</span>
