@@ -7,19 +7,30 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
 
+<p align="center">
+  <img src="docs/images/logo.png" width="300" alt="AtlasStack Logo">
+</p>
+
+# AtlasStack
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
+
 AtlasStack is an autonomous software engineering engine that analyzes GitHub repositories using **Gemini 1.5 Flash** and **Qwen2.5-Coder**, finds bugs, explains architecture, and proposes fixes — including an embedded web IDE experience.
 
 ---
 
 ##  Highlights
 
-- **Deep Repo Analysis:** Clones any public GitHub repo and produces a structured report: architecture, data flow, important files, security fixes, and a health score.
-- **Embedded Web IDE:** A full VS Code-like development environment directly in the browser.
+- **Production-Grade Security:** Hardened with strict regex URL validation, SSRF protection against internal metadata endpoints, and secure JWT handling.
+- **Resilient AI Orchestration:** Enforced mandatory timeouts (30s for Git, 120s for LLM) and defensive error handling for sub-engines to ensure 99.9% system uptime.
+- **Flexible Data Layer:** "Secure by Default" architecture with lazy-loading database engines—seamlessly toggle between SQLite for local dev and PostgreSQL for production.
+- **Observability & Probes:** Kubernetes-ready with standard `/health/live` and `/ready` probes, plus integrated structured logging via `structlog`.
 - **"Explain Like I'm 10":** Toggleable ELI5 summaries for every codebase analysis.
-- **Lite Mode Backend:** Runs entirely on Python + SQLite — no Docker needed.
-- **Premium CLI Tool:** Analyze repositories and view history directly from your terminal.
+- **Embedded Web IDE:** A full VS Code-like development environment directly in the browser.
+- **Terminal CLI:** Analyze repositories and view history directly from your terminal.
 - **Autonomous Training Data Collection:** Captures scan inputs and LLM outputs to build a high-quality fine-tuning dataset automatically.
-- **Enterprise Authentication:** Secured by Clerk, providing out-of-the-box SSO, OAuth, and user management.
+
 
 ---
 
@@ -182,10 +193,14 @@ The AtlasStack CLI is a powerful tool for developers who live in the terminal.
 | POST | `/api/v1/analysis/mvp` | No | Full repo analysis |
 | GET | `/api/v1/analyses` | Yes | List your past analyses |
 | GET | `/api/v1/analyses/{id}` | Yes | Get analysis detail |
+| GET | `/api/v1/languages` | No | List supported languages |
+| GET | `/api/v1/rules` | Yes | List security scan rules |
 | POST | `/api/v1/repositories` | Yes | Register a repo |
 | GET | `/api/v1/repositories` | Yes | List your repos |
 | POST | `/api/v1/repositories/{id}/analyze` | Yes | Trigger analysis |
-| GET | `/health` | No | Health check |
+| GET | `/health/live` | No | Liveness probe (200 OK) |
+| GET | `/ready` | No | Readiness probe (DB check) |
+
 
 Full interactive docs at `http://localhost:8005/docs`
 
@@ -313,8 +328,11 @@ See `.env.example` for the full list of configuration options.
 
 - **Authentication:** All user authentication, session management, and SSO is handled securely via **Clerk** (frontend) and **JWT** (backend).
 - **Vulnerability Scanning:** CI/CD includes automated scans via `bandit`, `safety`, and `semgrep`.
-- **Execution Sandboxing:** Repository analysis runs in isolated temporary directories with strict timeouts and size limits.
+- **Secure Repository Ingestion:** Git cloning is protected by strict regex validation and domain allowlisting (GitHub, GitLab, Bitbucket).
+- **SSRF Protection:** Built-in safeguards against Server-Side Request Forgery targeting localhost or cloud metadata services.
+- **Execution Sandboxing:** Repository analysis runs in isolated temporary directories with mandatory 30s git timeouts and 120s AI timeouts.
 - **LLM Data Privacy:** Local LLM inference via Lite Mode ensures your codebase never leaves your infrastructure (unless using external HuggingFace/Google Inference APIs).
+
 
 ---
 
