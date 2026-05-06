@@ -14,7 +14,7 @@ import asyncio
 import structlog
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from huggingface_hub import InferenceClient
+from huggingface_hub import AsyncInferenceClient
 import google.generativeai as genai
 
 from services.analysis.engine.architecture_mapper import get_mapper
@@ -153,22 +153,40 @@ class AnalysisOrchestrator:
                 )
                 content = response.text
             else:
-                logger.info("Using Hugging Face / OpenRouter for analysis")
+                logger.info(f"Using Hugging Face / OpenRouter for analysis with model: {self.default_model}")
                 # If OpenRouter is available, we use its base URL
                 base_url = "https://openrouter.ai/api/v1" if self.openrouter_key else None
-                client = InferenceClient(api_key=self.openrouter_key or self.hf_token, base_url=base_url)
+                client = AsyncInferenceClient(api_key=self.openrouter_key or self.hf_token, base_url=base_url)
                 
-                # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
-                response = await asyncio.wait_for(
-                    call_llm_with_retry(
-                        client=client,
-                        model=self.default_model, 
-                        messages=[{"role": "user", "content": prompt}], 
-                        max_tokens=3000,
-                        temperature=0.1
-                    ),
-                    timeout=120.0
-                )
+                try:
+                    # 🟡 TIMEOUT: Enforce 120 second limit on LLM generation
+                    response = await asyncio.wait_for(
+                        call_llm_with_retry(
+                            client=client,
+                            model=self.default_model, 
+                            messages=[{"role": "user", "content": prompt}], 
+                            max_tokens=3000,
+                            temperature=0.1
+                        ),
+                        timeout=120.0
+                    )
+                except Exception as e:
+                    # 🚀 AUTO-RECOVERY: If 32B or other model 404s, force 7B and retry
+                    if ("404" in str(e) or "Not Found" in str(e)) and self.default_model != "Qwen/Qwen2.5-Coder-7B-Instruct":
+                        logger.warning(f"Model {self.default_model} not found. Auto-recovering with 7B model...")
+                        response = await asyncio.wait_for(
+                            call_llm_with_retry(
+                                client=client,
+                                model="Qwen/Qwen2.5-Coder-7B-Instruct", 
+                                messages=[{"role": "user", "content": prompt}], 
+                                max_tokens=3000,
+                                temperature=0.1
+                            ),
+                            timeout=120.0
+                        )
+                    else:
+                        raise e
+
                 if hasattr(response, 'choices'):
                     content = response.choices[0].message.content
                 else:
