@@ -18,8 +18,8 @@ async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
     payload = {"inputs": prompt, "parameters": {"max_new_tokens": max_tokens, "temperature": temperature}}
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as http_client:
-            logger.info(f"Nuclear Fix: Direct POST to {url}")
+        async with httpx.AsyncClient(timeout=120.0) as http_client:
+            logger.info(f"Nuclear Fix: Direct POST to {url} (120s timeout)")
             resp = await http_client.post(url, json=payload, headers=headers)
             
             if resp.status_code == 200:

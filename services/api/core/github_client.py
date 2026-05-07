@@ -159,24 +159,25 @@ class GitHubClient:
             new_branch = repo.create_head(branch_name)
             new_branch.checkout()
             
-            # 3. Apply Patch
+            # 3. Apply Patch (Smarter Logic)
             file_path = os.path.join(temp_dir, fix["file_path"])
             if not os.path.exists(file_path):
-                raise FileNotFoundError(f"File {fix['file_path']} not found in repository")
-            
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            
-            # Simple replacement logic (can be replaced with git apply if we have a diff)
-            if fix.get("code_remove") and fix["code_remove"] in content:
-                new_content = content.replace(fix["code_remove"], fix.get("code_add", ""))
+                # If file doesn't exist, create it (handles new files)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(fix.get("code_add", ""))
             else:
-                # If exact match fails, try a line-by-line strategy or just append if it's an addition
-                # For Phase 1/2, we'll favor exact match or simple addition
-                new_content = content + "\n" + fix.get("code_add", "") if not fix.get("code_remove") else content
-
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(new_content)
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                if fix.get("code_remove") and fix["code_remove"] in content:
+                    new_content = content.replace(fix["code_remove"], fix.get("code_add", ""))
+                else:
+                    # Fallback: Append if we can't find the exact line to remove
+                    new_content = content + "\n\n# AtlasStack AI Suggested Fix:\n" + fix.get("code_add", "")
+                
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(new_content)
             
             # 4. Commit and Push
             from git import Actor
