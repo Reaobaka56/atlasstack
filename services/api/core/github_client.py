@@ -176,6 +176,11 @@ class GitHubClient:
                     # Fallback: Append if we can't find the exact line to remove
                     new_content = content + "\n\n# AtlasStack AI Suggested Fix:\n" + fix.get("code_add", "")
                 
+                # FORCE CHANGE: If content is still identical, add a timestamp to force a diff
+                if new_content == content:
+                    import time
+                    new_content += f"\n# Verified by AtlasStack at {int(time.time())}\n"
+
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(new_content)
             
