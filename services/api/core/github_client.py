@@ -56,30 +56,62 @@ class GitHubClient:
             token_data = resp.json()
             return token_data["token"]
 
+    async def get_repo_installation_id(self, owner: str, repo: str) -> str:
+        """Finds the installation ID for a specific repository."""
+        if not self.app_id or not self.private_key:
+            return None
+            
+        import jwt
+        import time
+        
+        payload = {
+            "iat": int(time.time()) - 60,
+            "exp": int(time.time()) + (10 * 60),
+            "iss": self.app_id,
+        }
+        encoded_jwt = jwt.encode(payload, self.private_key, algorithm="RS256")
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self.api_base}/repos/{owner}/{repo}/installation",
+                headers={
+                    "Authorization": f"Bearer {encoded_jwt}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+            )
+            if resp.status_code == 200:
+                return str(resp.json()["id"])
+            return None
+
     async def create_pr(self, repo_url: str, fix: Dict[str, Any], base_branch: str = "main") -> Dict[str, Any]:
         """
-        Creates a PR for a specific fix.
-        Logic: 
-        1. Clone repo to temp dir
-        2. Create feature branch
-        3. Apply patch
-        4. Push branch
-        5. API call to open PR
+        Creates a PR for a specific fix using App or User token.
         """
-        if not self.token:
-            raise ValueError("GitHub token is not configured. Automated PRs disabled.")
-
+        # 1. Try to get a token (prefer User Token, fallback to App Token)
+        token = self.token
+        
         # Extract owner/repo from URL
-        # e.g. https://github.com/owner/repo
         parts = repo_url.rstrip("/").split("/")
         if len(parts) < 2:
             raise ValueError(f"Invalid repository URL: {repo_url}")
-        owner_repo = f"{parts[-2]}/{parts[-1]}"
-        
+        owner = parts[-2]
+        repo_name = parts[-1]
+        owner_repo = f"{owner}/{repo_name}"
+
+        if not token and self.app_id:
+            logger.info("No user token found. Attempting GitHub App authentication...")
+            installation_id = await self.get_repo_installation_id(owner, repo_name)
+            if installation_id:
+                token = await self.get_installation_token(installation_id)
+                logger.info("Successfully generated GitHub App installation token.")
+
+        if not token:
+            raise ValueError("GitHub authentication failed. Please connect your GitHub account or install the AtlasStack GitHub App.")
+
         temp_dir = tempfile.mkdtemp()
         try:
-            # 1. Clone
-            authed_url = repo_url.replace("https://", f"https://x-access-token:{self.token}@")
+            # Clone and PR logic continues...
+            authed_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
             repo = Repo.clone_from(authed_url, temp_dir)
             
             # 2. Branch
@@ -129,7 +161,7 @@ class GitHubClient:
             async with httpx.AsyncClient() as client:
                 res = await client.post(
                     f"{self.api_base}/repos/{owner_repo}/pulls",
-                    headers=self.headers,
+                    headers={**self._headers, "Authorization": f"token {token}"},
                     json=pr_data
                 )
                 
