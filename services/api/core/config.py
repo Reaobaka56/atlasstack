@@ -159,3 +159,7 @@ _validate_settings(settings)
 def get_settings() -> Settings:
     """Get application settings"""
     return settings
+
+
+# AtlasStack AI Suggested Fix:
+settings = Settings()
