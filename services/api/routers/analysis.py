@@ -106,6 +106,7 @@ class MVPAnalysisRequest(BaseModel):
         return v
 
 class MVPAnalysisResponse(BaseModel):
+    id: Optional[str] = None
     explanation: dict
     important_files: list
     fixes: list
@@ -267,6 +268,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
     if not hf_token and not gemini_key:
         logger.warning("No AI tokens found. Falling back to mock MVP response.")
         return MVPAnalysisResponse(
+            id=analysis_id,
             explanation={
                 "summary": "This is a placeholder summary. Set HF_TOKEN to see real results.",
                 "eli5_summary": "Imagine a big box of legos, but it's empty right now because we need an API key!",
@@ -288,6 +290,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
         result_json = await orchestrator.analyze_repository(str(request.repo_url))
         
         parsed = MVPAnalysisResponse(**result_json)
+        parsed.id = analysis_id
 
         # Persist result to DB
         if request.save_result:
