@@ -14,11 +14,47 @@ class GitHubClient:
     
     def __init__(self, token: Optional[str] = None):
         self.token = token or settings.GITHUB_TOKEN
+        self.app_id = settings.GITHUB_APP_ID
+        self.private_key = settings.GITHUB_PRIVATE_KEY
         self.api_base = "https://api.github.com"
-        self.headers = {
-            "Authorization": f"token {self.token}" if self.token else "",
+        self._headers = {
             "Accept": "application/vnd.github.v3+json",
         }
+
+    @property
+    def headers(self):
+        return {
+            **self._headers,
+            "Authorization": f"token {self.token}" if self.token else ""
+        }
+
+    async def get_installation_token(self, installation_id: str) -> str:
+        """Generates a temporary installation token for a GitHub App."""
+        if not self.app_id or not self.private_key:
+            raise ValueError("GitHub App credentials not configured.")
+        
+        import jwt
+        import time
+        
+        payload = {
+            "iat": int(time.time()),
+            "exp": int(time.time()) + (10 * 60),
+            "iss": self.app_id,
+        }
+        
+        encoded_jwt = jwt.encode(payload, self.private_key, algorithm="RS256")
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self.api_base}/app/installations/{installation_id}/access_tokens",
+                headers={
+                    "Authorization": f"Bearer {encoded_jwt}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+            )
+            resp.raise_for_status()
+            token_data = resp.json()
+            return token_data["token"]
 
     async def create_pr(self, repo_url: str, fix: Dict[str, Any], base_branch: str = "main") -> Dict[str, Any]:
         """

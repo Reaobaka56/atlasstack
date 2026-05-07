@@ -99,6 +99,11 @@ class Settings(BaseSettings):
     GITLAB_TOKEN: Optional[str] = None
     BITBUCKET_TOKEN: Optional[str] = None
 
+    # GitHub App Integration
+    GITHUB_APP_ID: Optional[str] = None
+    GITHUB_PRIVATE_KEY: Optional[str] = None
+    GITHUB_WEBHOOK_SECRET: Optional[str] = None
+
     # SMTP Settings
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
