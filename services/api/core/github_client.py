@@ -36,13 +36,18 @@ class GitHubClient:
         import jwt
         import time
         
+        # Clean up the private key format (handle common copy-paste newline issues)
+        clean_key = self.private_key.replace("\\n", "\n")
+        if not clean_key.startswith("-----BEGIN"):
+             logger.error("Private Key format error: Must start with -----BEGIN RSA PRIVATE KEY-----")
+        
         payload = {
-            "iat": int(time.time()),
+            "iat": int(time.time()) - 60,
             "exp": int(time.time()) + (10 * 60),
-            "iss": self.app_id,
+            "iss": str(self.app_id),
         }
         
-        encoded_jwt = jwt.encode(payload, self.private_key, algorithm="RS256")
+        encoded_jwt = jwt.encode(payload, clean_key, algorithm="RS256")
         
         async with httpx.AsyncClient() as client:
             resp = await client.post(
@@ -64,12 +69,14 @@ class GitHubClient:
         import jwt
         import time
         
+        clean_key = self.private_key.replace("\\n", "\n")
+        
         payload = {
             "iat": int(time.time()) - 60,
             "exp": int(time.time()) + (10 * 60),
-            "iss": self.app_id,
+            "iss": str(self.app_id),
         }
-        encoded_jwt = jwt.encode(payload, self.private_key, algorithm="RS256")
+        encoded_jwt = jwt.encode(payload, clean_key, algorithm="RS256")
         
         async with httpx.AsyncClient() as client:
             resp = await client.get(
