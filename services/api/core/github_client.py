@@ -81,6 +81,10 @@ class GitHubClient:
             )
             if resp.status_code == 200:
                 return str(resp.json()["id"])
+            
+            logger.error(f"GitHub App Installation check failed for {owner}/{repo}", 
+                         status=resp.status_code, 
+                         error=resp.text)
             return None
 
     async def create_pr(self, repo_url: str, fix: Dict[str, Any], base_branch: str = "main") -> Dict[str, Any]:
