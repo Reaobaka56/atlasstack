@@ -52,5 +52,7 @@ async def call_llm_with_retry(client, model, messages, max_tokens, temperature):
         "important_files": [{"path": "services/api/main.py", "reason": "Application Entry Point", "is_start_here": True}],
         "fixes": [{"problem": "Hardcoded configurations in some modules", "eli5_explanation": "Instead of writing secrets directly in the code, we should keep them in a safe box called a .env file.", "file_path": "services/api/core/config.py", "code_add": "settings = Settings()", "code_remove": "settings = {'key': 'value'}"}],
         "tech_stack": {"frameworks": ["FastAPI", "React", "Vite"], "databases": ["SQLite", "Redis"]},
-        "run_steps": ["pip install -r requirements.txt", "uvicorn main:app --reload"]
+        "run_steps": ["pip install -r requirements.txt", "uvicorn main:app --reload"],
+        "errors": [],
+        "dependencies": [{"name": "fastapi", "purpose": "Core API Framework"}, {"name": "clerk", "purpose": "Identity Management"}]
     })
