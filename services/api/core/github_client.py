@@ -179,19 +179,21 @@ class GitHubClient:
                 f.write(new_content)
             
             # 4. Commit and Push
+            from git import Actor
+            
             # Official GitHub Bot format: id+name[bot]@users.noreply.github.com
             if bot_info:
                 bot_name = bot_info.get("slug", "atlasstack-ai")
                 bot_id = bot_info.get("id", "12345")
-                author_str = f"{bot_name}[bot] <{bot_id}+{bot_name}[bot]@users.noreply.github.com>"
+                author_obj = Actor(f"{bot_name}[bot]", f"{bot_id}+{bot_name}[bot]@users.noreply.github.com")
             else:
-                author_str = f"AtlasStack AI <atlasstack-ai[bot]@users.noreply.github.com>"
+                author_obj = Actor("AtlasStack AI", "atlasstack-ai[bot]@users.noreply.github.com")
                 
             repo.index.add([fix["file_path"]])
             repo.index.commit(
                 f"AtlasStack Fix: {fix['problem']}", 
-                author=author_str,
-                committer=author_str
+                author=author_obj,
+                committer=author_obj
             )
             
             origin = repo.remote(name="origin")
