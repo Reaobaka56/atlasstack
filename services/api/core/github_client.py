@@ -87,12 +87,28 @@ class GitHubClient:
                 }
             )
             if resp.status_code == 200:
-                return str(resp.json()["id"])
+                inst_id = str(resp.json()["id"])
+                logger.info(f"✅ Found GitHub App Installation: {inst_id} for {owner}/{repo}")
+                return inst_id
             
-            logger.error(f"GitHub App Installation check failed for {owner}/{repo}", 
-                         status=resp.status_code, 
-                         error=resp.text)
+            logger.error(f"❌ GitHub App Installation check failed for {owner}/{repo}", 
+                         status_code=resp.status_code, 
+                         response_body=resp.text,
+                         app_id=self.app_id)
             return None
+
+    async def get_app_info(self, token: str) -> Dict[str, Any]:
+        """Fetches the authenticated App's info."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self.api_base}/app",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+            )
+            resp.raise_for_status()
+            return resp.json()
 
     async def create_pr(self, repo_url: str, fix: Dict[str, Any], base_branch: str = "main") -> Dict[str, Any]:
         """
@@ -100,6 +116,7 @@ class GitHubClient:
         """
         # 1. Try to get a token (prefer User Token, fallback to App Token)
         token = self.token
+        bot_info = None
         
         # Extract owner/repo from URL
         parts = repo_url.rstrip("/").split("/")
@@ -113,6 +130,18 @@ class GitHubClient:
             logger.info("No user token found. Attempting GitHub App authentication...")
             installation_id = await self.get_repo_installation_id(owner, repo_name)
             if installation_id:
+                # Generate JWT to get app info first
+                import jwt
+                import time
+                payload = {"iat": int(time.time()) - 60, "exp": int(time.time()) + 600, "iss": str(self.app_id)}
+                clean_key = self.private_key.replace("\\n", "\n")
+                encoded_jwt = jwt.encode(payload, clean_key, algorithm="RS256")
+                
+                try:
+                    bot_info = await self.get_app_info(encoded_jwt)
+                except Exception as e:
+                    logger.warning(f"Could not fetch bot info: {e}")
+
                 token = await self.get_installation_token(installation_id)
                 logger.info("Successfully generated GitHub App installation token.")
 
@@ -150,8 +179,20 @@ class GitHubClient:
                 f.write(new_content)
             
             # 4. Commit and Push
+            # Official GitHub Bot format: id+name[bot]@users.noreply.github.com
+            if bot_info:
+                bot_name = bot_info.get("slug", "atlasstack-ai")
+                bot_id = bot_info.get("id", "12345")
+                author_str = f"{bot_name}[bot] <{bot_id}+{bot_name}[bot]@users.noreply.github.com>"
+            else:
+                author_str = f"AtlasStack AI <atlasstack-ai[bot]@users.noreply.github.com>"
+                
             repo.index.add([fix["file_path"]])
-            repo.index.commit(f"AtlasStack Fix: {fix['problem']}")
+            repo.index.commit(
+                f"AtlasStack Fix: {fix['problem']}", 
+                author=author_str,
+                committer=author_str
+            )
             
             origin = repo.remote(name="origin")
             origin.push(branch_name)
