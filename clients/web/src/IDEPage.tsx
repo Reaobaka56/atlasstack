@@ -394,6 +394,30 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
     }
   };
 
+  const handleCreateAllPr = async () => {
+    if (!mvpData?.id) {
+      showToast("Save the analysis by logging in & re-running the scan first.");
+      return;
+    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const clerkToken = await getToken();
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
+    try {
+      showToast("Creating combined PR on GitHub...");
+      const res = await fetch(`${API_URL}/api/v1/analyses/${mvpData.id}/fixes/apply_all`, {
+        method: 'POST',
+        headers
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'PR creation failed');
+      showToast(`✅ Combined PR opened! Opening...`);
+      const prUrl = data.html_url || data.pr_url || data.url || data.htmlUrl;
+      if (prUrl) setTimeout(() => window.open(prUrl, '_blank'), 1200);
+    } catch (err: any) {
+      showToast(`❌ ${err.message}`);
+    }
+  };
+
   const copyToClipboard = (text: string, msg: string = "Copied to clipboard!") => {
     navigator.clipboard.writeText(text);
     showToast(msg);
@@ -657,6 +681,9 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                    </button>
                    <button onClick={handleCopyMarkdown} className="bg-white/5 hover:bg-white/10 text-white shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 transition-all hover:scale-105 active:scale-95">
                      <FileText className="w-3.5 h-3.5" /> Export
+                   </button>
+                   <button onClick={() => handleCreateAllPr()} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-emerald-400/10 transition-all hover:scale-105 active:scale-95">
+                     <GitPullRequest className="w-3.5 h-3.5" /> Apply All Fixes
                    </button>
                 </div>
 

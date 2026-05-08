@@ -133,6 +133,33 @@ npm run dev
 
 ---
 
+## GitHub Integration & Auto-Fix
+
+AtlasStack can connect to your GitHub account (OAuth) to list your repositories — including private repos — and open pull requests that apply suggested fixes.
+
+Quick notes:
+- Frontend path: `clients/web` contains the UI changes (Connect GitHub button and repo list).
+- Backend endpoints:
+  - `POST /api/v1/auth/github/login` — returns the GitHub authorize URL.
+  - `POST /api/v1/auth/github/callback` — exchange code and store encrypted token.
+  - `GET /api/v1/auth/github/repos` — list repositories for the signed-in user.
+  - `POST /api/v1/analyses/{id}/fixes/{index}/pr` — create a PR for a single suggested fix.
+  - `POST /api/v1/analyses/{id}/fixes/apply_all` — create one PR that applies all suggested fixes from an analysis (new).
+
+Environment requirements:
+- `ENCRYPTION_KEY` (recommended): when set, GitHub tokens are encrypted in the database using Fernet. If omitted, tokens may be stored plaintext — set this in production.
+- GitHub OAuth App: configure your OAuth App's Redirect URI to point to your frontend origin (e.g. `http://localhost:3000`). Ensure requested scopes include `repo` so private repositories can be listed and PRs created.
+
+How to use (dev):
+1. Start backend and frontend as in Quick Start above.
+2. In the web UI, sign in and click **Connect GitHub** on the Dashboard.
+3. Authorize the app; after callback the dashboard will list your repositories.
+4. Run an analysis on a repository; in the IDE header click **Apply All Fixes** to create a single PR with all suggested fixes.
+
+Security: the server validates repository URLs and uses strict cloning timeouts. PR creation uses the user's stored token (decrypted with `ENCRYPTION_KEY`) or the configured GitHub App fallback token.
+
+---
+
 ##  IDE Integration
 
 ### Visual Studio Code

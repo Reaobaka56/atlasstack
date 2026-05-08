@@ -615,6 +615,125 @@ async def create_fix_pr(
         raise HTTPException(status_code=500, detail=f"Failed to create PR: {str(e)}")
 
 
+@router.post("/analyses/{analysis_id}/fixes/apply_all")
+async def apply_all_fixes_as_pr(
+    analysis_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(PermissionChecker(["user"])),
+):
+    """Apply all suggested fixes from an analysis into a single PR."""
+    from sqlalchemy import select
+    result = await db.execute(
+        select(AnalysisRecord).where(
+            AnalysisRecord.id == analysis_id,
+            AnalysisRecord.user_id == current_user["id"]
+        )
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    fixes = record.fixes or []
+    if not fixes:
+        raise HTTPException(status_code=400, detail="No fixes available for this analysis")
+
+    # Fetch user to get their github token
+    user_result = await db.execute(select(UserRecord).where(UserRecord.id == current_user["id"]))
+    user_rec = user_result.scalar_one_or_none()
+
+    token = None
+    if user_rec and user_rec.github_token:
+        token = decrypt_token(user_rec.github_token)
+
+    github = get_github_client(token=token)
+
+    # We'll clone, apply all fixes, commit once, push branch and open a PR
+    import tempfile
+    import shutil
+    import os
+    import httpx
+    from git import Repo
+
+    repo_url = record.repo_url
+    parts = repo_url.rstrip("/").split("/")
+    if len(parts) < 2:
+        raise HTTPException(status_code=400, detail="Invalid repository URL")
+    owner = parts[-2]
+    repo_name = parts[-1]
+    owner_repo = f"{owner}/{repo_name}"
+
+    token_to_use = token or github.token
+    if not token_to_use:
+        raise HTTPException(status_code=403, detail="No GitHub credentials available for applying fixes")
+
+    temp_dir = tempfile.mkdtemp()
+    try:
+        authed_url = repo_url.replace("https://", f"https://x-access-token:{token_to_use}@")
+        repo = Repo.clone_from(authed_url, temp_dir)
+
+        branch_name = f"atlasstack/fixes-{os.urandom(4).hex()}"
+        new_branch = repo.create_head(branch_name)
+        new_branch.checkout()
+
+        # Apply fixes
+        for fix in fixes:
+            file_rel = fix.get("file_path")
+            if not file_rel:
+                continue
+            file_path = os.path.join(temp_dir, file_rel)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            if not os.path.exists(file_path):
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(fix.get("code_add", ""))
+            else:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                if fix.get("code_remove") and fix["code_remove"] in content:
+                    new_content = content.replace(fix["code_remove"], fix.get("code_add", ""))
+                else:
+                    new_content = content + "\n\n# AtlasStack Suggested Fix\n" + fix.get("code_add", "")
+                if new_content == content:
+                    import time
+                    new_content += f"\n# AtlasStack note: no-op patched at {int(time.time())}\n"
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(new_content)
+
+        # Stage all changed files
+        changed = [item.a_path for item in repo.index.diff(None)]
+        # If no changed tracked files, add all fixes' file paths
+        if not changed:
+            changed = [f.get("file_path") for f in fixes if f.get("file_path")]
+
+        repo.index.add(changed)
+
+        from git import Actor
+        author_obj = Actor("AtlasStack AI", "atlasstack-ai[bot]@users.noreply.github.com")
+        repo.index.commit(f"AtlasStack: Apply suggested fixes for analysis {analysis_id}", author=author_obj, committer=author_obj)
+
+        origin = repo.remote(name="origin")
+        origin.push(branch_name)
+
+        pr_data = {
+            "title": f"AtlasStack: Automated fixes for analysis {analysis_id}",
+            "body": f"This PR applies {len(fixes)} automated fixes suggested by AtlasStack AI for {record.repo_url}.",
+            "head": branch_name,
+            "base": record.branch or "main",
+        }
+
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                f"{github.api_base}/repos/{owner_repo}/pulls",
+                headers={**github._headers, "Authorization": f"token {token_to_use}"},
+                json=pr_data,
+            )
+            if res.status_code != 201:
+                logger.error("Failed to create combined PR", status=res.status_code, body=res.text)
+                raise HTTPException(status_code=500, detail=f"Failed to create PR: {res.text}")
+            return res.json()
+    finally:
+        shutil.rmtree(temp_dir)
+
+
 @router.post("/analysis/{analysis_id}/regenerate")
 async def regenerate_analysis(
     analysis_id: UUID,

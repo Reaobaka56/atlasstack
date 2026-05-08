@@ -139,6 +139,9 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [atlasAccessToken, setAtlasAccessToken] = useState<string | null>(localStorage.getItem('atlas_access_token'));
+  const [githubRepos, setGithubRepos] = useState<Array<any>>([]);
+  const [loadingRepos, setLoadingRepos] = useState(false);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -150,6 +153,66 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
 
   useEffect(() => {
     fetchAnalyses();
+  }, []);
+
+  const fetchAndSetRepos = async () => {
+    try {
+      setLoadingRepos(true);
+      const token = atlasAccessToken || localStorage.getItem('atlas_access_token');
+      if (!token) {
+        setGithubRepos([]);
+        return;
+      }
+      const res = await fetch(`${apiUrl}/api/v1/auth/github/repos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Failed to fetch repos');
+      const data = await res.json();
+      setGithubRepos(data || []);
+    } catch (e) {
+      console.error('Fetch repos error', e);
+      setGithubRepos([]);
+    } finally {
+      setLoadingRepos(false);
+    }
+  };
+
+  useEffect(() => {
+    if (atlasAccessToken) fetchAndSetRepos();
+  }, [atlasAccessToken]);
+
+  // Handle GitHub OAuth callback (frontend receives ?code= and exchanges it)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const processed = params.get('atlas_github_processed');
+    if (code && !processed) {
+      (async () => {
+        try {
+          // Exchange code for AtlasStack access token via backend
+          const res = await fetch(`${apiUrl}/api/v1/auth/github/callback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
+          if (!res.ok) throw new Error('GitHub sign-in failed');
+          const data = await res.json();
+          if (data.access_token) {
+            setAtlasAccessToken(data.access_token);
+            localStorage.setItem('atlas_access_token', data.access_token);
+            showToast('GitHub account linked');
+          }
+        } catch (err: any) {
+          console.error('GitHub callback error', err);
+          showToast('Failed to link GitHub account');
+        } finally {
+          // Mark as processed so we don't re-run on reload
+          params.set('atlas_github_processed', '1');
+          const newUrl = window.location.origin + window.location.pathname + '?' + params.toString();
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      })();
+    }
   }, []);
 
   const fetchAnalyses = async () => {
@@ -418,11 +481,65 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
 
           {/* View: Connected Repos */}
           {activeNav === 'repos' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="liquid-glass p-20 rounded-[1.5rem] border-white/5 text-center">
-              <GitBranch className="w-16 h-16 text-indigo-400 mx-auto mb-6" />
-              <h3 className="text-xl font-bold text-white mb-2">Connected Repositories</h3>
-              <p className="text-silver-500 text-sm max-w-xs mx-auto leading-relaxed">No GitHub integrations found. Connect your organization to enable automated PR analysis.</p>
-              <button className="btn-primary mt-8 px-8 py-3 rounded-2xl font-bold text-xs">Connect GitHub Organization</button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="liquid-glass p-8 rounded-[1.5rem] border-white/5">
+              <div className="flex items-center gap-4 mb-6">
+                <GitBranch className="w-12 h-12 text-indigo-400" />
+                <div>
+                  <h3 className="text-xl font-bold text-white">Connected Repositories</h3>
+                  <p className="text-silver-500 text-sm">Link your GitHub account to show repositories (including private ones you authorize).</p>
+                </div>
+              </div>
+
+              {githubRepos.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-silver-500 mb-6">No GitHub repos connected yet.</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const r = await fetch(`${apiUrl}/api/v1/auth/github/login`);
+                          const j = await r.json();
+                          if (j.url) {
+                            // Redirect user to GitHub authorize page
+                            window.location.href = j.url;
+                          } else throw new Error('Invalid redirect URL');
+                        } catch (e) { console.error(e); showToast('Unable to start GitHub OAuth'); }
+                      }}
+                      className="btn-primary px-6 py-3 rounded-2xl font-bold text-xs"
+                    >
+                      Connect GitHub
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        // Try to fetch repos if we already have an AtlasStack token
+                        await fetchAndSetRepos();
+                      }}
+                      className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold"
+                    >
+                      Refresh Repos
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {githubRepos.map((r, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-md bg-white/5 flex items-center justify-center"> <Github className="w-4 h-4 text-white" /> </div>
+                        <div>
+                          <div className="text-sm font-bold text-white">{r.name}</div>
+                          <div className="text-[11px] text-silver-500">{r.url}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-bold text-silver-400">{r.private ? 'Private' : 'Public'}</div>
+                        <a href={r.url} target="_blank" rel="noreferrer" className="text-[11px] text-indigo-400">Open</a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 
