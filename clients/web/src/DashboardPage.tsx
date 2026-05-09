@@ -69,7 +69,7 @@ const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNo
   </div>
 );
 
-const StatCard = ({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: React.ReactNode; color: string }) => (
+const StatCard = ({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: React.ReactElement<{ className?: string }>; color: string }) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -78,7 +78,7 @@ const StatCard = ({ label, value, sub, icon, color }: { label: string; value: st
     <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-500/5 blur-[60px] -z-10 transition-all group-hover:scale-150`} />
     <div className="flex justify-between items-start mb-6">
       <div className={`w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner`}>
-        {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 text-${color}-400` })}
+        {React.cloneElement(icon, { className: `w-5 h-5 text-${color}-400` })}
       </div>
       <div className="flex flex-col items-end">
         <p className="text-[10px] font-black text-silver-600 uppercase tracking-widest mb-1">{label}</p>
@@ -327,7 +327,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
   );
 
   return (
-    <div className="flex h-screen bg-[#030303] text-white overflow-hidden font-sans">
+    <div className="bluma-dashboard flex h-screen bg-[#030303] text-white overflow-hidden font-sans">
       <div className="noise-overlay" />
       <div className="island-bg">
         <div className="aurora-blob blob-1" />

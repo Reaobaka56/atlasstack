@@ -5,7 +5,7 @@ import {
   ArrowLeft, Search, ShieldCheck, Zap, Layers, FolderTree, Lightbulb, 
   Wrench, Play, Code2, Copy, ToggleLeft, ToggleRight, ListChecks, FileWarning, Star, AlertTriangle,
   Share2, Download, FileText, Check, RefreshCw, Lock, Puzzle, Wifi, TrendingUp, Eye, Rocket,
-  FileCode2, MessageSquare, Send, X, MessagesSquare, Network, LogOut, Home, GitBranch, Clock, BarChart3, Settings, Menu, Cpu, Sparkles
+  FileCode2, MessageSquare, Send, X, MessagesSquare, Network, LogOut, Home, GitBranch, Clock, BarChart3, Settings, Menu, Cpu, Sparkles, GitPullRequest
 } from 'lucide-react';
 import {
   SignInButton,
