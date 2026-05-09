@@ -12,11 +12,15 @@ import ArchitectureMap from './ArchitectureMap';
 import { useAuth, useClerk } from '@clerk/react';
 
 // ── Helpers ────────────────────────────────────────────────────────
-const scoreColor = (s: number) =>
-  s > 70 ? '#10b981' : s > 40 ? '#f59e0b' : '#ef4444';
+const scoreColor = (s: number | undefined | null) => {
+  if (typeof s !== 'number' || isNaN(s)) return '#ef4444';
+  return s > 70 ? '#10b981' : s > 40 ? '#f59e0b' : '#ef4444';
+};
 
-const scoreLabel = (s: number) =>
-  s > 70 ? 'Optimal' : s > 40 ? 'Fair' : 'Critical';
+const scoreLabel = (s: number | undefined | null) => {
+  if (typeof s !== 'number' || isNaN(s)) return 'Critical';
+  return s > 70 ? 'Optimal' : s > 40 ? 'Fair' : 'Critical';
+};
 
 const relativeTime = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -238,14 +242,16 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const filteredAnalyses = analyses.filter(a => 
-    a.repo_url.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Defensive: filter out analyses with missing or invalid fields
+  const filteredAnalyses = analyses
+    .filter(a => a && typeof a.repo_url === 'string' && a.repo_url.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(a => typeof a.health_score === 'number' && !isNaN(a.health_score));
 
+  const validAnalyses = analyses.filter(a => typeof a.health_score === 'number' && !isNaN(a.health_score));
   const stats = [
     { label: 'Active Repos', value: analyses.length, sub: 'Total mapped nodes', icon: <GitBranch />, color: 'indigo' },
-    { label: 'Total Risks', value: analyses.reduce((acc, a) => acc + (a.health_score < 70 ? 1 : 0), 0), sub: 'Critical vulnerabilities', icon: <Shield />, color: 'rose' },
-    { label: 'Avg Health', value: analyses.length ? Math.round(analyses.reduce((acc, a) => acc + a.health_score, 0) / analyses.length) : '--', sub: 'System integrity score', icon: <Activity />, color: 'emerald' },
+    { label: 'Total Risks', value: validAnalyses.reduce((acc, a) => acc + (a.health_score < 70 ? 1 : 0), 0), sub: 'Critical vulnerabilities', icon: <Shield />, color: 'rose' },
+    { label: 'Avg Health', value: validAnalyses.length ? Math.round(validAnalyses.reduce((acc, a) => acc + a.health_score, 0) / validAnalyses.length) : '--', sub: 'System integrity score', icon: <Activity />, color: 'emerald' },
     { label: 'AI Patches', value: '12', sub: 'Autofixes generated', icon: <Sparkles />, color: 'amber' },
   ];
 
@@ -410,7 +416,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
                   ) : (
                     <div className="grid grid-cols-1 gap-4">
                       {filteredAnalyses.slice(0, 5).map(a => (
-                        <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
+                        <HistoryCard key={a.id || Math.random()} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
                       ))}
                     </div>
                   )}
@@ -473,7 +479,7 @@ export const DashboardPage = ({ apiUrl, onBack, onViewAnalysis, onNewScan }: { a
               <h3 className="text-2xl font-black text-white metallic-text tracking-tighter">Full Scan History</h3>
               <div className="grid grid-cols-1 gap-4">
                 {filteredAnalyses.map(a => (
-                  <HistoryCard key={a.id} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
+                  <HistoryCard key={a.id || Math.random()} analysis={a} onClick={() => onViewAnalysis(a.id, a.repo_url)} />
                 ))}
               </div>
             </motion.div>
