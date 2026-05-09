@@ -14,51 +14,71 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import { AuditRun, RunStatus, Severity } from './auditRuns';
+
+type RunStatus = 'Ready' | 'Review' | 'Running';
+type Severity = 'Low' | 'Medium' | 'High';
+
+interface AuditRun {
+  id: string;
+  repo: string;
+  goal: string;
+  status: RunStatus;
+  score: number;
+  severity: Severity;
+  updated: string;
+  owner: string;
+  outputs: string[];
+}
+
+const runs: AuditRun[] = [
+  {
+    id: 'RUN-1042',
+    repo: 'atlasstack/platform',
+    goal: 'Security and auth callback review',
+    status: 'Review',
+    score: 86,
+    severity: 'Medium',
+    updated: '12 min ago',
+    owner: 'Core AI',
+    outputs: ['runbook.md', 'patch.diff', 'risk brief'],
+  },
+  {
+    id: 'RUN-1041',
+    repo: 'client/web',
+    goal: 'Dashboard route simplification',
+    status: 'Ready',
+    score: 94,
+    severity: 'Low',
+    updated: '48 min ago',
+    owner: 'Frontend',
+    outputs: ['ux brief', 'component map'],
+  },
+  {
+    id: 'RUN-1040',
+    repo: 'services/api',
+    goal: 'Dependency upgrade planning',
+    status: 'Running',
+    score: 71,
+    severity: 'High',
+    updated: '1 hr ago',
+    owner: 'Platform',
+    outputs: ['upgrade plan'],
+  },
+];
+
+const metrics = [
+  { label: 'Active runs', value: '18', trend: '+6 this week', icon: <CircleDot size={19} /> },
+  { label: 'Avg. health', value: '84%', trend: '+12 points', icon: <TrendingUp size={19} /> },
+  { label: 'PR drafts', value: '32', trend: '9 ready', icon: <GitPullRequest size={19} /> },
+  { label: 'Risks closed', value: '127', trend: 'last 30 days', icon: <CheckCircle2 size={19} /> },
+];
 
 const statusClass = (status: RunStatus) => status.toLowerCase();
 const severityClass = (severity: Severity) => severity.toLowerCase();
 
-const relativeTime = (date: string) => {
-  const timestamp = new Date(date).getTime();
-  if (Number.isNaN(timestamp)) return 'just now';
-
-  const diff = Date.now() - timestamp;
-  const minutes = Math.max(0, Math.floor(diff / 60000));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hr${hours === 1 ? '' : 's'} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
-};
-
-const getPrimaryAction = (runs: AuditRun[]) => {
-  const reviewRun = runs.find((run) => run.status === 'Review');
-  const highRiskRun = runs.find((run) => run.severity === 'High');
-  const runningRun = runs.find((run) => run.status === 'Running');
-  return reviewRun || highRiskRun || runningRun || runs[0];
-};
-
-export const DashboardPage: React.FC<{ runs: AuditRun[]; onCreateRun: () => void }> = ({ runs, onCreateRun }) => {
+export const DashboardPage: React.FC<{ onCreateRun: () => void }> = ({ onCreateRun }) => {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'All' | RunStatus>('All');
-
-  const metrics = useMemo(() => {
-    const averageScore = runs.length
-      ? Math.round(runs.reduce((total, run) => total + run.score, 0) / runs.length)
-      : 0;
-    const readyRuns = runs.filter((run) => run.status === 'Ready').length;
-    const reviewRuns = runs.filter((run) => run.status === 'Review').length;
-    const closedRisks = runs.reduce((total, run) => total + Math.max(1, run.outputs.length), 0);
-
-    return [
-      { label: 'Active runs', value: runs.length.toString(), trend: `${runs.filter((run) => run.status === 'Running').length} running`, icon: <CircleDot size={19} /> },
-      { label: 'Avg. health', value: `${averageScore}%`, trend: runs.length ? 'from current queue' : 'no runs yet', icon: <TrendingUp size={19} /> },
-      { label: 'PR drafts', value: readyRuns.toString(), trend: `${reviewRuns} in review`, icon: <GitPullRequest size={19} /> },
-      { label: 'Artifacts', value: closedRisks.toString(), trend: 'generated outputs', icon: <CheckCircle2 size={19} /> },
-    ];
-  }, [runs]);
 
   const filteredRuns = useMemo(() => {
     return runs.filter((run) => {
@@ -66,9 +86,7 @@ export const DashboardPage: React.FC<{ runs: AuditRun[]; onCreateRun: () => void
       const matchesStatus = status === 'All' || run.status === status;
       return matchesQuery && matchesStatus;
     });
-  }, [query, runs, status]);
-
-  const primaryAction = useMemo(() => getPrimaryAction(runs), [runs]);
+  }, [query, status]);
 
   return (
     <main className="dashboard-page">
@@ -76,7 +94,7 @@ export const DashboardPage: React.FC<{ runs: AuditRun[]; onCreateRun: () => void
         <div>
           <span className="eyebrow"><LayoutDashboard size={16} /> Workspace dashboard</span>
           <h1>Track every audit from first scan to shippable remediation.</h1>
-          <p>The dashboard is now driven by created, persisted, or API-loaded runs instead of a fixed static queue.</p>
+          <p>The dashboard now focuses on three useful jobs: monitor runs, review generated outputs, and start the next scan.</p>
         </div>
         <button className="primary-button large" onClick={onCreateRun}>
           <Plus size={17} /> New run
@@ -122,7 +140,7 @@ export const DashboardPage: React.FC<{ runs: AuditRun[]; onCreateRun: () => void
           </div>
 
           <div className="run-list">
-            {filteredRuns.length ? filteredRuns.map((run) => (
+            {filteredRuns.map((run) => (
               <article className="run-row" key={run.id}>
                 <div className="run-main">
                   <div className="repo-icon">{run.repo.slice(0, 1).toUpperCase()}</div>
@@ -140,39 +158,24 @@ export const DashboardPage: React.FC<{ runs: AuditRun[]; onCreateRun: () => void
                 <div className="run-meta">
                   <span className={`severity-pill ${severityClass(run.severity)}`}><ShieldAlert size={14} /> {run.severity}</span>
                   <strong>{run.score}%</strong>
-                  <small><Clock3 size={13} /> {relativeTime(run.updatedAt)}</small>
+                  <small><Clock3 size={13} /> {run.updated}</small>
                   <button aria-label={`Open ${run.repo}`}><ArrowUpRight size={17} /></button>
                 </div>
               </article>
-            )) : (
-              <div className="empty-state">
-                <h3>No matching runs</h3>
-                <p>Try clearing your filters or create a new audit from the studio.</p>
-                <button className="ghost-button" onClick={onCreateRun}>Create run</button>
-              </div>
-            )}
+            ))}
           </div>
         </div>
 
         <aside className="insight-panel">
           <span className="eyebrow"><Filter size={16} /> Next best action</span>
-          {primaryAction ? (
-            <>
-              <h2>{primaryAction.status === 'Running' ? 'Let the current scan finish.' : `Review ${primaryAction.repo} first.`}</h2>
-              <p>{primaryAction.goal} is the highest-priority item in the current queue based on status and severity.</p>
-              <div className="priority-stack">
-                <div><strong>1</strong><span>Open {primaryAction.repo} and inspect generated evidence</span></div>
-                <div><strong>2</strong><span>Export {primaryAction.outputs[0] || 'the runbook'} for reviewers</span></div>
-                <div><strong>3</strong><span>Start the next targeted scan from Studio</span></div>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2>Create your first audit run.</h2>
-              <p>The panel will update once a repository has been submitted or loaded from the API.</p>
-            </>
-          )}
-          <button className="ghost-button wide" onClick={onCreateRun}>Open studio</button>
+          <h2>Review the auth callback patch first.</h2>
+          <p>AtlasStack found one medium-risk token lifecycle issue and prepared a minimal patch. Review it before generating broader refactors.</p>
+          <div className="priority-stack">
+            <div><strong>1</strong><span>Approve patch.diff for atlasstack/platform</span></div>
+            <div><strong>2</strong><span>Export security brief for stakeholders</span></div>
+            <div><strong>3</strong><span>Schedule weekly architecture drift scan</span></div>
+          </div>
+          <button className="ghost-button wide">Open review queue</button>
         </aside>
       </section>
     </main>

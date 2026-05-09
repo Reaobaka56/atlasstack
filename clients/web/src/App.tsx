@@ -12,6 +12,7 @@ import {
   Code2,
   Download,
   GitBranch,
+  Github,
   Layers3,
   Menu,
   Play,
@@ -22,14 +23,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { DashboardPage } from './DashboardPage';
-import {
-  AuditRun,
-  NewRunPayload,
-  createAuditRun,
-  loadStoredRuns,
-  mapApiAnalyses,
-  saveStoredRuns,
-} from './auditRuns';
 import './index.css';
 
 type Page = 'landing' | 'dashboard' | 'studio';
@@ -55,11 +48,6 @@ const useHashRoute = () => {
   };
 
   return { page, navigate };
-};
-
-const getConfiguredApiUrl = () => {
-  const value = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
-  return value || null;
 };
 
 const flowSteps = [
@@ -102,11 +90,11 @@ const featureCards = [
   },
 ];
 
-const previewRows = [
-  ['source', 'connected workspace'],
-  ['focus', 'selected scan goal'],
+const demoRows = [
+  ['repo', 'atlasstack/platform'],
+  ['focus', 'security + architecture'],
   ['agents', 'scanner, mapper, fixer'],
-  ['export', 'chosen deliverable'],
+  ['export', 'runbook.md + pull request'],
 ];
 
 const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void }) => {
@@ -178,10 +166,10 @@ const HeroPreview = () => (
       <div className="preview-main">
         <div className="status-row">
           <span className="live-dot" />
-          <span>Audit workspace ready</span>
-          <strong>Live</strong>
+          <span>AI audit in progress</span>
+          <strong>82%</strong>
         </div>
-        {previewRows.map(([label, value]) => (
+        {demoRows.map(([label, value]) => (
           <div className="terminal-row" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>
@@ -189,10 +177,10 @@ const HeroPreview = () => (
         ))}
         <div className="risk-card">
           <div>
-            <p>Next action</p>
-            <h3>Create a run and track the generated queue</h3>
+            <p>Top finding</p>
+            <h3>Auth callback exposes stale token path</h3>
           </div>
-          <button>Dynamic</button>
+          <button>Fix queued</button>
         </div>
       </div>
     </div>
@@ -266,92 +254,43 @@ const LandingPage = ({ navigate }: { navigate: (page: Page) => void }) => (
   </main>
 );
 
-const StudioPage = ({ onCreateRun }: { onCreateRun: (payload: NewRunPayload) => void }) => {
-  const [repoUrl, setRepoUrl] = useState('');
-  const [goal, setGoal] = useState<NewRunPayload['goal']>('architecture');
-  const [output, setOutput] = useState<NewRunPayload['output']>('runbook');
-
-  return (
-    <main className="studio-page">
-      <section className="studio-card">
-        <div className="studio-copy">
-          <span className="eyebrow"><GitBranch size={16} /> New run</span>
-          <h1>Create an AtlasStack audit</h1>
-          <p>Choose the repository, desired outcome, and deliverables. Submitting this form creates a real dashboard run in local state and persists it in this browser.</p>
-        </div>
-        <form
-          className="run-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onCreateRun({ repoUrl, goal, output });
-          }}
-        >
-          <label>
-            Repository URL
-            <input
-              value={repoUrl}
-              onChange={(event) => setRepoUrl(event.target.value)}
-              placeholder="https://github.com/acme/product"
-              required
-            />
-          </label>
-          <label>
-            Goal
-            <select value={goal} onChange={(event) => setGoal(event.target.value as NewRunPayload['goal'])}>
-              <option value="architecture">Architecture review</option>
-              <option value="security">Security scan</option>
-              <option value="upgrade">Dependency upgrade plan</option>
-            </select>
-          </label>
-          <label>
-            Output
-            <select value={output} onChange={(event) => setOutput(event.target.value as NewRunPayload['output'])}>
-              <option value="runbook">Runbook + prioritized fixes</option>
-              <option value="pull-request">Pull request draft</option>
-              <option value="brief">Executive brief</option>
-            </select>
-          </label>
-          <button className="primary-button large" type="submit">Generate run <Sparkles size={16} /></button>
-        </form>
-      </section>
-    </main>
-  );
-};
+const StudioPage = ({ navigate }: { navigate: (page: Page) => void }) => (
+  <main className="studio-page">
+    <section className="studio-card">
+      <div className="studio-copy">
+        <span className="eyebrow"><GitBranch size={16} /> New run</span>
+        <h1>Create an AtlasStack audit</h1>
+        <p>Choose the repository, desired outcome, and deliverables. The redesigned flow keeps setup short and sends finished work straight to the dashboard.</p>
+      </div>
+      <form className="run-form" onSubmit={(event) => { event.preventDefault(); navigate('dashboard'); }}>
+        <label>
+          Repository URL
+          <input placeholder="https://github.com/acme/product" />
+        </label>
+        <label>
+          Goal
+          <select defaultValue="architecture">
+            <option value="architecture">Architecture review</option>
+            <option value="security">Security scan</option>
+            <option value="upgrade">Dependency upgrade plan</option>
+          </select>
+        </label>
+        <label>
+          Output
+          <select defaultValue="runbook">
+            <option value="runbook">Runbook + prioritized fixes</option>
+            <option value="pull-request">Pull request draft</option>
+            <option value="brief">Executive brief</option>
+          </select>
+        </label>
+        <button className="primary-button large" type="submit">Generate run <Sparkles size={16} /></button>
+      </form>
+    </section>
+  </main>
+);
 
 export default function App() {
   const { page, navigate } = useHashRoute();
-  const [runs, setRuns] = useState<AuditRun[]>(loadStoredRuns);
-
-  useEffect(() => {
-    saveStoredRuns(runs);
-  }, [runs]);
-
-  useEffect(() => {
-    const apiUrl = getConfiguredApiUrl();
-    if (!apiUrl) return;
-
-    let cancelled = false;
-    fetch(`${apiUrl}/api/v1/analyses`)
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`API ${response.status}`))))
-      .then((payload) => {
-        if (cancelled) return;
-        const apiRuns = mapApiAnalyses(payload);
-        if (apiRuns.length) setRuns(apiRuns);
-      })
-      .catch(() => {
-        // Keep the persisted browser runs when the optional API is unavailable.
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const handleCreateRun = (payload: NewRunPayload) => {
-    const nextRun = createAuditRun(payload);
-    setRuns((currentRuns) => [nextRun, ...currentRuns]);
-    navigate('dashboard');
-  };
 
   return (
     <div className="app-shell">
@@ -359,8 +298,8 @@ export default function App() {
       <div className="bg-orb orb-two" />
       <Navbar page={page} navigate={navigate} />
       {page === 'landing' && <LandingPage navigate={navigate} />}
-      {page === 'dashboard' && <DashboardPage runs={runs} onCreateRun={() => navigate('studio')} />}
-      {page === 'studio' && <StudioPage onCreateRun={handleCreateRun} />}
+      {page === 'dashboard' && <DashboardPage onCreateRun={() => navigate('studio')} />}
+      {page === 'studio' && <StudioPage navigate={navigate} />}
       <footer className="site-footer">
         <span>AtlasStack</span>
         <span>AI runbooks for code review, architecture, and remediation.</span>
