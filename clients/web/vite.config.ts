@@ -9,15 +9,6 @@ export default defineConfig({
     port: 3000
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'monaco': ['@monaco-editor/react'],
-          'vendor': ['react', 'react-dom', 'lucide-react', 'motion'],
-          'ui': ['@radix-ui/react-slot', 'class-variance-authority', 'clsx', 'tailwind-merge']
-        }
-      }
-    },
     chunkSizeWarningLimit: 1000
   }
 });
