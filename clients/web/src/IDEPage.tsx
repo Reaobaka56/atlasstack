@@ -666,7 +666,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
 
           {/* STEP 4: Dashboard */}
           {step === 'dashboard' && mvpData && (
-            <Show when="signed-in">
+            <>
               <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               
               {/* Header section */}
@@ -1110,32 +1110,9 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                 </div>
               )}
             </motion.div>
-            </Show>
+            </>
           )}
 
-          {step === 'dashboard' && mvpData && (
-            <Show when="signed-out">
-              <motion.div 
-                key="login-required" 
-                initial={{ opacity: 0, scale: 0.9 }} 
-                animate={{ opacity: 1, scale: 1 }} 
-                className="flex flex-col items-center justify-center py-20 text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8 shadow-2xl">
-                  <Lock className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-4xl font-black text-white metallic-text mb-4">Login to View Analysis</h2>
-                <p className="text-silver-500 max-w-md mb-10 leading-relaxed font-medium">
-                  Deep architectural insights, security vulnerabilities, and logic flows are restricted to authenticated nodes.
-                </p>
-                <SignInButton mode="modal">
-                  <button className="btn-primary px-12 py-5 text-lg font-bold rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all">
-                    Sign In to Unlock Results
-                  </button>
-                </SignInButton>
-              </motion.div>
-            </Show>
-          )}
         </AnimatePresence>
       </div>
 
@@ -1190,7 +1167,6 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
       </AnimatePresence>
 
       {/* Floating AI Chat Widget */}
-      <Show when="signed-in">
         <div className="fixed bottom-8 right-8 z-50">
           <AnimatePresence>
             {isChatOpen && (
@@ -1271,7 +1247,6 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
             {isChatOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-7 h-7 group-hover:scale-110 transition-transform" />}
           </button>
         </div>
-      </Show>
         </div>
       </main>
     </div>
