@@ -35,11 +35,41 @@ const routeFromHash = (): Page => {
 const useHashRoute = () => {
   const [page, setPage] = useState<Page>(routeFromHash);
 
+<<<<<<< codex/redesign-ui-and-dashboard-logic-zq272e
+        {/* Desktop */}
+        <div className="nav-links">
+          {currentPage === 'landing' ? (
+            <>
+              <span className="nav-link" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How it works</span>
+              <span className="nav-link" onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}>Stats</span>
+            </>
+          ) : (
+            <button className="nav-link flex items-center gap-2" onClick={() => onNavigate('landing')}>
+              <ArrowLeft size={14} /> Back
+            </button>
+          )}
+          <a className="nav-link" href="https://github.com/Reaobaka56/atlasstack" target="_blank" rel="noreferrer">GitHub</a>
+          <Show when="signed-in">
+            <button className="nav-link" onClick={() => onNavigate('dashboard')}>Dashboard</button>
+            <button className="nav-link" onClick={() => onNavigate('eye')}>AgentEye</button>
+            <UserButton />
+          </Show>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <span className="nav-link" style={{ padding: '8px 12px' }}>Sign in</span>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="btn-clay-primary" style={{ padding: '8px 20px', fontSize: '13px' }}>Get for Free</button>
+            </SignUpButton>
+          </Show>
+        </div>
+=======
   useEffect(() => {
     const onHashChange = () => setPage(routeFromHash());
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+>>>>>>> main
 
   const navigate = (nextPage: Page) => {
     window.location.hash = nextPage === 'landing' ? '#/' : `#/${nextPage}`;
@@ -109,6 +139,20 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
   );
 
   return (
+<<<<<<< codex/redesign-ui-and-dashboard-logic-zq272e
+    <div className="landing-shell" style={{ minHeight: '100vh', position: 'relative' }}>
+      {/* ── Background ── */}
+      <div className="island-bg">
+        <div className="aurora-blob blob-1" />
+        <div className="aurora-blob blob-2" />
+        <div className="aurora-blob blob-3" />
+      </div>
+      <div className="island-overlay" />
+
+      {/* ── Hero ── */}
+      <section className="hero">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+=======
     <header className="site-nav">
       <button className="brand-mark" onClick={() => navigate('landing')} aria-label="Go to AtlasStack home">
         <span className="brand-glyph">A</span>
@@ -125,6 +169,7 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
           GitHub
         </a>
       </nav>
+>>>>>>> main
 
       <div className="nav-actions">
         <button className="ghost-button" onClick={() => navigate('dashboard')}>View runs</button>
