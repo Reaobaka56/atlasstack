@@ -105,7 +105,7 @@ const Navbar = ({ onNavigate, currentPage, scrolled }: {
           <Show when="signed-in">
             <button className="nav-link" onClick={() => onNavigate('dashboard')}>Dashboard</button>
             <button className="nav-link" onClick={() => onNavigate('eye')}>AgentEye</button>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </Show>
           <Show when="signed-out">
             <SignInButton mode="modal">
@@ -237,7 +237,7 @@ const LandingPage = ({ onNavigateToDashboard, isPro }: {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', position: 'relative' }}>
+    <div className="landing-shell" style={{ minHeight: '100vh', position: 'relative' }}>
       {/* ── Background ── */}
       <div className="island-bg">
         <div className="aurora-blob blob-1" />
