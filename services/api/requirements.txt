@@ -53,7 +53,7 @@ huggingface_hub==0.24.6
 pytest==7.4.4
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
-mypy==1.10.0
+mypy==1.19.1
 black==24.4.2
 flake8==7.0.0
 isort==5.13.2
