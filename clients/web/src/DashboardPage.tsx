@@ -11,6 +11,35 @@ import {
 import ArchitectureMap from './ArchitectureMap';
 import { useAuth, useClerk } from '@clerk/react';
 
+// ── Error Boundary ──────────────────────────────────────────────
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    // You can log error info here
+    console.error('ErrorBoundary caught:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{padding: 32, color: 'red', background: 'black', minHeight: '100vh'}}>
+          <h1>Something went wrong.</h1>
+          <pre>{this.state.error?.toString()}</pre>
+          <p>Check the browser console for more details.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+
 // ── Helpers ────────────────────────────────────────────────────────
 const scoreColor = (s: number | undefined | null) => {
   if (typeof s !== 'number' || isNaN(s)) return '#ef4444';
