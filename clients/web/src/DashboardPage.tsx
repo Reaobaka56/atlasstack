@@ -2,14 +2,17 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth, UserButton, useUser } from '@clerk/react';
 import { motion } from 'motion/react';
 import {
+  ArrowRight,
   ArrowUpRight,
   CheckCircle2,
   CircleDot,
   Clock3,
   Filter,
   GitPullRequest,
+  Github,
   LayoutDashboard,
   Plus,
+  RefreshCw,
   Search,
   ShieldAlert,
   Sparkles,
@@ -138,7 +141,67 @@ const GitHubStats = ({ user }: { user: any }) => {
   );
 };
 
-export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void }> = ({ apiUrl, onCreateRun }) => {
+const GitHubRepos = ({ apiUrl, onAnalyze }: { apiUrl: string; onAnalyze: (url: string) => void }) => {
+  const { getToken } = useAuth();
+  const [repos, setRepos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRepos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${apiUrl}/api/v1/auth/github/repos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRepos(data);
+      } else {
+        const data = await res.json();
+        setError(data.detail || 'Failed to fetch repos');
+      }
+    } catch (err) {
+      setError('Connection failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchRepos(); }, []);
+
+  if (error) return (
+    <div className="repos-error-state">
+      <Github size={24} />
+      <p>Connect GitHub to see your repositories</p>
+      <button className="primary-button" onClick={() => window.location.href = `${apiUrl}/api/v1/auth/github/login`}>
+        Connect Account
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="github-repos-grid">
+      <div className="flex justify-between items-center mb-4">
+        <h3>GitHub Repositories</h3>
+        <button className="ghost-button mini" onClick={fetchRepos}><RefreshCw size={14} /></button>
+      </div>
+      {loading ? <p>Syncing repositories...</p> : (
+        <div className="repo-mini-list">
+          {repos.slice(0, 5).map(repo => (
+            <div key={repo.name} className="repo-mini-item">
+              <span>{repo.name}</span>
+              <button onClick={() => onAnalyze(repo.url)}>Scan <ArrowRight size={14} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; onAnalyze?: (url: string) => void }> = ({ apiUrl, onCreateRun, onAnalyze }) => {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [query, setQuery] = useState('');
@@ -206,7 +269,7 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void }
     <main className="dashboard-page">
       <section className="dashboard-hero">
         <div className="flex items-center gap-3 mb-2">
-          <img src="/logo_modern.png" alt="" className="brand-logo-img" />
+          <img src="/logo.png" alt="" className="brand-logo-img" />
           <span className="eyebrow"><LayoutDashboard size={16} /> {user?.firstName ? `${user.firstName}'s` : 'Workspace'} dashboard</span>
         </div>
         <div>
@@ -290,6 +353,9 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void }
 
         <aside className="insight-panel">
           <GitHubStats user={user} />
+          <div className="mt-6">
+            <GitHubRepos apiUrl={apiUrl} onAnalyze={onAnalyze || ((url) => console.log('Analyze', url))} />
+          </div>
           <div className="mt-6">
             <span className="eyebrow"><Filter size={16} /> Recommendation</span>
             <h2>Review architecture drift first.</h2>

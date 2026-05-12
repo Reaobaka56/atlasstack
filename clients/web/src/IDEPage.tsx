@@ -125,7 +125,13 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
     scrollToBottom();
   }, [chatMessages, isAiTyping]);
 
-  // WebSocket for Chat — uses live Clerk token
+  useEffect(() => {
+    if (repoUrl && step === 'connect') {
+      setStep('analyzing');
+      fetchMvpData();
+    }
+  }, [repoUrl]);
+
   useEffect(() => {
     let socket: WebSocket;
     (async () => {
@@ -544,9 +550,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-[60] p-4 flex items-center justify-between backdrop-blur-md bg-black/20 border-b border-white/5">
          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
-              <Zap className="w-4 h-4 text-white fill-white" />
-            </div>
+             <img src="/logo.png" alt="" className="w-8 h-8 rounded-xl" />
             <h1 className="text-lg font-black text-white tracking-tighter">ATLAS<span className="text-silver-500">STACK</span></h1>
          </div>
          <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10">

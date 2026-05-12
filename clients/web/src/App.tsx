@@ -23,13 +23,14 @@ import {
   Zap,
 } from 'lucide-react';
 import { DashboardPage } from './DashboardPage';
+import { IDEPage } from './IDEPage';
 import { ClerkProvider, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import './index.css';
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Zml0LW1hbW1hbC02MC5jbGVyay5hY2NvdW50cy5kZXYk';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-type Page = 'landing' | 'dashboard' | 'studio';
+type Page = 'landing' | 'dashboard' | 'studio' | 'ide';
 
 const routeFromHash = (): Page => {
   const route = window.location.hash.replace('#/', '').replace('#', '') as Page;
@@ -118,7 +119,7 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
   return (
     <header className="site-nav">
       <button className="brand-mark" onClick={() => navigate('landing')} aria-label="Go to AtlasStack home">
-        <img src="/logo_modern.png" alt="AtlasStack" className="brand-logo-img" />
+        <img src="/logo.png" alt="AtlasStack" className="brand-logo-img" />
         <span>AtlasStack</span>
       </button>
 
@@ -267,43 +268,66 @@ const LandingPage = ({ navigate }: { navigate: (page: Page) => void }) => {
   );
 };
 
-const StudioPage = ({ navigate }: { navigate: (page: Page) => void }) => (
-  <main className="studio-page">
-    <section className="studio-card">
-      <div className="studio-copy">
-        <span className="eyebrow"><GitBranch size={16} /> New run</span>
-        <h1>Create an AtlasStack audit</h1>
-        <p>Choose the repository, desired outcome, and deliverables. The redesigned flow keeps setup short and sends finished work straight to the dashboard.</p>
-      </div>
-      <form className="run-form" onSubmit={(event) => { event.preventDefault(); navigate('dashboard'); }}>
-        <label>
-          Repository URL
-          <input placeholder="https://github.com/acme/product" />
-        </label>
-        <label>
-          Goal
-          <select defaultValue="architecture">
-            <option value="architecture">Architecture review</option>
-            <option value="security">Security scan</option>
-            <option value="upgrade">Dependency upgrade plan</option>
-          </select>
-        </label>
-        <label>
-          Output
-          <select defaultValue="runbook">
-            <option value="runbook">Runbook + prioritized fixes</option>
-            <option value="pull-request">Pull request draft</option>
-            <option value="brief">Executive brief</option>
-          </select>
-        </label>
-        <button className="primary-button large" type="submit">Generate run <Sparkles size={16} /></button>
-      </form>
-    </section>
-  </main>
-);
+const StudioPage = ({ navigate }: { navigate: (page: Page, params?: any) => void }) => {
+  const [url, setUrl] = useState('');
+  return (
+    <main className="studio-page">
+      <section className="studio-card">
+        <div className="studio-copy">
+          <span className="eyebrow"><GitBranch size={16} /> New run</span>
+          <h1>Create an AtlasStack audit</h1>
+          <p>Choose the repository, desired outcome, and deliverables. The redesigned flow keeps setup short and sends finished work straight to the dashboard.</p>
+        </div>
+        <form className="run-form" onSubmit={(event) => { 
+          event.preventDefault(); 
+          if (url) navigate('ide', { repo: url }); 
+        }}>
+          <label>
+            Repository URL
+            <input 
+              placeholder="https://github.com/acme/product" 
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Goal
+            <select defaultValue="architecture">
+              <option value="architecture">Architecture review</option>
+              <option value="security">Security scan</option>
+              <option value="upgrade">Dependency upgrade plan</option>
+            </select>
+          </label>
+          <label>
+            Output
+            <select defaultValue="runbook">
+              <option value="runbook">Runbook + prioritized fixes</option>
+              <option value="pull-request">Pull request draft</option>
+              <option value="brief">Executive brief</option>
+            </select>
+          </label>
+          <button className="primary-button large" type="submit">Generate run <Sparkles size={16} /></button>
+        </form>
+      </section>
+    </main>
+  );
+};
 
 export default function App() {
-  const { page, navigate } = useHashRoute();
+  const [page, setPage] = useState<Page>(routeFromHash());
+  const [params, setParams] = useState<any>({});
+
+  useEffect(() => {
+    const onHashChange = () => setPage(routeFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const navigate = (nextPage: Page, nextParams: any = {}) => {
+    setParams(nextParams);
+    window.location.hash = nextPage === 'landing' ? '#/' : `#/${nextPage}`;
+  };
 
   return (
     <div className="app-shell">
@@ -311,13 +335,14 @@ export default function App() {
       <div className="bg-orb orb-two" />
       <Navbar page={page} navigate={navigate} />
       {page === 'landing' && <LandingPage navigate={navigate} />}
-        {page === 'dashboard' && (
-          <AuthGatedDashboard apiUrl={API_URL} onCreateRun={() => navigate('studio')} />
-        )}
+      {page === 'dashboard' && (
+        <AuthGatedDashboard apiUrl={API_URL} onCreateRun={() => navigate('studio')} navigate={navigate} />
+      )}
       {page === 'studio' && <StudioPage navigate={navigate} />}
+      {page === 'ide' && <IDEPage repoUrl={params.repo || ''} onBack={() => navigate('dashboard')} apiUrl={API_URL} />}
       <footer className="site-footer">
         <div className="footer-brand">
-          <img src="/logo_modern.png" alt="" className="brand-logo-img-small" />
+          <img src="/logo.png" alt="" className="brand-logo-img-small" />
           <span>AtlasStack</span>
         </div>
         <span>The autonomous engineering engine for professional teams.</span>
@@ -327,7 +352,7 @@ export default function App() {
   );
 }
 
-function AuthGatedDashboard({ apiUrl, onCreateRun }: { apiUrl: string; onCreateRun: () => void }) {
+function AuthGatedDashboard({ apiUrl, onCreateRun, navigate }: { apiUrl: string; onCreateRun: () => void; navigate: (page: Page, params?: any) => void }) {
   const { isSignedIn, isLoaded } = useAuth();
   
   if (!isLoaded) return <div className="loading-screen">Loading...</div>;
@@ -347,5 +372,5 @@ function AuthGatedDashboard({ apiUrl, onCreateRun }: { apiUrl: string; onCreateR
     );
   }
   
-  return <DashboardPage apiUrl={apiUrl} onCreateRun={onCreateRun} />;
+  return <DashboardPage apiUrl={apiUrl} onCreateRun={onCreateRun} onAnalyze={(url) => navigate('ide', { repo: url })} />;
 }
