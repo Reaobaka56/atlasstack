@@ -55,13 +55,14 @@ class AnalysisOrchestrator:
         self.scanner = get_scanner()
         self.collector = TrainingDataCollector()
 
-    async def analyze_repository(self, repo_url: str, is_local: bool = False) -> dict:
+    async def analyze_repository(self, repo_url: str, is_local: bool = False, github_token: str = None) -> dict:
         """
         Analyze a repository (remote or local).
         
         Args:
             repo_url: The URL or local path to the repository.
             is_local: If True, treats repo_url as a local path.
+            github_token: Optional token for private repository access.
             
         Returns:
             A structured dictionary containing:
@@ -84,6 +85,11 @@ class AnalysisOrchestrator:
             logger.error(f"Insecure or invalid repo URL blocked: {repo_url}")
             return self._get_error_response("Invalid repository URL format. Only standard GitHub/GitLab/Bitbucket URLs are allowed.")
 
+        # Prepare authenticated URL if token is provided
+        cloning_url = repo_url
+        if github_token and "github.com" in repo_url:
+            cloning_url = repo_url.replace("https://github.com/", f"https://x-access-token:{github_token}@github.com/")
+
         temp_dir = tempfile.mkdtemp()
         try:
             logger.info(f"Cloning {repo_url} into {temp_dir}")
@@ -92,7 +98,7 @@ class AnalysisOrchestrator:
             await asyncio.wait_for(
                 loop.run_in_executor(
                     _executor,
-                    lambda: git.Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
+                    lambda: git.Repo.clone_from(cloning_url, temp_dir, depth=1, single_branch=True)
                 ),
                 timeout=30.0
             )

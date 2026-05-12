@@ -23,7 +23,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { DashboardPage } from './DashboardPage';
+import { ClerkProvider, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import './index.css';
+
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Zml0LW1hbW1hbC02MC5jbGVyay5hY2NvdW50cy5kZXYk';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 type Page = 'landing' | 'dashboard' | 'studio';
 
@@ -99,9 +103,12 @@ const demoRows = [
 
 const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void }) => {
   const [open, setOpen] = useState(false);
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+
   const links = useMemo(
     () => [
-      { label: 'How it works', onClick: () => document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth' }) },
+      { label: 'Capabilities', onClick: () => document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth' }) },
       { label: 'Dashboard', onClick: () => navigate('dashboard') },
       { label: 'Studio', onClick: () => navigate('studio') },
     ],
@@ -111,7 +118,7 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
   return (
     <header className="site-nav">
       <button className="brand-mark" onClick={() => navigate('landing')} aria-label="Go to AtlasStack home">
-        <span className="brand-glyph">A</span>
+        <img src="/logo_modern.png" alt="AtlasStack" className="brand-logo-img" />
         <span>AtlasStack</span>
       </button>
 
@@ -121,14 +128,19 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
             {link.label}
           </button>
         ))}
-        <a href="https://github.com/Reaobaka56/atlasstack" target="_blank" rel="noreferrer">
-          GitHub
-        </a>
       </nav>
 
       <div className="nav-actions">
-        <button className="ghost-button" onClick={() => navigate('dashboard')}>View runs</button>
-        <button className="primary-button" onClick={() => navigate('studio')}>Start scan <ArrowRight size={16} /></button>
+        {isSignedIn ? (
+          <>
+            <button className="ghost-button" onClick={() => navigate('dashboard')}>My runs</button>
+            <UserButton afterSignOutUrl="/" />
+          </>
+        ) : (
+          <SignInButton mode="modal">
+            <button className="primary-button">Sign in</button>
+          </SignInButton>
+        )}
       </div>
 
       <button className="menu-button" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
@@ -142,7 +154,11 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
               {link.label}
             </button>
           ))}
-          <button onClick={() => { navigate('studio'); setOpen(false); }}>Start scan</button>
+          {!isSignedIn && (
+            <SignInButton mode="modal">
+              <button>Sign in</button>
+            </SignInButton>
+          )}
         </div>
       )}
     </header>
@@ -187,72 +203,69 @@ const HeroPreview = () => (
   </motion.div>
 );
 
-const LandingPage = ({ navigate }: { navigate: (page: Page) => void }) => (
-  <main>
-    <section className="hero-shell">
-      <div className="hero-copy">
-        <motion.div className="eyebrow" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <Sparkles size={16} /> AI software delivery engine
-        </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          Move from messy codebase to shippable fix plan in one focused workspace.
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          A Bluma-inspired, lightweight interface for creating repo audits, architecture maps, security summaries, and AI-assisted remediation workflows without stitching together separate tools.
-        </motion.p>
-        <motion.div className="hero-actions" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <button className="primary-button large" onClick={() => navigate('studio')}>
-            Create a run <Play size={16} />
-          </button>
-          <button className="ghost-button large" onClick={() => navigate('dashboard')}>
-            Explore dashboard <ChevronRight size={16} />
-          </button>
-        </motion.div>
-        <div className="trust-strip">
-          {useCases.map((item) => (
-            <span key={item}><CheckCircle2 size={15} /> {item}</span>
-          ))}
+const LandingPage = ({ navigate }: { navigate: (page: Page) => void }) => {
+  const { isSignedIn } = useAuth();
+  
+  return (
+    <main>
+      <section className="hero-shell">
+        <div className="hero-copy">
+          <motion.div className="eyebrow" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <Sparkles size={16} /> Autonomous Software Delivery
+          </motion.div>
+          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            Ship verified fix plans, not just empty pull requests.
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            AtlasStack scans your repository context, identifies architecture drift, finds high-risk bugs, and generates production-ready patches with a single click.
+          </motion.p>
+          <motion.div className="hero-actions" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <button className="primary-button large" onClick={() => navigate('studio')}>
+              Start a scan <Play size={16} />
+            </button>
+            <button className="ghost-button large" onClick={() => navigate('dashboard')}>
+              {isSignedIn ? 'My dashboard' : 'Sign in to explore'} <ChevronRight size={16} />
+            </button>
+          </motion.div>
         </div>
-      </div>
-      <HeroPreview />
-    </section>
+        <HeroPreview />
+      </section>
 
-    <section id="workflow" className="section-wrap">
-      <div className="section-heading">
-        <span className="eyebrow centered"><Zap size={16} /> What AtlasStack helps you ship</span>
-        <h2>Designed for high-volume engineering review where speed and consistency matter.</h2>
-      </div>
-      <div className="feature-grid">
-        {featureCards.map((card) => (
-          <article className="soft-card" key={card.title}>
-            <div className="card-icon">{card.icon}</div>
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
+      <section id="workflow" className="section-wrap">
+        <div className="section-heading">
+          <span className="eyebrow centered"><Zap size={16} /> Core Capabilities</span>
+          <h2>Professional engineering review at scale.</h2>
+        </div>
+        <div className="feature-grid">
+          <article className="soft-card">
+            <div className="card-icon"><ShieldCheck size={20} /></div>
+            <h3>Bug & Security Audit</h3>
+            <p>Deep scan for SQLi, XSS, and logic flaws with AI-reasoned evidence.</p>
           </article>
-        ))}
-      </div>
-    </section>
+          <article className="soft-card">
+            <div className="card-icon"><GitBranch size={20} /></div>
+            <h3>Architecture Mapping</h3>
+            <p>Visualize dependencies and data flow to prevent architectural drift.</p>
+          </article>
+          <article className="soft-card">
+            <div className="card-icon"><Code2 size={20} /></div>
+            <h3>Remediation Engine</h3>
+            <p>Don't just find problems. Generate real patches and open PRs instantly.</p>
+          </article>
+        </div>
+      </section>
 
-    <section className="workflow-band">
-      {flowSteps.map((step, index) => (
-        <article key={step.title}>
-          <span>{String(index + 1).padStart(2, '0')}</span>
-          <h3>{step.title}</h3>
-          <p>{step.body}</p>
-        </article>
-      ))}
-    </section>
-
-    <section className="cta-panel">
-      <div>
-        <span className="eyebrow"><Code2 size={16} /> Studio ready</span>
-        <h2>Launch a fresh audit workspace with only the routes your team needs.</h2>
-        <p>Landing, dashboard, and studio are now the core product paths—no extra observability screens or dead-end auth gates.</p>
-      </div>
-      <button className="primary-button large" onClick={() => navigate('studio')}>Open studio <ArrowRight size={16} /></button>
-    </section>
-  </main>
-);
+      <section className="cta-panel">
+        <div>
+          <span className="eyebrow"><Code2 size={16} /> Ready for Private Repos</span>
+          <h2>Connect your GitHub and audit any codebase.</h2>
+          <p>Full support for private repositories, organizational audits, and team-wide security posture tracking.</p>
+        </div>
+        <button className="primary-button large" onClick={() => navigate('studio')}>Get started <ArrowRight size={16} /></button>
+      </section>
+    </main>
+  );
+};
 
 const StudioPage = ({ navigate }: { navigate: (page: Page) => void }) => (
   <main className="studio-page">
@@ -298,13 +311,41 @@ export default function App() {
       <div className="bg-orb orb-two" />
       <Navbar page={page} navigate={navigate} />
       {page === 'landing' && <LandingPage navigate={navigate} />}
-      {page === 'dashboard' && <DashboardPage onCreateRun={() => navigate('studio')} />}
+        {page === 'dashboard' && (
+          <AuthGatedDashboard apiUrl={API_URL} onCreateRun={() => navigate('studio')} />
+        )}
       {page === 'studio' && <StudioPage navigate={navigate} />}
       <footer className="site-footer">
-        <span>AtlasStack</span>
-        <span>AI runbooks for code review, architecture, and remediation.</span>
+        <div className="footer-brand">
+          <img src="/logo_modern.png" alt="" className="brand-logo-img-small" />
+          <span>AtlasStack</span>
+        </div>
+        <span>The autonomous engineering engine for professional teams.</span>
         <a href="/atlasstack.vsix" download><Download size={14} /> VS Code extension</a>
       </footer>
     </div>
   );
+}
+
+function AuthGatedDashboard({ apiUrl, onCreateRun }: { apiUrl: string; onCreateRun: () => void }) {
+  const { isSignedIn, isLoaded } = useAuth();
+  
+  if (!isLoaded) return <div className="loading-screen">Loading...</div>;
+  
+  if (!isSignedIn) {
+    return (
+      <div className="auth-gate-full">
+        <div className="auth-card">
+          <Zap size={40} className="text-indigo-500 mb-6" />
+          <h1>Sign in to AtlasStack</h1>
+          <p>Access your dashboard, runs, and AI audit reports.</p>
+          <SignInButton mode="modal">
+            <button className="primary-button large">Continue to Dashboard</button>
+          </SignInButton>
+        </div>
+      </div>
+    );
+  }
+  
+  return <DashboardPage apiUrl={apiUrl} onCreateRun={onCreateRun} />;
 }

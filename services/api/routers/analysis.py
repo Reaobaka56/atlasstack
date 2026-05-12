@@ -285,9 +285,16 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             tech_stack={"frameworks": ["Unknown"], "databases": ["Unknown"]}
         )
         
+    github_token = None
+    if user_id != "anonymous":
+        user_result = await db.execute(select(UserRecord).where(UserRecord.id == user_id))
+        user_rec = user_result.scalar_one_or_none()
+        if user_rec and user_rec.github_token:
+            github_token = decrypt_token(user_rec.github_token)
+
     try:
         orchestrator = AnalysisOrchestrator(hf_token=hf_token)
-        result_json = await orchestrator.analyze_repository(str(request.repo_url))
+        result_json = await orchestrator.analyze_repository(str(request.repo_url), github_token=github_token)
         
         parsed = MVPAnalysisResponse(**result_json)
         parsed.id = analysis_id

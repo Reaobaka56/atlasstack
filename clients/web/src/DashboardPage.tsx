@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useAuth, UserButton, useUser } from '@clerk/react';
 import { motion } from 'motion/react';
 import {
   ArrowUpRight,
@@ -68,7 +69,7 @@ const TIPS = [
 ];
 
 // ── Types ───────────────────────────────────────────────────────────
-type RunStatus = 'Ready' | 'Review' | 'Running';
+type RunStatus = 'Ready' | 'Review' | 'Running' | 'pending' | 'completed' | 'failed';
 type Severity = 'Low' | 'Medium' | 'High';
 
 interface AuditRun {
@@ -83,41 +84,16 @@ interface AuditRun {
   outputs: string[];
 }
 
-const runs: AuditRun[] = [
-  {
-    id: 'RUN-1042',
-    repo: 'atlasstack/platform',
-    goal: 'Security and auth callback review',
-    status: 'Review',
-    score: 86,
-    severity: 'Medium',
-    updated: '12 min ago',
-    owner: 'Core AI',
-    outputs: ['runbook.md', 'patch.diff', 'risk brief'],
-  },
-  {
-    id: 'RUN-1041',
-    repo: 'client/web',
-    goal: 'Dashboard route simplification',
-    status: 'Ready',
-    score: 94,
-    severity: 'Low',
-    updated: '48 min ago',
-    owner: 'Frontend',
-    outputs: ['ux brief', 'component map'],
-  },
-  {
-    id: 'RUN-1040',
-    repo: 'services/api',
-    goal: 'Dependency upgrade planning',
-    status: 'Running',
-    score: 71,
-    severity: 'High',
-    updated: '1 hr ago',
-    owner: 'Platform',
-    outputs: ['upgrade plan'],
-  },
-];
+interface BackendAnalysis {
+  id: string;
+  repo_url: string;
+  status: string;
+  health_score: number;
+  created_at: string;
+  summary?: string;
+}
+
+const runs: AuditRun[] = [];
 
 const metrics = [
   { label: 'Active runs', value: '18', trend: '+6 this week', icon: <CircleDot size={19} /> },
@@ -129,12 +105,97 @@ const metrics = [
 const statusClass = (status: RunStatus) => status.toLowerCase();
 const severityClass = (severity: Severity) => severity.toLowerCase();
 
-export const DashboardPage: React.FC<{ onCreateRun: () => void }> = ({ onCreateRun }) => {
+const GitHubStats = ({ user }: { user: any }) => {
+  if (!user) return null;
+  const githubAccount = user.externalAccounts?.find((a: any) => a.provider === 'github');
+  
+  return (
+    <article className="github-stats-card">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="github-avatar">
+          {githubAccount?.imageUrl ? <img src={githubAccount.imageUrl} alt="" /> : <Github size={20} />}
+        </div>
+        <div>
+          <h4 className="m-0 text-sm font-semibold">{githubAccount?.username || user.username || 'GitHub Connected'}</h4>
+          <span className="text-xs text-indigo-500 font-medium">Verified Identity</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 border-t border-indigo-100/30 pt-4">
+        <div className="stat-item">
+          <span className="label">Repos</span>
+          <span className="value">--</span>
+        </div>
+        <div className="stat-item">
+          <span className="label">Stars</span>
+          <span className="value">--</span>
+        </div>
+        <div className="stat-item">
+          <span className="label">Private</span>
+          <span className="value">Yes</span>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void }> = ({ apiUrl, onCreateRun }) => {
+  const { getToken } = useAuth();
+  const { user } = useUser();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'All' | RunStatus>('All');
+  const [backendRuns, setBackendRuns] = useState<AuditRun[]>([]);
+
+  const metrics = useMemo(() => [
+    { label: 'Active runs', value: String(backendRuns.length), trend: 'Real-time', icon: <CircleDot size={19} /> },
+    { label: 'Health avg', value: backendRuns.length > 0 ? `${Math.round(backendRuns.reduce((acc, r) => acc + r.score, 0) / backendRuns.length)}%` : '100%', trend: 'Global index', icon: <Activity size={19} /> },
+    { label: 'PR drafts', value: String(backendRuns.filter(r => r.status === 'Review').length), trend: 'Verified fixes', icon: <GitPullRequest size={19} /> },
+  ], [backendRuns]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalyses = async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        const response = await fetch(`${apiUrl}/api/v1/analyses`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const analyses: BackendAnalysis[] = data.analyses || [];
+          
+          const mappedRuns: AuditRun[] = analyses.map(a => ({
+            id: a.id,
+            repo: a.repo_url.split('/').pop() || a.repo_url,
+            goal: a.summary || 'General repo analysis',
+            status: (a.status === 'completed' ? 'Ready' : a.status === 'pending' ? 'Running' : 'Review') as RunStatus,
+            score: a.health_score || 0,
+            severity: (a.health_score < 40 ? 'High' : a.health_score < 70 ? 'Medium' : 'Low') as Severity,
+            updated: relativeTime(a.created_at),
+            owner: 'System',
+            outputs: ['runbook.md', 'summary.json'],
+          }));
+
+          setBackendRuns(mappedRuns);
+        }
+      } catch (error) {
+        console.error('Failed to fetch analyses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyses();
+  }, [apiUrl, getToken]);
+
+  const allRuns = useMemo(() => [...backendRuns, ...runs], [backendRuns]);
 
   const filteredRuns = useMemo(() => {
-    return runs.filter((run) => {
+    return allRuns.filter((run) => {
       const matchesQuery = `${run.repo} ${run.goal} ${run.owner}`.toLowerCase().includes(query.toLowerCase());
       const matchesStatus = status === 'All' || run.status === status;
       return matchesQuery && matchesStatus;
@@ -144,13 +205,16 @@ export const DashboardPage: React.FC<{ onCreateRun: () => void }> = ({ onCreateR
   return (
     <main className="dashboard-page">
       <section className="dashboard-hero">
+        <div className="flex items-center gap-3 mb-2">
+          <img src="/logo_modern.png" alt="" className="brand-logo-img" />
+          <span className="eyebrow"><LayoutDashboard size={16} /> {user?.firstName ? `${user.firstName}'s` : 'Workspace'} dashboard</span>
+        </div>
         <div>
-          <span className="eyebrow"><LayoutDashboard size={16} /> Workspace dashboard</span>
-          <h1>Track every audit from first scan to shippable remediation.</h1>
-          <p>The dashboard now focuses on three useful jobs: monitor runs, review generated outputs, and start the next scan.</p>
+          <h1>Welcome back, {user?.firstName || 'Engineer'}.</h1>
+          <p>You have {backendRuns.length} active analyses. Connect more repositories to generate deeper architectural insights.</p>
         </div>
         <button className="primary-button large" onClick={onCreateRun}>
-          <Plus size={17} /> New run
+          <Plus size={17} /> New scan
         </button>
       </section>
 
@@ -176,7 +240,12 @@ export const DashboardPage: React.FC<{ onCreateRun: () => void }> = ({ onCreateR
           <div className="panel-header">
             <div>
               <span className="eyebrow"><Sparkles size={16} /> Recent workflows</span>
-              <h2>Run queue</h2>
+              <div className="flex justify-between items-center w-full">
+                <h2>Queue</h2>
+                <div className="user-nav-mini">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </div>
             </div>
             <div className="toolbar">
               <div className="search-box">
@@ -220,15 +289,18 @@ export const DashboardPage: React.FC<{ onCreateRun: () => void }> = ({ onCreateR
         </div>
 
         <aside className="insight-panel">
-          <span className="eyebrow"><Filter size={16} /> Next best action</span>
-          <h2>Review the auth callback patch first.</h2>
-          <p>AtlasStack found one medium-risk token lifecycle issue and prepared a minimal patch. Review it before generating broader refactors.</p>
-          <div className="priority-stack">
-            <div><strong>1</strong><span>Approve patch.diff for atlasstack/platform</span></div>
-            <div><strong>2</strong><span>Export security brief for stakeholders</span></div>
-            <div><strong>3</strong><span>Schedule weekly architecture drift scan</span></div>
+          <GitHubStats user={user} />
+          <div className="mt-6">
+            <span className="eyebrow"><Filter size={16} /> Recommendation</span>
+            <h2>Review architecture drift first.</h2>
+            <p>AtlasStack identified potential misalignment in your core data flow. Review the generated map to align with best practices.</p>
+            <div className="priority-stack">
+              <div><strong>1</strong><span>Audit private repository security posture</span></div>
+              <div><strong>2</strong><span>Generate architecture-aware remediation patches</span></div>
+              <div><strong>3</strong><span>Schedule automated weekly drift scans</span></div>
+            </div>
+            <button className="ghost-button wide">Open review queue</button>
           </div>
-          <button className="ghost-button wide">Open review queue</button>
         </aside>
       </section>
     </main>
