@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Sparkles,
   TrendingUp,
+  Activity,
 } from 'lucide-react';
 
 // ── Error Boundary ──────────────────────────────────────────────

@@ -8,7 +8,8 @@
   ],
   "functions": {
     "api/index.py": {
-      "runtime": "vercel-python@1.0.3"
+      "runtime": "python3.9"
     }
   }
 }
+
