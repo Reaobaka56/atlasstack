@@ -2,7 +2,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth, UserButton, useUser } from '@clerk/react';
 import { motion } from 'motion/react';
 import {
-  Activity,
   ArrowRight,
   ArrowUpRight,
   CheckCircle2,
@@ -10,7 +9,6 @@ import {
   Clock3,
   Filter,
   GitPullRequest,
-  Github,
   LayoutDashboard,
   Plus,
   RefreshCw,
@@ -22,7 +20,7 @@ import {
 } from 'lucide-react';
 
 // ── Error Boundary ──────────────────────────────────────────────
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -36,9 +34,9 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{padding: 32, color: '#ef4444', background: '#000', minHeight: '100vh', fontFamily: 'sans-serif'}}>
+        <div style={{ padding: 32, color: '#ef4444', background: '#000', minHeight: '100vh', fontFamily: 'sans-serif' }}>
           <h1>Something went wrong.</h1>
-          <pre style={{background: '#111', padding: 16, borderRadius: 8}}>{this.state.error?.toString()}</pre>
+          <pre style={{ background: '#111', padding: 16, borderRadius: 8 }}>{this.state.error?.toString()}</pre>
           <p>Check the browser console for more details.</p>
         </div>
       );
@@ -116,7 +114,7 @@ const severityClass = (severity: Severity) => severity.toLowerCase();
 const GitHubStats = ({ user }: { user: any }) => {
   if (!user) return null;
   const githubAccount = user.externalAccounts?.find((a: any) => a.provider === 'github');
-  
+
   return (
     <article className="github-stats-card">
       <div className="flex items-center gap-3 mb-4">
@@ -235,7 +233,7 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; 
         if (response.ok) {
           const data = await response.json();
           const analyses: BackendAnalysis[] = data.analyses || [];
-          
+
           const mappedRuns: AuditRun[] = analyses.map(a => ({
             id: a.id,
             repo: a.repo_url?.split('/').pop() || a.repo_url || 'Unknown',
@@ -349,7 +347,7 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; 
                   <span className={`severity-pill ${severityClass(run.severity)}`}><ShieldAlert size={14} /> {run.severity}</span>
                   <strong>{run.score}%</strong>
                   <small><Clock3 size={13} /> {run.updated}</small>
-                  <button 
+                  <button
                     aria-label={`Open ${run.repo}`}
                     onClick={() => {
                       if (onAnalyze) {
