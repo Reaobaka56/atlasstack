@@ -44,9 +44,11 @@ class AnalysisOrchestrator:
         self.openrouter_key = os.environ.get("OPENROUTER_API_KEY")
         self.default_model = os.environ.get("DEFAULT_MODEL", DEFAULT_MODEL)
         
-        if self.gemini_key:
+        # 🟢 CRITICAL: Prioritize Hugging Face/OpenRouter as the primary engine
+        # We only use Gemini as a secondary fallback or if explicitly configured without HF
+        if self.gemini_key and not self.hf_token:
             genai.configure(api_key=self.gemini_key)
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
         else:
             self.gemini_model = None
 
@@ -178,7 +180,7 @@ class AnalysisOrchestrator:
                     )
                 except Exception as e:
                     # 🚀 AUTO-RECOVERY: If 32B or other model 404s, force 7B and retry
-                    if ("404" in str(e) or "Not Found" in str(e)) and self.default_model != "Qwen/Qwen2.5-Coder-7B-Instruct":
+                    if ("404" in str(e) or "400" in str(e) or "Not Found" in str(e) or "Bad Request" in str(e)) and self.default_model != "Qwen/Qwen2.5-Coder-7B-Instruct":
                         logger.warning(f"Model {self.default_model} not found. Auto-recovering with 7B model...")
                         response = await asyncio.wait_for(
                             call_llm_with_retry(

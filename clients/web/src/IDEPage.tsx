@@ -125,70 +125,6 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
     scrollToBottom();
   }, [chatMessages, isAiTyping]);
 
-  useEffect(() => {
-    if (repoUrl && step === 'connect') {
-      setStep('analyzing');
-      fetchMvpData();
-    }
-  }, [repoUrl]);
-
-  useEffect(() => {
-    let socket: WebSocket;
-    (async () => {
-      const clerkToken = await getToken();
-      if (!clerkToken) return;
-      const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(clerkToken);
-      socket = new WebSocket(wsUrl);
-      webSocket.current = socket;
-      socket.onopen = () => console.log('Web Chat Socket Connected');
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'chat_response') {
-            setIsAiTyping(false);
-            setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
-          }
-        } catch (e) {
-          console.error('WS Error:', e);
-        }
-      };
-      socket.onclose = () => console.log('Web Chat Socket Disconnected');
-    })();
-    return () => socket?.close();
-  }, [API_URL, getToken]);
-
-  const handleSendChat = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!chatInput.trim() || !webSocket.current) return;
-
-    const text = chatInput;
-    setChatMessages(prev => [...prev, { role: 'user', text }]);
-    setChatInput('');
-    setIsAiTyping(true);
-
-    webSocket.current.send(JSON.stringify({
-      type: 'chat',
-      text: text
-    }));
-  };
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3500);
-  };
-
-  // Animated analysis steps
-  useEffect(() => {
-    if (step !== 'analyzing') return;
-    const steps = ['Cloning repository...', 'Parsing file tree...', 'Running AI analysis...', 'Scoring health...'];
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % steps.length;
-      setAnalyzingStep(i);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, [step]);
-
   const fetchMvpData = async () => {
     const targetRepo = repoInput;
     const clerkToken = await getToken();
@@ -267,6 +203,65 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
       setTimeout(() => setStep('dashboard'), 500);
     });
   };
+
+
+  useEffect(() => {
+    let socket: WebSocket;
+    (async () => {
+      const clerkToken = await getToken();
+      if (!clerkToken) return;
+      const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws?token=' + encodeURIComponent(clerkToken);
+      socket = new WebSocket(wsUrl);
+      webSocket.current = socket;
+      socket.onopen = () => console.log('Web Chat Socket Connected');
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'chat_response') {
+            setIsAiTyping(false);
+            setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+          }
+        } catch (e) {
+          console.error('WS Error:', e);
+        }
+      };
+      socket.onclose = () => console.log('Web Chat Socket Disconnected');
+    })();
+    return () => socket?.close();
+  }, [API_URL, getToken]);
+
+  const handleSendChat = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || !webSocket.current) return;
+
+    const text = chatInput;
+    setChatMessages(prev => [...prev, { role: 'user', text }]);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    webSocket.current.send(JSON.stringify({
+      type: 'chat',
+      text: text
+    }));
+  };
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  // Animated analysis steps
+  useEffect(() => {
+    if (step !== 'analyzing') return;
+    const steps = ['Cloning repository...', 'Parsing file tree...', 'Running AI analysis...', 'Scoring health...'];
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % steps.length;
+      setAnalyzingStep(i);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [step]);
+
 
   const fetchExistingData = async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -641,7 +636,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                  <Zap className="w-10 h-10 text-yellow-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 filter drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
                </div>
                <h3 className="text-4xl font-black text-white mb-4 tracking-tighter metallic-text">Scanning Infrastructure...</h3>
-               <p className="text-silver-600 text-sm mb-10 font-medium">Synchronizing with node clusters and generating AI architectural map.</p>
+               <p className="text-indigo-600 text-sm mb-10 font-medium">Synchronizing with node clusters and generating AI architectural map.</p>
                <div className="flex flex-col gap-3 mt-6">
                  {['Cloning repository...', 'Parsing file tree...', 'Running AI analysis...', 'Scoring health...'].map((label, idx) => (
                    <motion.div
@@ -650,16 +645,16 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                        idx === analyzingStep
                          ? 'bg-white/10 border-white/20 text-white shadow-xl scale-[1.02]'
                          : idx < analyzingStep
-                         ? 'bg-white/5 border-white/10 text-silver-300'
-                         : 'bg-white/[0.02] border-white/5 text-silver-700'
+                         ? 'bg-white/5 border-white/10 text-indigo-300'
+                         : 'bg-white/[0.02] border-white/5 text-indigo-700'
                      }`}
                    >
                      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 ${
                        idx < analyzingStep ? 'border-white bg-white/20' :
-                       idx === analyzingStep ? 'border-yellow-400' : 'border-white/10'
+                       idx === analyzingStep ? 'border-indigo-400' : 'border-white/10'
                      }`}>
                        {idx < analyzingStep && <Check className="w-4 h-4 text-white" />}
-                       {idx === analyzingStep && <div className="w-2.5 h-2.5 rounded-sm bg-yellow-400 animate-pulse" />}
+                       {idx === analyzingStep && <div className="w-2.5 h-2.5 rounded-sm bg-indigo-400 animate-pulse" />}
                      </div>
                      <span className="text-xs font-black uppercase tracking-widest">{label}</span>
                    </motion.div>
@@ -686,7 +681,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                    <button onClick={handleCopyMarkdown} className="bg-white/5 hover:bg-white/10 text-white shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 transition-all hover:scale-105 active:scale-95">
                      <FileText className="w-3.5 h-3.5" /> Export
                    </button>
-                   <button onClick={() => handleCreateAllPr()} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-emerald-400/10 transition-all hover:scale-105 active:scale-95">
+                   <button onClick={() => handleCreateAllPr()} className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 shadow-xl text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2 border border-indigo-400/10 transition-all hover:scale-105 active:scale-95">
                      <GitPullRequest className="w-3.5 h-3.5" /> Apply All Fixes
                    </button>
                 </div>
@@ -698,7 +693,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                     </div>
                     <div className="max-w-full overflow-hidden">
                       <h2 className="text-2xl sm:text-3xl font-black text-white metallic-text tracking-tighter">Analysis Complete</h2>
-                      <p className="text-silver-600 font-bold text-[10px] sm:text-xs mt-1 block max-w-full truncate opacity-60 decoration-white/20 underline underline-offset-4" title={repoInput}>{repoInput}</p>
+                      <p className="text-indigo-600 font-bold text-[10px] sm:text-xs mt-1 block max-w-full truncate opacity-60 decoration-white/20 underline underline-offset-4" title={repoInput}>{repoInput}</p>
                     </div>
                   </div>
                 </div>
@@ -707,31 +702,31 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                   {/* Health Score */}
                   <div className="text-center group flex flex-col sm:flex-row items-center gap-6 sm:gap-10 w-full sm:w-auto justify-center">
                     <div className="flex flex-col items-center">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-3">Integrity Score</p>
+                      <p className="text-[10px] uppercase tracking-[0.4em] text-indigo-700 font-extrabold mb-3">Integrity Score</p>
                       <div className={`text-5xl sm:text-6xl font-black tracking-tighter tabular-nums drop-shadow-2xl transition-all duration-700 ${
-                        mvpData.health_score > 70 ? 'text-white' : 
-                        mvpData.health_score > 40 ? 'text-silver-400' : 
+                        (mvpData?.health_score || 0) > 70 ? 'text-white' : 
+                        (mvpData?.health_score || 0) > 40 ? 'text-slate-400' : 
                         'text-red-500'
                       }`}>
-                        {mvpData.health_score}<span className="text-xl opacity-20 font-black">/100</span>
+                        {mvpData?.health_score || 0}<span className="text-xl opacity-20 font-black">/100</span>
                       </div>
                       <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-3 py-1 px-4 rounded-full border inline-block ${
-                        mvpData.health_score > 70 ? 'text-white border-white/20 bg-white/5' : 
-                        mvpData.health_score > 40 ? 'text-silver-400 border-silver-400/20 bg-silver-400/5' : 'text-red-500 border-red-500/20 bg-red-500/5'
+                        (mvpData?.health_score || 0) > 70 ? 'text-white border-white/20 bg-white/5' : 
+                        (mvpData?.health_score || 0) > 40 ? 'text-indigo-400 border-indigo-400/20 bg-indigo-400/5' : 'text-red-500 border-red-500/20 bg-red-500/5'
                       }`}>
-                        {mvpData.health_score > 70 ? 'OPTIMAL' : mvpData.health_score > 40 ? 'STABLE' : 'CRITICAL'}
+                        {(mvpData?.health_score || 0) > 70 ? 'OPTIMAL' : (mvpData?.health_score || 0) > 40 ? 'STABLE' : 'CRITICAL'}
                       </div>
                     </div>
 
                     <div className="hidden sm:block w-px h-16 bg-white/5 self-center" />
 
                     <div className="flex flex-col items-center">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-silver-700 font-extrabold mb-3">Maturity Level</p>
+                      <p className="text-[10px] uppercase tracking-[0.4em] text-indigo-700 font-extrabold mb-3">Maturity Level</p>
                       <div className="text-2xl sm:text-3xl font-black text-white metallic-text tracking-tighter mb-1 uppercase">
-                         {mvpData.maturity_level || 'Unknown'}
+                         {mvpData?.maturity_level || 'Unknown'}
                       </div>
-                      <div className="text-[10px] font-bold text-silver-600 uppercase tracking-widest mt-2">
-                         {mvpData.tech_debt_score || 0}% Tech Debt
+                      <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-2">
+                         {mvpData?.tech_debt_score || 0}% Tech Debt
                       </div>
                     </div>
                   </div>
@@ -749,14 +744,14 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                       onClick={handleRetry}
                       className="btn-pill py-4 px-8 text-[10px] sm:text-xs flex items-center justify-center gap-3 group border border-white/10 hover:border-white/30 hover:bg-white/10 text-white transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform duration-700 text-yellow-400" /> RE-SCAN
+                      <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform duration-700 text-indigo-400" /> RE-SCAN
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Actionable Warnings — Temper intensity, but useful icons & buttons */}
-              {(mvpData.errors?.length > 0 || mvpData.isError) && (
+              {(mvpData?.errors?.length > 0 || mvpData?.isError) && (
                 <div className="rounded-[1.25rem] overflow-hidden border border-red-500/10 bg-red-500/[0.03] shadow-inner mb-6 transition-all duration-500 hover:bg-red-500/[0.05]">
                   <div className="px-8 py-5 border-b border-red-500/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -789,8 +784,8 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
                           <div className="flex items-center gap-4 min-w-0">
                             <span className="text-lg sm:text-xl filter grayscale group-hover:grayscale-0 transition-all opacity-80">{iconSymbol}</span>
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-silver-700 group-hover:text-silver-500 transition-colors mb-0.5">{tag}</span>
-                              <span className="text-silver-400 text-xs sm:text-sm font-medium tracking-tight truncate max-w-full sm:max-w-xl group-hover:text-white transition-colors">{err}</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-400 transition-colors mb-0.5">{tag}</span>
+                              <span className="text-slate-400 text-xs sm:text-sm font-medium tracking-tight truncate max-w-full sm:max-w-xl group-hover:text-white transition-colors">{err}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 w-full sm:w-auto">

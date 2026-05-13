@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth, UserButton, useUser } from '@clerk/react';
 import { motion } from 'motion/react';
 import {
+  Activity,
   ArrowRight,
   ArrowUpRight,
   CheckCircle2,
@@ -57,7 +58,10 @@ const scoreLabel = (s: number | undefined | null) => {
 };
 
 const relativeTime = (dateStr: string) => {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  if (!dateStr) return 'Unknown';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Recently';
+  const diff = Date.now() - d.getTime();
   const h = Math.floor(diff / 36e5);
   if (h < 1) return 'Just now';
   if (h < 24) return `${h}h ago`;
@@ -233,7 +237,7 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; 
           
           const mappedRuns: AuditRun[] = analyses.map(a => ({
             id: a.id,
-            repo: a.repo_url.split('/').pop() || a.repo_url,
+            repo: a.repo_url?.split('/').pop() || a.repo_url || 'Unknown',
             goal: a.summary || 'General repo analysis',
             status: (a.status === 'completed' ? 'Ready' : a.status === 'pending' ? 'Running' : 'Review') as RunStatus,
             score: a.health_score || 0,
@@ -276,7 +280,7 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; 
           <h1>Welcome back, {user?.firstName || 'Engineer'}.</h1>
           <p>You have {backendRuns.length} active analyses. Connect more repositories to generate deeper architectural insights.</p>
         </div>
-        <button className="primary-button large" onClick={onCreateRun}>
+        <button className="btn-primary large" onClick={onCreateRun}>
           <Plus size={17} /> New scan
         </button>
       </section>
@@ -344,7 +348,19 @@ export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; 
                   <span className={`severity-pill ${severityClass(run.severity)}`}><ShieldAlert size={14} /> {run.severity}</span>
                   <strong>{run.score}%</strong>
                   <small><Clock3 size={13} /> {run.updated}</small>
-                  <button aria-label={`Open ${run.repo}`}><ArrowUpRight size={17} /></button>
+                  <button 
+                    aria-label={`Open ${run.repo}`}
+                    onClick={() => {
+                      if (onAnalyze) {
+                        onAnalyze(run.id); // If ID, fetch existing
+                      } else {
+                        // Fallback navigation
+                        window.location.hash = `#/ide?id=${run.id}`;
+                      }
+                    }}
+                  >
+                    <ArrowUpRight size={17} />
+                  </button>
                 </div>
               </article>
             ))}

@@ -34,16 +34,16 @@ const LAYER_STYLE: Record<
   GraphNode["layer"],
   { fill: string; stroke: string; text: string }
 > = {
-  client: { fill: "#B5D4F4", stroke: "#185FA5", text: "#0C447C" },
-  infra:  { fill: "#D3D1C7", stroke: "#5F5E5A", text: "#444441" },
-  core:   { fill: "#9FE1CB", stroke: "#0F6E56", text: "#085041" },
-  data:   { fill: "#D3D1C7", stroke: "#5F5E5A", text: "#444441" },
+  client: { fill: "#EEF2FF", stroke: "#6366F1", text: "#4338CA" },
+  infra:  { fill: "#F8FAFC", stroke: "#94A3B8", text: "#475569" },
+  core:   { fill: "#ECFDF5", stroke: "#10B981", text: "#047857" },
+  data:   { fill: "#FFF7ED", stroke: "#F59E0B", text: "#B45309" },
 };
 
-const RISK_STROKE = "#E24B4A";
-const RISK_FILL   = "#FCEBEB";
-const FLOW_COLOR  = "#1D9E75";
-const STATIC_COLOR = "#B4B2A9";
+const RISK_STROKE = "#EF4444";
+const RISK_FILL   = "#FEF2F2";
+const FLOW_COLOR  = "#10B981";
+const STATIC_COLOR = "#CBD5E1";
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
@@ -166,10 +166,10 @@ export default function ArchitectureMap({ graph, onShare }: Props) {
         {/* Legend */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 12, fontSize: 11, color: "var(--color-text-tertiary, #999)", flexWrap: "wrap" }}>
           {[
-            { color: "#378ADD", label: "client" },
-            { color: "#1D9E75", label: "service" },
-            { color: "#888780", label: "data" },
-            { color: "#E24B4A", label: "risk" },
+            { color: "#6366F1", label: "client" },
+            { color: "#10B981", label: "service" },
+            { color: "#F59E0B", label: "data" },
+            { color: "#EF4444", label: "risk" },
           ].map((l) => (
             <span key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, display: "inline-block" }} />

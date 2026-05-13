@@ -34,26 +34,9 @@ type Page = 'landing' | 'dashboard' | 'studio' | 'ide';
 
 const routeFromHash = (): Page => {
   const route = window.location.hash.replace('#/', '').replace('#', '') as Page;
-  return ['landing', 'dashboard', 'studio'].includes(route) ? route : 'landing';
+  return ['landing', 'dashboard', 'studio', 'ide'].includes(route) ? route : 'landing';
 };
 
-const useHashRoute = () => {
-  const [page, setPage] = useState<Page>(routeFromHash);
-
-  useEffect(() => {
-    const onHashChange = () => setPage(routeFromHash());
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
-
-  const navigate = (nextPage: Page) => {
-    window.location.hash = nextPage === 'landing' ? '#/' : `#/${nextPage}`;
-    setPage(nextPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  return { page, navigate };
-};
 
 const flowSteps = [
   {
@@ -319,6 +302,9 @@ export default function App() {
   const [params, setParams] = useState<any>({});
 
   useEffect(() => {
+    if (window.location.pathname !== '/') {
+      window.history.replaceState(null, '', '/' + window.location.hash);
+    }
     const onHashChange = () => setPage(routeFromHash());
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
