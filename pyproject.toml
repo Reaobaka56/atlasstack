@@ -24,8 +24,9 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = ["atlas"]
+py-modules = ["atlas", "app"]
 packages = ["shared", "services"]
 
 [project.scripts]
 atlas = "atlas:app"
+app = "app:app"
