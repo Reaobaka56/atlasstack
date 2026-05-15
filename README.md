@@ -29,7 +29,7 @@ AtlasStack is designed for engineering speed. No more jumping between tools to f
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Core Platform
 - **Frontend:** React, TypeScript, Vite, Framer Motion, Monaco Editor (Fix Editing)
