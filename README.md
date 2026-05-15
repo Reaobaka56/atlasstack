@@ -7,7 +7,7 @@ AtlasStack is an autonomous software engineering engine that analyzes GitHub rep
 
 ---
 
-## 🚀 The High-Velocity Workflow
+##  The High-Velocity Workflow
 
 AtlasStack is designed for engineering speed. No more jumping between tools to fix security or architectural debt.
 
@@ -18,7 +18,7 @@ AtlasStack is designed for engineering speed. No more jumping between tools to f
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 - **Liquid Glass Dashboard**: A premium, high-contrast engineering interface with real-time scan queues and live status polling.
 - **Embedded Fix Editor**: Modify AI suggestions before they ever touch your codebase.
@@ -39,7 +39,7 @@ AtlasStack is designed for engineering speed. No more jumping between tools to f
 
 ---
 
-## ⚡ Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Python 3.12+
@@ -73,7 +73,7 @@ npm run dev
 
 ---
 
-## 🔧 Configuration Reference
+##  Configuration Reference
 
 | Variable | Description |
 |----------|-------------|
@@ -85,7 +85,7 @@ npm run dev
 
 ---
 
-## 📈 Architecture
+##  Architecture
 
 AtlasStack coordinates specialized agents via a central API Gateway to handle the full lifecycle of a code fix.
 
