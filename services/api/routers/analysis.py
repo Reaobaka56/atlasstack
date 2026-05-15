@@ -658,9 +658,13 @@ async def apply_all_fixes_as_pr(
     repo_name = parts[-1]
     owner_repo = f"{owner}/{repo_name}"
 
-    token_to_use = token or github.token
+    token_to_use = token or settings.GITHUB_TOKEN
     if not token_to_use:
-        raise HTTPException(status_code=403, detail="No GitHub credentials available for applying fixes")
+        logger.error("No GitHub token found for PR creation. Fallback to settings.GITHUB_TOKEN failed.")
+        raise HTTPException(
+            status_code=403, 
+            detail="No GitHub credentials available. Please connect your GitHub account or add GITHUB_TOKEN to your backend .env file."
+        )
 
     temp_dir = tempfile.mkdtemp()
     try:
@@ -721,18 +725,34 @@ async def apply_all_fixes_as_pr(
             "base": record.branch or "main",
         }
 
-        async with httpx.AsyncClient() as client:
-            res = await client.post(
-                f"{github.api_base}/repos/{owner_repo}/pulls",
-                headers={**github._headers, "Authorization": f"token {token_to_use}"},
-                json=pr_data,
-            )
-            if res.status_code != 201:
-                logger.error("Failed to create combined PR", status=res.status_code, body=res.text)
-                raise HTTPException(status_code=500, detail=f"Failed to create PR: {res.text}")
-            return res.json()
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    f"{github.api_base}/repos/{owner_repo}/pulls",
+                    headers={**github._headers, "Authorization": f"token {token_to_use}"},
+                    json=pr_data,
+                )
+                if res.status_code != 201:
+                    logger.error("Failed to create combined PR", status=res.status_code, body=res.text)
+                    raise HTTPException(
+                        status_code=500, 
+                        detail=f"PR creation failed on GitHub. Status: {res.status_code}. Error: {res.text}. "
+                               "Ensure your GITHUB_TOKEN has 'repo' scope and write access to this repository."
+                    )
+                return res.json()
+        except httpx.RequestError as exc:
+            logger.error(f"Network error while creating PR: {exc}")
+            raise HTTPException(status_code=500, detail=f"Failed to reach GitHub API: {str(exc)}")
+    except Exception as e:
+        logger.error(f"Critical error in PR flow: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create PR: {str(e)}")
     finally:
-        shutil.rmtree(temp_dir)
+        # Robust cleanup
+        if 'temp_dir' in locals() and os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception as cleanup_err:
+                logger.warning(f"Failed to cleanup temp dir {temp_dir}: {cleanup_err}")
 
 
 @router.post("/analysis/{analysis_id}/regenerate")

@@ -147,6 +147,7 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [prStatus, setPrStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [prError, setPrError] = useState<string | null>(null);
   const [prUrl, setPrUrl] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedCode, setEditedCode] = useState<string>('');
@@ -157,6 +158,7 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
     if (!run) {
       setDetail(null);
       setPrStatus('idle');
+      setPrError(null);
       setEditingIndex(null);
       setOverrides({});
       return;
@@ -184,6 +186,7 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
   const handleCreatePR = async () => {
     if (!run) return;
     setPrStatus('loading');
+    setPrError(null);
     try {
       const token = await getToken();
       const res = await fetch(`${apiUrl}/api/v1/analyses/${run.id}/fixes/apply_all`, {
@@ -199,10 +202,15 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
         setPrStatus('success');
         setPrUrl(data.html_url || data.pr_url);
       } else {
+        const data = await res.json().catch(() => ({ detail: 'Unknown PR error' }));
         setPrStatus('error');
+        setPrError(data.detail);
+        console.error('PR Creation Failed:', data);
       }
-    } catch (err) {
+    } catch (err: any) {
       setPrStatus('error');
+      setPrError(err.message || 'Network error');
+      console.error('PR Network Error:', err);
     }
   };
 
@@ -323,7 +331,14 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
                 <GitPullRequest size={16} /> Pull Request Opened! View on GitHub →
               </a>
             )}
-            {prStatus === 'error' && <span className="text-sm text-rose font-bold">Failed to create PR. Check backend logs.</span>}
+            {prStatus === 'error' && (
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-rose font-bold">PR Creation Failed</span>
+                <span className="text-[10px] text-rose opacity-80 max-w-[300px] leading-tight">
+                  {prError || 'Check backend logs for details.'}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex gap-4">
             <button className="ghost-button" onClick={onClose}>Close</button>
