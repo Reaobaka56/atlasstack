@@ -108,9 +108,10 @@ pip install -e .  # Registers the 'atlas' command
 ### 3) Start the backend (Lite Mode)
 
 ```bash
-python test_app2.py
-# → http://localhost:8005
-# → API docs at http://localhost:8005/docs
+python app.py litemode
+# or, after install: app litemode
+# → http://localhost:8000
+# → API docs at http://localhost:8000/docs
 ```
 
 ### 4) Start the frontend
