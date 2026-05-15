@@ -262,6 +262,8 @@ class GithubAuthRequest(BaseModel):
     code: str
 
 
+from fastapi.responses import RedirectResponse
+
 @router.get("/auth/github/login")
 async def github_login(request: Request):
     """Return the GitHub OAuth authorize URL — frontend redirects user there."""
@@ -273,11 +275,11 @@ async def github_login(request: Request):
 
     # The redirect_uri must match what's registered in your GitHub OAuth App settings.
     # It should point to your FRONTEND so the ?code= param lands back in the React app.
-    origin = request.headers.get("origin") or request.headers.get("referer", "http://localhost:5173")
+    origin = request.headers.get("origin") or request.headers.get("referer", "http://localhost:3000")
     # Strip trailing slash/path — keep just origin
     import re
     origin_match = re.match(r"(https?://[^/]+)", origin)
-    frontend_origin = origin_match.group(1) if origin_match else "http://localhost:5173"
+    frontend_origin = origin_match.group(1) if origin_match else "http://localhost:3000"
     redirect_uri = frontend_origin  # GitHub sends ?code= back to this URL
 
     url = (
@@ -287,7 +289,7 @@ async def github_login(request: Request):
         f"&scope=repo+user:email"
         f"&allow_signup=true"
     )
-    return {"url": url}
+    return RedirectResponse(url=url)
 
 
 @router.post("/auth/github/callback", response_model=TokenResponse)

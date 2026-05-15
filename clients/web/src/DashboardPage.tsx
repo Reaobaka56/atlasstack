@@ -17,6 +17,7 @@ import {
   Sparkles,
   TrendingUp,
   Activity,
+  Github,
 } from 'lucide-react';
 
 // ── Error Boundary ──────────────────────────────────────────────
@@ -192,19 +193,28 @@ const GitHubRepos = ({ apiUrl, onAnalyze }: { apiUrl: string; onAnalyze: (url: s
       </div>
       {loading ? <p>Syncing repositories...</p> : (
         <div className="repo-mini-list">
-          {repos.slice(0, 5).map(repo => (
-            <div key={repo.name} className="repo-mini-item">
-              <span>{repo.name}</span>
-              <button onClick={() => onAnalyze(repo.url)}>Scan <ArrowRight size={14} /></button>
+          {Array.isArray(repos) && repos.slice(0, 5).map(repo => (
+            <div key={repo.name || repo.url} className="repo-mini-item">
+              <span>{repo.name || 'Untitled Repo'}</span>
+              <button onClick={() => onAnalyze(repo.url || '')}>Scan <ArrowRight size={14} /></button>
             </div>
           ))}
+          {Array.isArray(repos) && repos.length === 0 && <p className="text-xs opacity-50">No repositories found.</p>}
         </div>
       )}
     </div>
   );
 };
 
-export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; onAnalyze?: (url: string) => void }> = ({ apiUrl, onCreateRun, onAnalyze }) => {
+export const DashboardPage: React.FC<{ apiUrl: string; onCreateRun: () => void; onAnalyze?: (url: string) => void }> = (props) => {
+  return (
+    <ErrorBoundary>
+      <DashboardContent {...props} />
+    </ErrorBoundary>
+  );
+};
+
+const DashboardContent: React.FC<{ apiUrl: string; onCreateRun: () => void; onAnalyze?: (url: string) => void }> = ({ apiUrl, onCreateRun, onAnalyze }) => {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [query, setQuery] = useState('');

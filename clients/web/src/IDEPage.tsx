@@ -20,6 +20,38 @@ const Show = ({ when, children }: { when: 'signed-in' | 'signed-out'; children: 
   if (when === 'signed-out' && !isSignedIn) return <>{children}</>;
   return null;
 };
+
+// ── Error Boundary ──────────────────────────────────────────────
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('ErrorBoundary caught:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 48, color: '#ef4444', background: '#020617', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '1rem' }}>Something went wrong in the IDE.</h1>
+          <pre style={{ background: '#0f172a', padding: 24, borderRadius: 12, border: '1px solid #1e293b', overflow: 'auto' }}>{this.state.error?.toString()}</pre>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ marginTop: 24, background: '#4f46e5', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import mermaid from 'mermaid';
 import ArchitectureMap from './ArchitectureMap';
 
@@ -85,14 +117,18 @@ const Mermaid = ({ chart }: { chart: string }) => {
 
 
 export const IDEPage = (props: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null; key?: React.Key }) => {
-  return <IDEPageContent {...props} />;
+  return (
+    <ErrorBoundary>
+      <IDEPageContent {...props} />
+    </ErrorBoundary>
+  );
 };
 
 const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { repoUrl: string; analysisId?: string | null; onBack: () => void; apiUrl?: string; token?: string | null }) => {
   const defaultApiHost = window.location.hostname;
   const defaultApiUrl = (defaultApiHost === 'localhost' || defaultApiHost === '127.0.0.1' || defaultApiHost === '0.0.0.0')
-    ? 'http://localhost:8005'
-    : `${window.location.protocol}//${defaultApiHost}:8005`;
+    ? 'http://localhost:8000'
+    : `${window.location.protocol}//${defaultApiHost}:8000`;
   const API_URL = apiUrlProp || (import.meta as any).env?.VITE_API_URL || (window as any).ATLASSTACK_API_URL || defaultApiUrl;
   const { getToken, isSignedIn } = useAuth();
   const { signOut } = useClerk();
@@ -179,7 +215,7 @@ const IDEPageContent = ({ repoUrl, analysisId, onBack, apiUrl: apiUrlProp }: { r
         setArchGraph(ATLAS_MOCK_GRAPH as any);
       });
 
-      setTimeout(() => setStep('dashboard'), 500);
+      setTimeout(() => setStep('dashboard'), 100);
     })
     .catch(err => {
       // Safe mock

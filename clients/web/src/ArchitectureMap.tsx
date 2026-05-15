@@ -69,14 +69,15 @@ function autoLayout(nodes: GraphNode[]): GraphNode[] {
   let y = 30;
 
   return nodes.map((node) => {
-    const row = rows[node.layer];
+    const row = rows[node.layer] || [];
     const idx = row.indexOf(node);
     const totalW = row.length * NODE_W + (row.length - 1) * H_GAP;
     const startX = (CANVAS_W - totalW) / 2;
+    const layerIdx = LAYER_ORDER.indexOf(node.layer);
     return {
       ...node,
-      x: startX + idx * (NODE_W + H_GAP),
-      y: y + LAYER_ORDER.indexOf(node.layer) * (NODE_H + V_GAP),
+      x: startX + (idx >= 0 ? idx : 0) * (NODE_W + H_GAP),
+      y: y + (layerIdx >= 0 ? layerIdx : 0) * (NODE_H + V_GAP),
     };
   });
 }
