@@ -33,8 +33,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Skip rate limiting for exempt paths
-        if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
+        # Skip rate limiting for exempt paths or in development mode
+        if settings.ENVIRONMENT == "development" or any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
             return await call_next(request)
 
         # Get client identifier

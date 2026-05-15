@@ -28,7 +28,7 @@ import { ClerkProvider, SignInButton, UserButton, useAuth, useUser } from '@cler
 import './index.css';
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Zml0LW1hbW1hbC02MC5jbGVyay5hY2NvdW50cy5kZXYk';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 type Page = 'landing' | 'dashboard' | 'studio' | 'ide';
 

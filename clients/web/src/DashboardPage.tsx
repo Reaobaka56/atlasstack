@@ -187,8 +187,11 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
     if (!run) return;
     setPrStatus('loading');
     setPrError(null);
+    console.log(`Starting PR creation for run: ${run.id} at ${apiUrl}`);
     try {
       const token = await getToken();
+      if (!token) throw new Error('No auth token available');
+      
       const res = await fetch(`${apiUrl}/api/v1/analyses/${run.id}/fixes/apply_all`, {
         method: 'POST',
         headers: { 
@@ -197,6 +200,7 @@ const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: s
         },
         body: JSON.stringify({ overrides })
       });
+      console.log(`PR response status: ${res.status}`);
       if (res.ok) {
         const data = await res.json();
         setPrStatus('success');

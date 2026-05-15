@@ -232,7 +232,7 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
 
     # Enforce daily scan limit (Disabled for development)
     if False and not is_pro:
-        # If anonymous, we limit by IP? For now let's just limit by user_id if logged in.
+        pass # Placeholder for limit logic if re-enabled
 
     # Save initial record
     if request.save_result:
