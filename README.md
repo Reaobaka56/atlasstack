@@ -167,7 +167,7 @@ Security: the server validates repository URLs and uses strict cloning timeouts.
 The AtlasStack VS Code extension brings AI-driven analysis directly to your workspace.
 
 1.  **Build/Install:** Open [clients/vscode](clients/vscode) and follow the README to build the `.vsix`.
-2.  **Connect:** Open VS Code settings and set `atlasstack.serverUrl` to your backend (default: `http://localhost:8005`).
+2.  **Connect:** Open VS Code settings and set `atlasstack.serverUrl` to your backend (default: `http://localhost:8000`).
 3.  **Analyze:** Use the AtlasStack icon in the Activity Bar to run deep repository scans.
 
 ---
@@ -219,7 +219,7 @@ The AtlasStack CLI is a powerful tool for developers who live in the terminal.
 | GET | `/ready` | No | Readiness probe (DB check) |
 
 
-Full interactive docs at `http://localhost:8005/docs`
+Full interactive docs at `http://localhost:8000/docs`
 
 ---
 

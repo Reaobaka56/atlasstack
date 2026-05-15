@@ -18,7 +18,74 @@ import {
   TrendingUp,
   Activity,
   Github,
+  X,
+  Cpu,
+  Loader2,
+  Edit3,
+  Save,
 } from 'lucide-react';
+
+// ── Scan Overlay Component ───────────────────────────────────────
+const ScanOverlay = ({ isVisible, repoUrl, onCancel }: { isVisible: boolean, repoUrl: string, onCancel: () => void }) => {
+  if (!isVisible) return null;
+
+  return (
+    <motion.div 
+      className="scan-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="scan-overlay-content">
+        <motion.div 
+          className="scan-icon-container"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 90, 180, 270, 360]
+          }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        >
+          <Cpu size={48} color="#4f46e5" />
+        </motion.div>
+        
+        <h2>Analyzing Architecture</h2>
+        <p className="repo-target">{repoUrl}</p>
+        
+        <div className="scan-steps">
+          <div className="scan-step active">
+            <Loader2 className="animate-spin" size={16} />
+            <span>Cloning Repository...</span>
+          </div>
+          <div className="scan-step">
+            <div className="dot" />
+            <span>Parsing AST & Dependencies...</span>
+          </div>
+          <div className="scan-step">
+            <div className="dot" />
+            <span>Running Security Audit...</span>
+          </div>
+          <div className="scan-step">
+            <div className="dot" />
+            <span>Synthesizing Architectural Map...</span>
+          </div>
+        </div>
+
+        <div className="progress-bar-container">
+          <motion.div 
+            className="progress-bar-fill"
+            initial={{ width: "0%" }}
+            animate={{ width: "65%" }}
+            transition={{ duration: 10, ease: "easeOut" }}
+          />
+        </div>
+
+        <button className="cancel-button" onClick={onCancel}>
+          <X size={16} /> Cancel Analysis
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 // ── Error Boundary ──────────────────────────────────────────────
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -75,6 +142,209 @@ const TIPS = [
   'Higher health scores unlock Pro AI fix generation.',
 ];
 
+// ── Result Modal Component ───────────────────────────────────────
+const ResultModal = ({ run, apiUrl, onClose }: { run: AuditRun | null, apiUrl: string, onClose: () => void }) => {
+  const [detail, setDetail] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [prStatus, setPrStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [prUrl, setPrUrl] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editedCode, setEditedCode] = useState<string>('');
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    if (!run) {
+      setDetail(null);
+      setPrStatus('idle');
+      setEditingIndex(null);
+      setOverrides({});
+      return;
+    }
+    const fetchDetail = async () => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const res = await fetch(`${apiUrl}/api/v1/analyses/${run.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDetail(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [run, apiUrl, getToken]);
+
+  const handleCreatePR = async () => {
+    if (!run) return;
+    setPrStatus('loading');
+    try {
+      const token = await getToken();
+      const res = await fetch(`${apiUrl}/api/v1/analyses/${run.id}/fixes/apply_all`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ overrides })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPrStatus('success');
+        setPrUrl(data.html_url || data.pr_url);
+      } else {
+        setPrStatus('error');
+      }
+    } catch (err) {
+      setPrStatus('error');
+    }
+  };
+
+  const startEditing = (index: number, code: string) => {
+    setEditingIndex(index);
+    setEditedCode(overrides[index] || code);
+  };
+
+  const saveEdit = () => {
+    if (editingIndex !== null) {
+      setOverrides({ ...overrides, [editingIndex]: editedCode });
+      setEditingIndex(null);
+    }
+  };
+
+  if (!run) return null;
+
+  return (
+    <motion.div 
+      className="result-modal-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={onClose}
+    >
+      <motion.div 
+        className="result-modal-content"
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div className="flex items-center gap-4">
+            <div className="repo-icon">{run.repo.slice(0, 1).toUpperCase()}</div>
+            <div>
+              <h2>{run.repo} Analysis</h2>
+              <span className="text-sm opacity-60">Completed {run.updated}</span>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <div className="modal-body">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 className="animate-spin text-indigo-500" size={40} />
+              <p className="text-sm font-bold opacity-50">Syncing detailed architecture report...</p>
+            </div>
+          ) : (
+            <>
+              <div className="risk-summary">
+                <div className="score-ring" style={{ borderColor: scoreColor(run.score) }}>
+                  <strong>{run.score}%</strong>
+                  <span>Health</span>
+                </div>
+                <div className="risk-details">
+                  <h3>Analysis Summary</h3>
+                  <p className="text-sm mt-2 opacity-70">
+                    {detail?.explanation?.summary || run.goal}
+                  </p>
+                  
+                  {detail?.fixes?.length > 0 && (
+                    <div className="risk-item high">
+                      <ShieldAlert size={16} />
+                      <span>{detail.fixes.length} fixable issues identified</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {detail?.fixes?.length > 0 && (
+                <div className="analysis-outputs mt-8">
+                  <h4 className="eyebrow mb-4">Recommended Patches</h4>
+                  <div className="grid gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    {detail.fixes.map((fix: any, i: number) => (
+                      <div key={i} className={`fix-card-v2 ${editingIndex === i ? 'editing' : ''}`}>
+                        <div className="fix-header">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 size={16} className="text-mint" />
+                            <span className="text-sm font-bold">{fix.problem}</span>
+                          </div>
+                          <button 
+                            className="text-xs font-bold text-indigo-500 hover:underline flex items-center gap-1"
+                            onClick={() => editingIndex === i ? saveEdit() : startEditing(i, fix.code_add)}
+                          >
+                            {editingIndex === i ? <Save size={14} /> : <Edit3 size={14} />}
+                            {editingIndex === i ? 'Save' : 'Edit'}
+                          </button>
+                        </div>
+                        
+                        <div className="fix-body mt-2">
+                          <span className="text-[10px] opacity-40 font-mono block mb-2">{fix.file_path}</span>
+                          {editingIndex === i ? (
+                            <textarea 
+                              className="edit-area"
+                              value={editedCode}
+                              onChange={(e) => setEditedCode(e.target.value)}
+                              spellCheck={false}
+                            />
+                          ) : (
+                            <pre className="code-preview">
+                              {overrides[i] || fix.code_add}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="modal-footer flex justify-between items-center py-6 px-8 bg-indigo-50/30">
+          <div className="pr-status-area">
+            {prStatus === 'success' && prUrl && (
+              <a href={prUrl} target="_blank" rel="noreferrer" className="text-sm text-mint font-bold flex items-center gap-2">
+                <GitPullRequest size={16} /> Pull Request Opened! View on GitHub →
+              </a>
+            )}
+            {prStatus === 'error' && <span className="text-sm text-rose font-bold">Failed to create PR. Check backend logs.</span>}
+          </div>
+          <div className="flex gap-4">
+            <button className="ghost-button" onClick={onClose}>Close</button>
+            {detail?.fixes?.length > 0 && prStatus !== 'success' && (
+              <button 
+                className="btn-primary" 
+                style={{ padding: '0 32px', minHeight: '52px', fontSize: '16px' }}
+                onClick={handleCreatePR}
+                disabled={prStatus === 'loading'}
+              >
+                {prStatus === 'loading' ? <Loader2 className="animate-spin" size={20} /> : <GitPullRequest size={20} />}
+                {prStatus === 'loading' ? 'Creating PR...' : 'Create Pull Request'}
+              </button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 // ── Types ───────────────────────────────────────────────────────────
 type RunStatus = 'Ready' | 'Review' | 'Running' | 'pending' | 'completed' | 'failed';
 type Severity = 'Low' | 'Medium' | 'High';
@@ -123,18 +393,18 @@ const GitHubStats = ({ user }: { user: any }) => {
           {githubAccount?.imageUrl ? <img src={githubAccount.imageUrl} alt="" /> : <Github size={20} />}
         </div>
         <div>
-          <h4 className="m-0 text-sm font-semibold">{githubAccount?.username || user.username || 'GitHub Connected'}</h4>
-          <span className="text-xs text-indigo-500 font-medium">Verified Identity</span>
+          <h4 className="m-0 text-sm font-semibold truncate max-w-[120px]">{githubAccount?.username || user.username || 'Connected'}</h4>
+          <span className="text-xs text-indigo-500 font-medium">GitHub Profile</span>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 border-t border-indigo-100/30 pt-4">
         <div className="stat-item">
-          <span className="label">Repos</span>
-          <span className="value">--</span>
+          <span className="label">Identity</span>
+          <span className="value">Verified</span>
         </div>
         <div className="stat-item">
-          <span className="label">Stars</span>
-          <span className="value">--</span>
+          <span className="label">Auth</span>
+          <span className="value">Active</span>
         </div>
         <div className="stat-item">
           <span className="label">Private</span>
@@ -178,10 +448,8 @@ const GitHubRepos = ({ apiUrl, onAnalyze }: { apiUrl: string; onAnalyze: (url: s
   if (error) return (
     <div className="repos-error-state">
       <Github size={24} />
-      <p>Connect GitHub to see your repositories</p>
-      <button className="primary-button" onClick={() => window.location.href = `${apiUrl}/api/v1/auth/github/login`}>
-        Connect Account
-      </button>
+      <p>Unable to fetch repositories.</p>
+      <span className="text-xs opacity-50">Ensure your GitHub account is connected in settings.</span>
     </div>
   );
 
@@ -227,46 +495,114 @@ const DashboardContent: React.FC<{ apiUrl: string; onCreateRun: () => void; onAn
     { label: 'PR drafts', value: String(backendRuns.filter(r => r.status === 'Review').length), trend: 'Verified fixes', icon: <GitPullRequest size={19} /> },
   ], [backendRuns]);
   const [loading, setLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [targetRepo, setTargetRepo] = useState('');
+  const [selectedRun, setSelectedRun] = useState<AuditRun | null>(null);
+
+  const handleAnalyze = async (url: string) => {
+    setTargetRepo(url);
+    setIsAnalyzing(true);
+    
+    try {
+      const token = await getToken();
+      // Trigger backend scan
+      const res = await fetch(`${apiUrl}/api/v1/analysis/mvp`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ repo_url: url })
+      });
+      
+      if (res.ok) {
+        const newRunData = await res.json();
+        // Wait a bit to simulate "thinking" for the premium feel
+        setTimeout(async () => {
+          setIsAnalyzing(false);
+          await fetchAnalyses();
+          
+          // Auto-popup results for the new run
+          const mappedRun: AuditRun = {
+            id: newRunData.id,
+            repo: newRunData.repo_url.split('/').pop() || 'Untitled',
+            goal: newRunData.summary || 'Architecture Analysis',
+            status: 'Ready',
+            severity: 'Medium',
+            updated: 'Just now',
+            score: newRunData.health_score || 0,
+            owner: 'You',
+            outputs: ['Map', 'Audit']
+          };
+          setSelectedRun(mappedRun);
+        }, 2000);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Analysis failed: ${errData.detail || 'Check server logs'}`);
+        setIsAnalyzing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error: Could not reach the analysis engine.');
+      setIsAnalyzing(false);
+    }
+  };
+
+  const fetchAnalyses = React.useCallback(async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const response = await fetch(`${apiUrl}/api/v1/analyses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const analyses: BackendAnalysis[] = data.analyses || [];
+
+        const mappedRuns: AuditRun[] = analyses.map(a => ({
+          id: a.id,
+          repo: a.repo_url?.split('/').pop() || a.repo_url || 'Unknown',
+          goal: a.summary || 'General repo analysis',
+          status: (a.status === 'completed' ? 'Ready' : a.status === 'pending' ? 'Running' : 'Review') as RunStatus,
+          score: a.health_score || 0,
+          severity: (a.health_score < 40 ? 'High' : a.health_score < 70 ? 'Medium' : 'Low') as Severity,
+          updated: relativeTime(a.created_at),
+          owner: 'System',
+          outputs: ['runbook.md', 'summary.json'],
+        }));
+
+        setBackendRuns(mappedRuns);
+      }
+    } catch (error) {
+      console.error('Failed to fetch analyses:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, getToken]);
 
   useEffect(() => {
-    const fetchAnalyses = async () => {
-      try {
-        const token = await getToken();
-        if (!token) return;
-
-        const response = await fetch(`${apiUrl}/api/v1/analyses`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const analyses: BackendAnalysis[] = data.analyses || [];
-
-          const mappedRuns: AuditRun[] = analyses.map(a => ({
-            id: a.id,
-            repo: a.repo_url?.split('/').pop() || a.repo_url || 'Unknown',
-            goal: a.summary || 'General repo analysis',
-            status: (a.status === 'completed' ? 'Ready' : a.status === 'pending' ? 'Running' : 'Review') as RunStatus,
-            score: a.health_score || 0,
-            severity: (a.health_score < 40 ? 'High' : a.health_score < 70 ? 'Medium' : 'Low') as Severity,
-            updated: relativeTime(a.created_at),
-            owner: 'System',
-            outputs: ['runbook.md', 'summary.json'],
-          }));
-
-          setBackendRuns(mappedRuns);
-        }
-      } catch (error) {
-        console.error('Failed to fetch analyses:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAnalyses();
-  }, [apiUrl, getToken]);
+    
+    // Check for scan trigger from Studio
+    const hashParts = window.location.hash.split('?');
+    if (hashParts.length > 1) {
+      const params = new URLSearchParams(hashParts[1]);
+      const scanUrl = params.get('scan');
+      if (scanUrl && !isAnalyzing) {
+        handleAnalyze(decodeURIComponent(scanUrl));
+        // Clear param to prevent re-triggering on refresh
+        window.location.hash = '#/dashboard';
+      }
+    }
+
+    // Add polling to keep queue fresh
+    const interval = setInterval(fetchAnalyses, 5000);
+    return () => clearInterval(interval);
+  }, [fetchAnalyses, handleAnalyze, isAnalyzing, window.location.hash]);
 
   const allRuns = useMemo(() => [...backendRuns, ...runs], [backendRuns]);
 
@@ -310,6 +646,18 @@ const DashboardContent: React.FC<{ apiUrl: string; onCreateRun: () => void; onAn
           </motion.article>
         ))}
       </section>
+
+      <ScanOverlay 
+        isVisible={isAnalyzing} 
+        repoUrl={targetRepo} 
+        onCancel={() => setIsAnalyzing(false)} 
+      />
+
+      <ResultModal 
+        run={selectedRun} 
+        apiUrl={apiUrl}
+        onClose={() => setSelectedRun(null)} 
+      />
 
       <section className="dashboard-grid">
         <div className="runs-panel">
@@ -357,19 +705,26 @@ const DashboardContent: React.FC<{ apiUrl: string; onCreateRun: () => void; onAn
                   <span className={`severity-pill ${severityClass(run.severity)}`}><ShieldAlert size={14} /> {run.severity}</span>
                   <strong>{run.score}%</strong>
                   <small><Clock3 size={13} /> {run.updated}</small>
-                  <button
-                    aria-label={`Open ${run.repo}`}
-                    onClick={() => {
-                      if (onAnalyze) {
-                        onAnalyze(run.id); // If ID, fetch existing
-                      } else {
-                        // Fallback navigation
-                        window.location.hash = `#/ide?id=${run.id}`;
-                      }
-                    }}
-                  >
-                    <ArrowUpRight size={17} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {run.status === 'Ready' && (
+                      <button 
+                        className="btn-primary" 
+                        style={{ height: '36px', padding: '0 12px', fontSize: '12px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRun(run);
+                        }}
+                      >
+                        <GitPullRequest size={14} /> Ship PR
+                      </button>
+                    )}
+                    <button
+                      aria-label={`Open ${run.repo}`}
+                      onClick={() => setSelectedRun(run)}
+                    >
+                      <ArrowUpRight size={17} />
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -379,7 +734,7 @@ const DashboardContent: React.FC<{ apiUrl: string; onCreateRun: () => void; onAn
         <aside className="insight-panel">
           <GitHubStats user={user} />
           <div className="mt-6">
-            <GitHubRepos apiUrl={apiUrl} onAnalyze={onAnalyze || ((url) => console.log('Analyze', url))} />
+            <GitHubRepos apiUrl={apiUrl} onAnalyze={handleAnalyze} />
           </div>
           <div className="mt-6">
             <span className="eyebrow"><Filter size={16} /> Recommendation</span>

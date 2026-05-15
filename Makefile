@@ -32,7 +32,7 @@ help:
 	@echo ""
 	@echo "Lite Mode (no Docker):"
 	@echo "  make lite-install   - Install Python + Node dependencies"
-	@echo "  make lite-backend   - Start backend (http://localhost:8005)"
+	@echo "  make lite-backend   - Start backend (http://localhost:8000)"
 	@echo "  make lite-frontend  - Start frontend (http://localhost:3000)"
 	@echo "  make lite-dev       - Start both simultaneously"
 	@echo ""
@@ -51,7 +51,7 @@ lite-install:
 	cd clients/web && npm install
 
 lite-backend:
-	@echo "Starting AtlasStack backend (Lite Mode) on http://localhost:8005"
+	@echo "Starting AtlasStack backend (Lite Mode) on http://localhost:8000"
 	python test_app2.py
 
 lite-frontend:

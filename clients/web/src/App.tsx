@@ -33,7 +33,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 type Page = 'landing' | 'dashboard' | 'studio' | 'ide';
 
 const routeFromHash = (): Page => {
-  const route = window.location.hash.replace('#/', '').replace('#', '') as Page;
+  const hash = window.location.hash.replace('#/', '').replace('#', '');
+  const route = hash.split('?')[0] as Page;
   return ['landing', 'dashboard', 'studio', 'ide'].includes(route) ? route : 'landing';
 };
 
@@ -92,9 +93,9 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
 
   const links = useMemo(
     () => [
-      { label: 'Capabilities', onClick: () => document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth' }) },
-      { label: 'Dashboard', onClick: () => navigate('dashboard') },
-      { label: 'Studio', onClick: () => navigate('studio') },
+      { label: 'Capabilities', id: 'landing', onClick: () => navigate('landing') },
+      { label: 'Studio', id: 'studio', onClick: () => navigate('studio') },
+      { label: 'My runs', id: 'dashboard', onClick: () => navigate('dashboard') },
     ],
     [navigate],
   );
@@ -108,7 +109,7 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
 
       <nav className="nav-center" aria-label="Primary navigation">
         {links.map((link) => (
-          <button key={link.label} className={page.toLowerCase() === link.label.toLowerCase() ? 'active' : ''} onClick={link.onClick}>
+          <button key={link.label} className={page === link.id ? 'active' : ''} onClick={link.onClick}>
             {link.label}
           </button>
         ))}
@@ -116,10 +117,10 @@ const Navbar = ({ page, navigate }: { page: Page; navigate: (page: Page) => void
 
       <div className="nav-actions">
         {isSignedIn ? (
-          <>
-            <button className="ghost-button" onClick={() => navigate('dashboard')}>My runs</button>
+          <div className="flex items-center gap-4">
+            <button className="ghost-button mini-btn" onClick={() => navigate('dashboard')}>My runs</button>
             <UserButton afterSignOutUrl="/" />
-          </>
+          </div>
         ) : (
           <SignInButton mode="modal">
             <button className="primary-button">Sign in</button>
@@ -263,7 +264,10 @@ const StudioPage = ({ navigate }: { navigate: (page: Page, params?: any) => void
         </div>
         <form className="run-form" onSubmit={(event) => { 
           event.preventDefault(); 
-          if (url) navigate('ide', { repo: url }); 
+          if (url) {
+            // Trigger scan and go to dashboard
+            window.location.hash = `#/dashboard?scan=${encodeURIComponent(url)}`;
+          }
         }}>
           <label>
             Repository URL
@@ -358,5 +362,5 @@ function AuthGatedDashboard({ apiUrl, onCreateRun, navigate }: { apiUrl: string;
     );
   }
   
-  return <DashboardPage apiUrl={apiUrl} onCreateRun={onCreateRun} onAnalyze={(url) => navigate('ide', { repo: url })} />;
+  return <DashboardPage apiUrl={apiUrl} onCreateRun={onCreateRun} onAnalyze={() => {}} />;
 }

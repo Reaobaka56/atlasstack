@@ -230,24 +230,9 @@ async def analyze_mvp(request: MVPAnalysisRequest, req: Request = None, db: Asyn
             roles = user_context.get("roles", [])
             is_pro = "pro" in roles
 
-    # Enforce daily scan limit (4 per day) for non-pro users
-    if not is_pro:
+    # Enforce daily scan limit (Disabled for development)
+    if False and not is_pro:
         # If anonymous, we limit by IP? For now let's just limit by user_id if logged in.
-        # If anonymous, we could skip the limit or use IP, but the requirement said "per user".
-        if user_id != "anonymous":
-            one_day_ago = datetime.utcnow() - timedelta(days=1)
-            count_stmt = select(func.count(AnalysisRecord.id)).where(
-                AnalysisRecord.user_id == user_id,
-                AnalysisRecord.created_at >= one_day_ago
-            )
-            count_result = await db.execute(count_stmt)
-            scan_count = count_result.scalar() or 0
-            
-            if scan_count >= 4:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Daily scan limit reached (4/day). Upgrade to Pro for unlimited scans."
-                )
 
     # Save initial record
     if request.save_result:
@@ -622,9 +607,13 @@ async def create_fix_pr(
         raise HTTPException(status_code=500, detail=f"Failed to create PR: {str(e)}")
 
 
+class ApplyFixesRequest(BaseModel):
+    overrides: Optional[dict] = None  # index -> new_code_add
+
 @router.post("/analyses/{analysis_id}/fixes/apply_all")
 async def apply_all_fixes_as_pr(
     analysis_id: str,
+    request: ApplyFixesRequest = ApplyFixesRequest(),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(PermissionChecker(["user"])),
 ):
@@ -683,22 +672,27 @@ async def apply_all_fixes_as_pr(
         new_branch.checkout()
 
         # Apply fixes
-        for fix in fixes:
+        for i, fix in enumerate(fixes):
             file_rel = fix.get("file_path")
             if not file_rel:
                 continue
+                
+            code_add = fix.get("code_add", "")
+            if request.overrides and str(i) in request.overrides:
+                code_add = request.overrides[str(i)]
+                
             file_path = os.path.join(temp_dir, file_rel)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             if not os.path.exists(file_path):
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(fix.get("code_add", ""))
+                    f.write(code_add)
             else:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
                 if fix.get("code_remove") and fix["code_remove"] in content:
-                    new_content = content.replace(fix["code_remove"], fix.get("code_add", ""))
+                    new_content = content.replace(fix["code_remove"], code_add)
                 else:
-                    new_content = content + "\n\n# AtlasStack Suggested Fix\n" + fix.get("code_add", "")
+                    new_content = content + "\n\n# AtlasStack Suggested Fix\n" + code_add
                 if new_content == content:
                     import time
                     new_content += f"\n# AtlasStack note: no-op patched at {int(time.time())}\n"
