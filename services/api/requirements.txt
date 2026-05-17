@@ -42,7 +42,7 @@ structlog==24.1.0
 # Utilities
 slowapi==0.1.9
 python-json-logger==2.0.7
-python-dotenv==1.0.0
+python-dotenv==1.2.1
 pyyaml==6.0.1
 tenacity==8.2.3
 GitPython==3.1.41
