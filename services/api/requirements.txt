@@ -52,7 +52,7 @@ huggingface_hub==0.24.6
 # Testing (dev only)
 pytest==8.4.2
 pytest-asyncio==0.23.3
-pytest-cov==4.1.0
+pytest-cov==7.1.0
 mypy==1.19.1
 black==24.4.2
 flake8==7.0.0
